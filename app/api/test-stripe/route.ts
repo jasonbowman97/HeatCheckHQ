@@ -12,6 +12,8 @@ export async function GET() {
       keyPrefix,
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasSupabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      nextPublicBaseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'NOT SET',
+      vercelUrl: process.env.VERCEL_URL || 'NOT SET',
     })
   } catch (error) {
     return NextResponse.json({

@@ -81,6 +81,14 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
     }
   }
 
+  // Build return URL with proper scheme
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
+                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                  "https://heatcheckhq.com"
+
+  const returnUrl = `${baseUrl}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
+  console.log("[Stripe] Return URL:", returnUrl)
+
   console.log("[Stripe] Creating checkout session...")
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
@@ -91,7 +99,7 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
         quantity: 1,
       },
     ],
-    return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.com"}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+    return_url: returnUrl,
     ui_mode: "embedded",
     metadata: {
       supabase_user_id: user.id,
