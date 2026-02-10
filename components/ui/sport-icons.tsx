@@ -60,22 +60,4 @@ export function FootballIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function HeatCheckLogo(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      {/* Flame / fire icon representing "heat" */}
-      <path d="M12 2c-2 4-6 6-6 11a6 6 0 0 0 12 0c0-5-4-7-6-11Z" />
-      {/* Inner flame */}
-      <path d="M12 22c-2 0-4-1.5-4-4 0-3 2-4 4-7 2 3 4 4 4 7 0 2.5-2 4-4 4Z" />
-    </svg>
-  )
-}
+

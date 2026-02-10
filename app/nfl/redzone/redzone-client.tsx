@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import useSWR from "swr"
-import { Loader2 } from "lucide-react"
-import { HeatCheckLogo } from "@/components/ui/sport-icons"
+import { BarChart3, Loader2 } from "lucide-react"
 import { RedzoneTable } from "@/components/nfl/redzone-table"
 import type { NFLScheduleGame } from "@/lib/nfl-api"
 
@@ -25,7 +24,7 @@ export default function RedzoneClient() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <HeatCheckLogo className="h-5 w-5 text-primary" />
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold tracking-tight text-foreground">

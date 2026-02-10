@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Loader2 } from "lucide-react"
-import { HeatCheckLogo } from "@/components/ui/sport-icons"
+import { BarChart3, Loader2 } from "lucide-react"
 import { pitchers as staticPitchers } from "@/lib/pitching-data"
 import type { PitcherStats } from "@/lib/pitching-data"
 import { PitchingTable } from "@/components/mlb/pitching-table"
@@ -62,7 +61,7 @@ export default function PitchingStatsPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <HeatCheckLogo className="h-5 w-5 text-primary" />
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>

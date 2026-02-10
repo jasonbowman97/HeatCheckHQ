@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, ChevronDown } from "lucide-react"
+import { BarChart3, Menu, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { HeatCheckLogo } from "@/components/ui/sport-icons"
 
 const sportLinks = [
   {
@@ -42,7 +41,7 @@ export function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <HeatCheckLogo className="h-5 w-5 text-primary" />
+            <BarChart3 className="h-5 w-5 text-primary" />
           </div>
           <span className="text-lg font-bold tracking-tight text-foreground">
             HeatCheck HQ
