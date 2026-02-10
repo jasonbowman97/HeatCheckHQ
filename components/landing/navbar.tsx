@@ -3,36 +3,54 @@
 import { useState, useRef, useCallback } from "react"
 import Link from "next/link"
 import { BarChart3, Menu, X, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { AuthButtons, MobileAuthButtons } from "@/components/auth-buttons"
+
+type Tier = "public" | "free" | "pro"
 
 const sportLinks = [
   {
     sport: "MLB",
     pages: [
-      { name: "Hot Hitters", href: "/mlb/hot-hitters" },
-      { name: "Hitting Stats", href: "/mlb/hitting-stats" },
-      { name: "Pitching Stats", href: "/mlb/pitching-stats" },
-      { name: "NRFI", href: "/mlb/nrfi" },
-      { name: "Trends", href: "/mlb/trends" },
+      { name: "Hot Hitters", href: "/mlb/hot-hitters", tier: "pro" as Tier },
+      { name: "Hitting Stats", href: "/mlb/hitting-stats", tier: "pro" as Tier },
+      { name: "Pitching Stats", href: "/mlb/pitching-stats", tier: "pro" as Tier },
+      { name: "NRFI", href: "/mlb/nrfi", tier: "public" as Tier },
+      { name: "Trends", href: "/mlb/trends", tier: "free" as Tier },
     ],
   },
   {
     sport: "NBA",
     pages: [
-      { name: "First Basket", href: "/nba/first-basket" },
-      { name: "Head-to-Head", href: "/nba/head-to-head" },
-      { name: "Def vs Pos", href: "/nba/defense-vs-position" },
-      { name: "Trends", href: "/nba/trends" },
+      { name: "First Basket", href: "/nba/first-basket", tier: "public" as Tier },
+      { name: "Head-to-Head", href: "/nba/head-to-head", tier: "pro" as Tier },
+      { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
+      { name: "Trends", href: "/nba/trends", tier: "free" as Tier },
     ],
   },
   {
     sport: "NFL",
     pages: [
-      { name: "Matchup", href: "/nfl/matchup" },
-      { name: "Trends", href: "/nfl/trends" },
+      { name: "Matchup", href: "/nfl/matchup", tier: "pro" as Tier },
+      { name: "Trends", href: "/nfl/trends", tier: "free" as Tier },
     ],
   },
 ]
+
+function TierBadge({ tier }: { tier: Tier }) {
+  if (tier === "public") return null
+  if (tier === "pro") {
+    return (
+      <span className="ml-auto rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+        Pro
+      </span>
+    )
+  }
+  return (
+    <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      Free
+    </span>
+  )
+}
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -103,10 +121,11 @@ export function Navbar() {
                       <Link
                         key={page.href}
                         href={page.href}
-                        className="block rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        className="flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                         onClick={() => setOpenDropdown(null)}
                       >
                         {page.name}
+                        <TierBadge tier={page.tier} />
                       </Link>
                     ))}
                   </div>
@@ -116,13 +135,8 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>
-            <Link href="/mlb/hitting-stats">Log in</Link>
-          </Button>
-          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
-            <Link href="/mlb/hitting-stats">Sign up free</Link>
-          </Button>
+        <div className="hidden items-center md:flex">
+          <AuthButtons />
         </div>
 
         {/* Mobile toggle */}
@@ -163,14 +177,7 @@ export function Navbar() {
               </div>
             ))}
 
-            <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Button variant="ghost" size="sm" className="justify-start text-muted-foreground" asChild>
-                <Link href="/mlb/hitting-stats">Log in</Link>
-              </Button>
-              <Button size="sm" className="bg-primary text-primary-foreground" asChild>
-                <Link href="/mlb/hitting-stats">Sign up free</Link>
-              </Button>
-            </div>
+            <MobileAuthButtons />
           </div>
         </div>
       )}

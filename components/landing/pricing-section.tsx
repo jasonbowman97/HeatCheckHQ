@@ -12,11 +12,11 @@ const plans = [
     cta: "Get started free",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "Limited view of charts and tables", included: true },
-      { text: "Basic trend overview", included: true },
+      { text: "NRFI, Weather & First Basket (no account)", included: true },
+      { text: "Defense vs Position & all Trends pages", included: true },
       { text: "Full dashboard access", included: false },
-      { text: "Advanced filtering & drill-downs", included: false },
-      { text: "Complete streaks & surges", included: false },
+      { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
+      { text: "Head-to-Head & NFL Matchup", included: false },
     ],
   },
   {
@@ -29,12 +29,12 @@ const plans = [
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
-      { text: "All 3 sports -- MLB, NBA, NFL", included: true },
-      { text: "All dashboards, trends & insights", included: true },
-      { text: "Real-time data access", included: true },
-      { text: "Comprehensive player & team analytics", included: true },
-      { text: "Custom metrics & views", included: true },
-      { text: "Advanced filtering & drill-downs", included: true },
+      { text: "Everything in Free", included: true },
+      { text: "Hot Hitters, Hitting & Pitching Stats", included: true },
+      { text: "Head-to-Head & NFL Matchup", included: true },
+      { text: "All dashboards across MLB, NBA, NFL", included: true },
+      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Cancel anytime", included: true },
     ],
   },
 ]
@@ -110,7 +110,7 @@ export function PricingSection() {
                   size="lg"
                   asChild
                 >
-                  <Link href="/mlb/hitting-stats">{plan.cta}</Link>
+                  <Link href={plan.popular ? "/checkout" : "/auth/sign-up"}>{plan.cta}</Link>
                 </Button>
               </div>
               </div>

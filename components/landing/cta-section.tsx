@@ -27,7 +27,7 @@ export function CtaSection() {
                 className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8"
                 asChild
               >
-                <Link href="/mlb/hitting-stats">
+                <Link href="/auth/sign-up">
                   Get started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

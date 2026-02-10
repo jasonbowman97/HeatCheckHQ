@@ -63,7 +63,7 @@ export function HeroSection() {
           <FadeIn delay={0.4}>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 text-base" asChild>
-                <Link href="/mlb/hitting-stats">
+                <Link href="/auth/sign-up">
                   Explore dashboards
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
