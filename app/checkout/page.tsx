@@ -47,17 +47,36 @@ export default function CheckoutPage() {
   // Check authentication on mount
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      try {
+        const supabase = createClient()
 
-      if (!user) {
-        // Redirect to login with return URL
+        // First check session
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('Session check:', session ? 'Found' : 'Not found')
+
+        if (!session) {
+          console.log('No session, redirecting to login')
+          router.push('/auth/login?redirect=/checkout')
+          return
+        }
+
+        // Double check user
+        const { data: { user }, error } = await supabase.auth.getUser()
+        console.log('User check:', user ? user.email : 'Not found', error)
+
+        if (!user) {
+          console.log('No user, redirecting to login')
+          router.push('/auth/login?redirect=/checkout')
+          return
+        }
+
+        console.log('Auth successful, showing checkout')
+        setIsAuthenticated(true)
+        setIsCheckingAuth(false)
+      } catch (error) {
+        console.error('Auth check error:', error)
         router.push('/auth/login?redirect=/checkout')
-        return
       }
-
-      setIsAuthenticated(true)
-      setIsCheckingAuth(false)
     }
 
     checkAuth()
