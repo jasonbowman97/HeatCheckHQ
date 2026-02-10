@@ -82,9 +82,14 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
   }
 
   // Build return URL with proper scheme
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                  "https://heatcheckhq.com"
+  let baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
+                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                "https://heatcheckhq.com"
+
+  // Ensure the base URL always has a valid scheme
+  if (baseUrl && !baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+    baseUrl = `https://${baseUrl}`
+  }
 
   const returnUrl = `${baseUrl}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
   console.log("[Stripe] Return URL:", returnUrl)
