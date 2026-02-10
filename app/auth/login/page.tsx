@@ -17,6 +17,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const message = searchParams.get("message")
+  const redirect = searchParams.get("redirect")
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -32,7 +33,8 @@ function LoginForm() {
       return
     }
 
-    router.push("/")
+    // Redirect to the specified page or home
+    router.push(redirect || "/")
     router.refresh()
   }
 
@@ -51,6 +53,12 @@ function LoginForm() {
 
         {message && (
           <p className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-center text-sm text-primary">{message}</p>
+        )}
+
+        {redirect && !message && (
+          <p className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-center text-sm text-primary">
+            Please sign in to continue to checkout
+          </p>
         )}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -100,7 +108,7 @@ function LoginForm() {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {"Don't have an account? "}
-          <Link href="/auth/sign-up" className="text-primary hover:underline">
+          <Link href={redirect ? `/auth/sign-up?redirect=${redirect}` : "/auth/sign-up"} className="text-primary hover:underline">
             Sign up
           </Link>
         </p>

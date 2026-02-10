@@ -1,21 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 
-export default function SignUpPage() {
+function SignUpForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect")
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault()
@@ -65,6 +67,12 @@ export default function SignUpPage() {
           </Link>
           <p className="mt-2 text-sm text-muted-foreground">Create a free account</p>
         </div>
+
+        {redirect && (
+          <p className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-center text-sm text-primary">
+            Create an account to continue to checkout
+          </p>
+        )}
 
         <form onSubmit={handleSignUp} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
@@ -121,11 +129,19 @@ export default function SignUpPage() {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-primary hover:underline">
+          <Link href={redirect ? `/auth/login?redirect=${redirect}` : "/auth/login"} className="text-primary hover:underline">
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <SignUpForm />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useState, useEffect } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import {
   EmbeddedCheckoutProvider,
@@ -9,7 +9,9 @@ import {
 import { createCheckoutSession } from "@/app/actions/stripe"
 import { PRODUCTS } from "@/lib/products"
 import Link from "next/link"
-import { BarChart3, ArrowLeft, Check } from "lucide-react"
+import { BarChart3, ArrowLeft, Check, Loader2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -19,6 +21,45 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPlan, setSelectedPlan] = useState("pro-monthly")
   const [checkoutStarted, setCheckoutStarted] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const router = useRouter()
+
+  // Check authentication on mount
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        // Redirect to login with return URL
+        router.push('/auth/login?redirect=/checkout')
+        return
+      }
+
+      setIsAuthenticated(true)
+      setIsCheckingAuth(false)
+    }
+
+    checkAuth()
+  }, [router])
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render checkout if not authenticated (router.push will redirect)
+  if (!isAuthenticated) {
+    return null
+  }
 
   // Check if Stripe is configured
   if (!stripePromise) {
