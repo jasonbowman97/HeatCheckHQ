@@ -14,6 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     // MLB Pages
     {
+      url: `${baseUrl}/mlb/hot-hitters`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/mlb/hitting-stats`,
       lastModified: currentDate,
       changeFrequency: 'daily',
@@ -52,6 +58,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/nba/head-to-head`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/nba/defense-vs-position`,
       lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 0.9,

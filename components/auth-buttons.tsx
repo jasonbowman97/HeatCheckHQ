@@ -38,9 +38,14 @@ export function AuthButtons() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-          {user.email}
-        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          asChild
+        >
+          <Link href="/account">Account</Link>
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -100,6 +105,14 @@ export function MobileAuthButtons() {
     return (
       <div className="flex flex-col gap-2 pt-2 border-t border-border">
         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="justify-start text-muted-foreground"
+          asChild
+        >
+          <Link href="/account">Account</Link>
+        </Button>
         <Button
           variant="ghost"
           size="sm"

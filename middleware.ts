@@ -98,7 +98,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Security Headers
+  // Security Headers -- start from supabaseResponse headers to preserve cookies
   const headers = new Headers(response.headers)
 
   // Content Security Policy
@@ -156,7 +156,12 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 200, headers })
   }
 
-  return NextResponse.next({ headers })
+  // Apply all security headers to the supabase response (preserving its cookies)
+  headers.forEach((value, key) => {
+    response.headers.set(key, value)
+  })
+
+  return response
 }
 
 export const config = {

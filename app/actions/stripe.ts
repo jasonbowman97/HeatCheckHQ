@@ -55,7 +55,7 @@ export async function createCheckoutSession() {
         quantity: 1,
       },
     ],
-    success_url: `{CHECKOUT_SESSION_URL}/return?session_id={CHECKOUT_SESSION_ID}`,
+    return_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.com"}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
     ui_mode: "embedded",
     metadata: {
       supabase_user_id: user.id,

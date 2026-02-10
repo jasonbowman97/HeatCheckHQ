@@ -2,29 +2,38 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("")
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const message = searchParams.get("message")
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleUpdate(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       setError(error.message)
@@ -32,8 +41,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push("/")
-    router.refresh()
+    router.push("/auth/login?message=Password+updated+successfully")
   }
 
   return (
@@ -46,38 +54,16 @@ export default function LoginPage() {
             </div>
             <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
           </Link>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
+          <p className="mt-2 text-sm text-muted-foreground">Set your new password</p>
         </div>
 
-        {message && (
-          <p className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-center text-sm text-primary">{message}</p>
-        )}
-
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+        <form onSubmit={handleUpdate} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className="text-sm text-foreground">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-card border-border text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-sm text-foreground">Password</Label>
-              <Link href="/auth/forgot-password" className="text-xs text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
+            <Label htmlFor="password" className="text-sm text-foreground">New password</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Your password"
+              placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -85,25 +71,29 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="confirmPassword" className="text-sm text-foreground">Confirm password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Repeat your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
             type="submit"
             disabled={loading}
             className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Updating..." : "Update password"}
           </Button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {"Don't have an account? "}
-          <Link href="/auth/sign-up" className="text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   )
