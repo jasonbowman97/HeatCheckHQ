@@ -12,3 +12,4 @@ node_modules
 .DS_Store
 build.log
 next-env.d.ts
+_backup
