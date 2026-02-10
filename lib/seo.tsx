@@ -67,7 +67,7 @@ export function generateSEO({
       address: false,
       telephone: false,
     },
-    metadataBase: new URL(baseUrl),
+    metadataBase: (() => { try { return new URL(baseUrl) } catch { return new URL(DEFAULT_URL) } })(),
     alternates: {
       canonical: url,
     },
