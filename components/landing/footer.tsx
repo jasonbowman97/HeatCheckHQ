@@ -24,11 +24,11 @@ export function Footer() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">MLB</p>
             <div className="flex flex-col gap-2">
-              <Link href="/mlb/hitting-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hitting Stats</Link>
-              <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
-              <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
-              <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
               <Link href="/mlb/hot-hitters" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hot Hitters</Link>
+              <Link href="/mlb/hitting-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hitting Stats</Link>
+              <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
+              <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
+              <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>
 

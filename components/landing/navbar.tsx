@@ -9,11 +9,11 @@ const sportLinks = [
   {
     sport: "MLB",
     pages: [
-      { name: "Hitting Stats", href: "/mlb/hitting-stats" },
-      { name: "NRFI", href: "/mlb/nrfi" },
-      { name: "Pitching Stats", href: "/mlb/pitching-stats" },
-      { name: "Trends", href: "/mlb/trends" },
       { name: "Hot Hitters", href: "/mlb/hot-hitters" },
+      { name: "Hitting Stats", href: "/mlb/hitting-stats" },
+      { name: "Pitching Stats", href: "/mlb/pitching-stats" },
+      { name: "NRFI", href: "/mlb/nrfi" },
+      { name: "Trends", href: "/mlb/trends" },
     ],
   },
   {
