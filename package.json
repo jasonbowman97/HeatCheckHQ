@@ -2,6 +2,7 @@
   "name": "heatcheckhq",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "preinstall": "rm -rf node_modules || true",
     "dev": "next dev",
