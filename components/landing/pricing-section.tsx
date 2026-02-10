@@ -20,11 +20,11 @@ const plans = [
     ],
   },
   {
-    name: "Pro",
+    name: "Pro Monthly",
     price: "$12",
     period: "/month",
     description:
-      "Gain the advantage with expert-curated insights, comprehensive analytics, and live data updates to power smarter, faster decisions and keep you ahead of the competition.",
+      "Full access to every dashboard, trend, and insight across all sports.",
     cta: "Get Pro",
     ctaVariant: "default" as const,
     popular: true,
@@ -35,6 +35,24 @@ const plans = [
       { text: "All dashboards across MLB, NBA, NFL", included: true },
       { text: "Real-time data & advanced filtering", included: true },
       { text: "Cancel anytime", included: true },
+    ],
+  },
+  {
+    name: "Pro Annual",
+    price: "$100",
+    period: "/year",
+    description:
+      "Same full access as monthly. Pay once, save $44 over 12 months.",
+    cta: "Get Pro Annual",
+    ctaVariant: "default" as const,
+    savings: "Save $44",
+    highlights: [
+      { text: "Everything in Pro Monthly", included: true },
+      { text: "Just $8.33/mo billed annually", included: true },
+      { text: "All dashboards across MLB, NBA, NFL", included: true },
+      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Cancel anytime", included: true },
+      { text: "Best value", included: true },
     ],
   },
 ]
@@ -49,16 +67,16 @@ export function PricingSection() {
               Pricing
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              Start free. Unlock everything for $12/mo.
+              Start free. Unlock everything with Pro.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
               Preview the data for free, then go Pro for full access to every dashboard, filter,
-              and insight.
+              and insight. Save with an annual plan.
             </p>
           </div>
         </FadeIn>
 
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
           {plans.map((plan, index) => (
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
@@ -71,6 +89,11 @@ export function PricingSection() {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-primary-foreground">
                   Most Popular
+                </div>
+              )}
+              {(plan as Record<string, unknown>).savings && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-primary-foreground">
+                  {(plan as Record<string, unknown>).savings as string}
                 </div>
               )}
 
@@ -110,7 +133,7 @@ export function PricingSection() {
                   size="lg"
                   asChild
                 >
-                  <Link href={plan.popular ? "/checkout" : "/auth/sign-up"}>{plan.cta}</Link>
+                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"}>{plan.cta}</Link>
                 </Button>
               </div>
               </div>

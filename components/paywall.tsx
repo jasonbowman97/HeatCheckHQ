@@ -78,7 +78,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
               </h2>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 This dashboard is available with a Pro subscription.
-                Get full access to every dashboard, trend, and insight for $12/mo.
+                Get full access to every dashboard, trend, and insight starting at $8.33/mo.
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <Button
@@ -86,7 +86,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                   asChild
                 >
                   <Link href="/auth/sign-up">
-                    Sign up and subscribe -- $12/mo
+                    Sign up and subscribe
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -124,7 +124,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
               </h2>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 This dashboard requires a Pro subscription. Get full access to
-                every dashboard, trend, and insight for $12/mo.
+                every dashboard, trend, and insight starting at $8.33/mo.
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <Button
@@ -132,7 +132,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                   asChild
                 >
                   <Link href="/checkout">
-                    Upgrade to Pro -- $12/mo
+                    Upgrade to Pro
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

@@ -4,7 +4,7 @@ import { stripe } from "@/lib/stripe"
 import { createClient } from "@/lib/supabase/server"
 import { PRODUCTS } from "@/lib/products"
 
-export async function createCheckoutSession() {
+export async function createCheckoutSession(planId: string = "pro-monthly") {
   const supabase = await createClient()
   const {
     data: { user },
@@ -14,7 +14,7 @@ export async function createCheckoutSession() {
     throw new Error("You must be logged in to subscribe")
   }
 
-  const product = PRODUCTS[0]
+  const product = PRODUCTS.find((p) => p.id === planId) ?? PRODUCTS[0]
 
   // Check if user already has a Stripe customer ID
   const { data: profile } = await supabase
@@ -43,15 +43,7 @@ export async function createCheckoutSession() {
     mode: "subscription",
     line_items: [
       {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: product.name,
-            description: product.description,
-          },
-          unit_amount: product.priceInCents,
-          recurring: { interval: product.interval },
-        },
+        price: product.stripePriceId,
         quantity: 1,
       },
     ],
