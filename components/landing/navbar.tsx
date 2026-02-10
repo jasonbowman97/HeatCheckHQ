@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import Link from "next/link"
 import { BarChart3, Menu, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,22 @@ const sportLinks = [
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleMouseEnter = useCallback((sport: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    setOpenDropdown(sport)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null)
+      closeTimeoutRef.current = null
+    }, 150)
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -67,8 +83,8 @@ export function Navbar() {
             <div
               key={sport.sport}
               className="relative"
-              onMouseEnter={() => setOpenDropdown(sport.sport)}
-              onMouseLeave={() => setOpenDropdown(null)}
+              onMouseEnter={() => handleMouseEnter(sport.sport)}
+              onMouseLeave={handleMouseLeave}
             >
               <button
                 className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
