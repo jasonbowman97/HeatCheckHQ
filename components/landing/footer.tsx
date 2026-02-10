@@ -38,6 +38,7 @@ export function Footer() {
             <div className="flex flex-col gap-2">
               <Link href="/nba/first-basket" className="text-xs text-muted-foreground hover:text-foreground transition-colors">First Basket</Link>
               <Link href="/nba/head-to-head" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Head-to-Head</Link>
+              <Link href="/nba/defense-vs-position" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Def vs Position</Link>
               <Link href="/nba/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>

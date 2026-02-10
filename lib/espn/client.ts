@@ -88,6 +88,39 @@ export function fetchMLBActiveAthletes(page = 1, limit = 500) {
   )
 }
 
+/* ═══ NBA Endpoints ═══ */
+
+export function fetchNBAScoreboard(date?: string) {
+  const dateParam = date ?? todayESPN()
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/basketball/nba/scoreboard?dates=${dateParam}`
+  )
+}
+
+export function fetchNBATeams() {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/basketball/nba/teams`
+  )
+}
+
+export function fetchNBATeamRoster(teamId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/basketball/nba/teams/${teamId}/roster`
+  )
+}
+
+export function fetchNBATeamSchedule(teamId: string, season = 2026) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/basketball/nba/teams/${teamId}/schedule?season=${season}`
+  )
+}
+
+export function fetchNBAGameSummary(eventId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/basketball/nba/summary?event=${eventId}`
+  )
+}
+
 /* ── Helpers ── */
 function todayESPN(): string {
   const d = new Date()

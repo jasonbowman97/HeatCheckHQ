@@ -136,15 +136,21 @@ export default function NBAH2HPage() {
             >
               First Basket
             </Link>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-              H2H
-            </span>
-            <Link
-              href="/nba/trends"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Trends
-            </Link>
+  <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
+  H2H
+  </span>
+  <Link
+    href="/nba/defense-vs-position"
+    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+  >
+  Def vs Pos
+  </Link>
+  <Link
+    href="/nba/trends"
+    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+  >
+  Trends
+  </Link>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
             <Link
               href="/mlb/hitting-stats"

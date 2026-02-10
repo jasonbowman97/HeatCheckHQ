@@ -37,6 +37,12 @@ export function NBAHeader() {
             H2H
           </Link>
           <Link
+            href="/nba/defense-vs-position"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+          >
+            Def vs Pos
+          </Link>
+          <Link
             href="/nba/trends"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >

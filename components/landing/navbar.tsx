@@ -21,6 +21,7 @@ const sportLinks = [
     pages: [
       { name: "First Basket", href: "/nba/first-basket" },
       { name: "Head-to-Head", href: "/nba/head-to-head" },
+      { name: "Def vs Pos", href: "/nba/defense-vs-position" },
       { name: "Trends", href: "/nba/trends" },
     ],
   },

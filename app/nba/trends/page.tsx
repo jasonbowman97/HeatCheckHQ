@@ -51,6 +51,9 @@ export default async function NBATrendsPage() {
             <Link href="/nba/head-to-head" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               H2H
             </Link>
+            <Link href="/nba/defense-vs-position" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Def vs Pos
+            </Link>
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
               Trends
             </span>

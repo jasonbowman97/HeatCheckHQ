@@ -29,6 +29,7 @@ const sports = [
     dashboards: [
       { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank by player" },
       { name: "Head-to-Head", href: "/nba/head-to-head", description: "Team H2H, momentum, defense vs position, injuries" },
+      { name: "Def vs Position", href: "/nba/defense-vs-position", description: "Which teams give up the most stats to each position" },
       { name: "Trends", href: "/nba/trends", description: "Scoring runs, 3PT streaks, rebound and assist surges" },
     ],
   },
