@@ -1,27 +1,28 @@
 import Link from "next/link"
-import { ArrowRight, Activity, Crosshair, Flame } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
+import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
 
 const dashboardPreviews = [
   {
     sport: "MLB",
     label: "NRFI",
-    icon: Activity,
+    icon: BaseballIcon,
     description: "No Run First Inning probabilities, pitcher matchups, and streak data.",
     href: "/mlb/nrfi",
   },
   {
     sport: "NBA",
     label: "First Basket",
-    icon: Crosshair,
+    icon: BasketballIcon,
     description: "Tip-off win rates, first shot percentages, and player rankings.",
     href: "/nba/first-basket",
   },
   {
     sport: "NFL",
     label: "Matchup",
-    icon: Flame,
+    icon: FootballIcon,
     description: "Side-by-side team stats, positional splits, and game log trends.",
     href: "/nfl/matchup",
   },
@@ -79,7 +80,7 @@ export function HeroSection() {
               <FadeIn key={preview.label} delay={0.5 + index * 0.1}>
                 <Link
                   href={preview.href}
-                  className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+                  className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">

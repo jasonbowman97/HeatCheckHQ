@@ -1,12 +1,13 @@
-import { Activity, Crosshair, Flame, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { FadeIn } from "@/components/ui/fade-in"
+import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
 
 const sports = [
   {
     name: "MLB",
     label: "Baseball",
-    icon: Activity,
+    icon: BaseballIcon,
     accentClass: "text-primary bg-primary/10",
     description:
       "Pitcher arsenals, batter vs. pitcher matchups, NRFI probabilities, and strikeout projections. Drill into every pitch type with heatmap-colored stat breakdowns.",
@@ -20,7 +21,7 @@ const sports = [
   {
     name: "NBA",
     label: "Basketball",
-    icon: Crosshair,
+    icon: BasketballIcon,
     accentClass: "text-accent bg-accent/10",
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
@@ -33,7 +34,7 @@ const sports = [
   {
     name: "NFL",
     label: "Football",
-    icon: Flame,
+    icon: FootballIcon,
     accentClass: "text-primary bg-primary/10",
     description:
       "Full team stat comparisons with league rankings, side-by-side passing, rushing, and receiving breakdowns with recent game log chips.",

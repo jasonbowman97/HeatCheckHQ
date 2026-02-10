@@ -1,8 +1,9 @@
 "use client"
 
-import { BarChart3, ChevronLeft } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { HeatCheckLogo } from "@/components/ui/sport-icons"
 
 interface DashboardHeaderProps {
   showBack?: boolean
@@ -28,7 +29,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
           )}
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <HeatCheckLogo className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
