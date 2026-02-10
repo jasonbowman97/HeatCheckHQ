@@ -81,15 +81,10 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
     }
   }
 
-  // Build return URL with proper scheme
-  let baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                "https://heatcheckhq.com"
-
-  // Ensure the base URL always has a valid scheme
-  if (baseUrl && !baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
-    baseUrl = `https://${baseUrl}`
-  }
+  // Build return URL - prefer VERCEL_URL (auto-set by Vercel to the correct deployment domain)
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.com"
 
   const returnUrl = `${baseUrl}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
   console.log("[Stripe] Return URL:", returnUrl)
