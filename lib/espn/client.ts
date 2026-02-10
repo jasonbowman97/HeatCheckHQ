@@ -115,6 +115,12 @@ export function fetchNBATeamSchedule(teamId: string, season = 2026) {
   )
 }
 
+export function fetchNBAAthleteGameLog(athleteId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${WEB_BASE}/basketball/nba/athletes/${athleteId}/gamelog`
+  )
+}
+
 export function fetchNBAGameSummary(eventId: string) {
   return espnFetch<Record<string, unknown>>(
     `${SITE_BASE}/basketball/nba/summary?event=${eventId}`

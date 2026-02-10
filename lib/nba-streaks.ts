@@ -4,9 +4,50 @@
  */
 import "server-only"
 
-import { getPlayerGameLog } from "./espn/mlb" // Using same ESPN gamelog endpoint
+import { fetchNBAAthleteGameLog } from "./espn/client"
+import { getNBALeaders } from "./nba-api"
 import type { StreakResult } from "./streak-detector"
 import type { Trend } from "./trends-types"
+
+/** Parse NBA athlete gamelog from ESPN */
+interface NBAGameLogEntry {
+  date: string
+  opponent: string
+  stats: Record<string, string | number>
+}
+
+async function getNBAPlayerGameLog(athleteId: string): Promise<NBAGameLogEntry[]> {
+  try {
+    const raw = await fetchNBAAthleteGameLog(athleteId)
+    const seasonTypes = (raw as Record<string, unknown>).seasonTypes as Array<Record<string, unknown>> | undefined
+    if (!seasonTypes?.length) return []
+
+    const entries: NBAGameLogEntry[] = []
+    const regularSeason = seasonTypes.find((st) => (st.displayName as string)?.includes("Regular")) ?? seasonTypes[0]
+    const categories = (regularSeason?.categories ?? []) as Array<Record<string, unknown>>
+    if (!categories.length) return entries
+
+    const cat = categories[0]
+    const labels = (cat.labels ?? []) as string[]
+    const events = (cat.events ?? []) as Array<Record<string, unknown>>
+
+    for (const evt of events.slice(0, 15)) {
+      const statsArr = (evt.stats ?? []) as Array<string | number>
+      const statMap: Record<string, string | number> = {}
+      labels.forEach((label, i) => {
+        statMap[label] = statsArr[i] ?? 0
+      })
+      entries.push({
+        date: (evt.eventDate as string) ?? "",
+        opponent: (evt.opponent as Record<string, unknown>)?.abbreviation as string ?? "",
+        stats: statMap,
+      })
+    }
+    return entries
+  } catch {
+    return []
+  }
+}
 
 /**
  * Detect NBA scoring streaks from game logs
@@ -201,47 +242,36 @@ function calculateCurrentStreak(games: boolean[]): number {
  */
 export async function getNBAStreakTrends(): Promise<Trend[]> {
   try {
-    // For NBA, we'll need to get player IDs from ESPN NBA API
-    // For now, using a curated list of top players (would need ESPN NBA leaders endpoint)
-    const topPlayerIds = [
-      "3975", // LeBron James
-      "6583", // Giannis
-      "3992", // Stephen Curry
-      "3102", // Kevin Durant
-      "4066", // Luka Doncic
-      "4277", // Joel Embiid
-      "3059", // Kawhi Leonard
-      "4395", // Jayson Tatum
-      "3136", // Damian Lillard
-      "2991", // Jimmy Butler
-      "4065", // Nikola Jokic
-      "4351", // Trae Young
-      "3213", // Anthony Davis
-      "2528", // James Harden
-      "3032", // Kyrie Irving
-      "4432", // Donovan Mitchell
-      "6440", // Anthony Edwards
-      "4562", // Devin Booker
-      "4433", // Bam Adebayo
-      "4896", // Ja Morant
-    ]
+    // Get top players dynamically from ESPN NBA leaders
+    const leaderCategories = await getNBALeaders()
 
+    // Collect unique players across all categories
+    const playerMap = new Map<string, { id: string; name: string; team: string; position: string }>()
+    for (const cat of leaderCategories) {
+      for (const leader of (cat.leaders ?? []).slice(0, 10)) {
+        if (!playerMap.has(leader.athlete.id)) {
+          playerMap.set(leader.athlete.id, {
+            id: leader.athlete.id,
+            name: leader.athlete.displayName,
+            team: leader.athlete.team?.abbreviation ?? "???",
+            position: leader.athlete.position?.abbreviation ?? "G",
+          })
+        }
+      }
+    }
+
+    const topPlayers = Array.from(playerMap.values()).slice(0, 25)
     const allStreaks: StreakResult[] = []
 
-    // Fetch all player game logs in parallel
-    const playerPromises = topPlayerIds.map(async (playerId) => {
+    // Fetch all player game logs in parallel using NBA endpoint
+    const playerPromises = topPlayers.map(async (player) => {
       try {
-        const gameLogs = await getPlayerGameLog(playerId)
+        const gameLogs = await getNBAPlayerGameLog(player.id)
         if (gameLogs.length < 5) return []
 
-        // Extract player info from first game log (ESPN includes it)
-        const playerName = "NBA Player" // Would extract from ESPN response
-        const team = "NBA"
-        const position = "G"
-
-        return detectScoringStreaks(playerId, playerName, team, position, gameLogs)
+        return detectScoringStreaks(player.id, player.name, player.team, player.position, gameLogs)
       } catch (err) {
-        console.error(`[NBA Streaks] Failed to fetch game log for player ${playerId}:`, err)
+        console.error(`[NBA Streaks] Failed to fetch game log for ${player.name}:`, err)
         return []
       }
     })

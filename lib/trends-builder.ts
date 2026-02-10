@@ -25,15 +25,25 @@ interface CategoryConfig {
 }
 
 function generateRecentGames(rank: number, total: number, isHot: boolean): boolean[] {
-  // Generate a plausible recent-games pattern based on ranking
-  const games: boolean[] = []
-  const hitRate = isHot
-    ? 0.6 + (1 - rank / total) * 0.35 // hot: 60-95% hit rate
-    : 0.15 + (rank / total) * 0.3 // cold: 15-45% hit rate
-  for (let i = 0; i < 8; i++) {
-    games.push(Math.random() < hitRate)
+  // Generate a deterministic recent-games pattern based on ranking
+  // Uses a seeded pattern instead of Math.random() so results are stable across renders
+  if (isHot) {
+    // Hot players: mostly true with a few false based on rank
+    const patterns: boolean[][] = [
+      [true, true, true, true, true, true, true, true],   // rank 0 (best)
+      [true, true, false, true, true, true, true, true],   // rank 1
+      [true, false, true, true, false, true, true, true],  // rank 2
+      [true, true, false, true, true, false, true, true],  // rank 3+
+    ]
+    return patterns[Math.min(rank, patterns.length - 1)]
+  } else {
+    // Cold players: mostly false with a few true based on rank
+    const patterns: boolean[][] = [
+      [false, false, true, false, false, false, true, false], // rank 0 (worst)
+      [false, true, false, false, true, false, false, true],  // rank 1
+    ]
+    return patterns[Math.min(rank, patterns.length - 1)]
   }
-  return games
 }
 
 export function buildTrends(
