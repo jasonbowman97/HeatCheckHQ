@@ -19,9 +19,13 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
     return <>{children}</>
   }
 
-  // Determine what to show
-  const needsAccount = userTier === "anonymous"
-  const needsPro = requiredTier === "pro" && userTier === "free"
+  // Determine what to show:
+  // 1. Anonymous on a FREE page -> "Create a free account"
+  // 2. Anonymous on a PRO page -> "Subscribe to Pro" (NOT "free account")
+  // 3. Free user on a PRO page -> "Upgrade to Pro"
+  const isAnonymous = userTier === "anonymous"
+  const isProPage = requiredTier === "pro"
+  const isFreePage = requiredTier === "free"
 
   return (
     <div className="relative">
@@ -39,7 +43,8 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
             <Lock className="h-6 w-6 text-primary" />
           </div>
 
-          {needsAccount ? (
+          {isAnonymous && isFreePage ? (
+            /* Anonymous user on a FREE-tier page */
             <>
               <h2 className="text-xl font-bold text-foreground">
                 Create a free account
@@ -65,7 +70,54 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                 </p>
               </div>
             </>
-          ) : needsPro ? (
+          ) : isAnonymous && isProPage ? (
+            /* Anonymous user on a PRO-tier page */
+            <>
+              <h2 className="text-xl font-bold text-foreground">
+                Pro subscription required
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                This dashboard is available with a Pro subscription.
+                Get full access to every dashboard, trend, and insight for $12/mo.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  asChild
+                >
+                  <Link href="/auth/sign-up">
+                    Sign up and subscribe -- $12/mo
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <ul className="mt-3 flex flex-col gap-1 text-left text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Hot Hitters, Hitting and Pitching Stats
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Head-to-Head and NFL Matchup
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    All dashboards across MLB, NBA, NFL
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Cancel anytime
+                  </li>
+                </ul>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/auth/login" className="text-primary hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </>
+          ) : !isAnonymous && isProPage ? (
+            /* Free user on a PRO-tier page */
             <>
               <h2 className="text-xl font-bold text-foreground">
                 Upgrade to Pro
