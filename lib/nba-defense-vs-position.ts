@@ -399,7 +399,7 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
     }
 
     function getTeamRank(teamId: string, pos: Position, cat: StatCategory): { rank: number; avgAllowed: number } {
-      const key = `${pos}_${cat.key}`
+      const key = `${pos}_${cat}`
       const list = rankingsMap[key] ?? []
       const idx = list.findIndex((r) => r.teamId === teamId)
       return { rank: idx + 1, avgAllowed: list[idx]?.avgAllowed ?? 0 }
