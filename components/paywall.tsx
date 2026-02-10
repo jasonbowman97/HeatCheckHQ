@@ -1,0 +1,108 @@
+import Link from "next/link"
+import { Lock, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import type { AccessTier } from "@/lib/access-control"
+
+interface PaywallProps {
+  requiredTier: AccessTier
+  userTier: "anonymous" | "free" | "pro"
+  children: React.ReactNode
+}
+
+export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
+  const hasAccess =
+    requiredTier === "public" ||
+    (requiredTier === "free" && (userTier === "free" || userTier === "pro")) ||
+    (requiredTier === "pro" && userTier === "pro")
+
+  if (hasAccess) {
+    return <>{children}</>
+  }
+
+  // Determine what to show
+  const needsAccount = userTier === "anonymous"
+  const needsPro = requiredTier === "pro" && userTier === "free"
+
+  return (
+    <div className="relative">
+      {/* Blurred content preview */}
+      <div className="pointer-events-none select-none" aria-hidden="true">
+        <div className="blur-sm opacity-40">
+          {children}
+        </div>
+      </div>
+
+      {/* Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+        <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-6 w-6 text-primary" />
+          </div>
+
+          {needsAccount ? (
+            <>
+              <h2 className="text-xl font-bold text-foreground">
+                Create a free account
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Sign up for free to access this dashboard. It only takes a few seconds.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  asChild
+                >
+                  <Link href="/auth/sign-up">
+                    Sign up free
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/auth/login" className="text-primary hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </>
+          ) : needsPro ? (
+            <>
+              <h2 className="text-xl font-bold text-foreground">
+                Upgrade to Pro
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                This dashboard requires a Pro subscription. Get full access to
+                every dashboard, trend, and insight for $12/mo.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  asChild
+                >
+                  <Link href="/checkout">
+                    Upgrade to Pro -- $12/mo
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <ul className="mt-2 flex flex-col gap-1 text-left text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    All dashboards across MLB, NBA, NFL
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Real-time data and advanced filtering
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Cancel anytime
+                  </li>
+                </ul>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
