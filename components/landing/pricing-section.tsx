@@ -91,11 +91,11 @@ export function PricingSection() {
                   Most Popular
                 </div>
               )}
-              {(plan as Record<string, unknown>).savings && (
+              {(plan as Record<string, unknown>).savings ? (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-primary-foreground">
-                  {(plan as Record<string, unknown>).savings as string}
+                  {String((plan as Record<string, unknown>).savings)}
                 </div>
-              )}
+              ) : null}
 
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
