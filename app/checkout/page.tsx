@@ -11,14 +11,31 @@ import { PRODUCTS } from "@/lib/products"
 import Link from "next/link"
 import { BarChart3, ArrowLeft, Check } from "lucide-react"
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-)
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
 
 export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPlan, setSelectedPlan] = useState("pro-monthly")
   const [checkoutStarted, setCheckoutStarted] = useState(false)
+
+  // Check if Stripe is configured
+  if (!stripePromise) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="max-w-md rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+          <p className="font-semibold text-destructive mb-2">Stripe Not Configured</p>
+          <p className="text-sm text-muted-foreground">
+            Please add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your Vercel environment variables.
+          </p>
+          <Link href="/" className="mt-4 inline-block text-sm text-primary hover:underline">
+            Return Home
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const fetchClientSecret = useCallback(async () => {
     try {
