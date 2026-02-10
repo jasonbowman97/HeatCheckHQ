@@ -29,17 +29,22 @@ export default function CheckoutPage() {
   const fetchClientSecret = useCallback(async () => {
     try {
       console.log("Fetching client secret for plan:", selectedPlan)
-      const { clientSecret } = await createCheckoutSession(selectedPlan)
-      if (!clientSecret) {
-        console.error("No client secret returned")
-        throw new Error("No client secret returned")
+      const result = await createCheckoutSession(selectedPlan)
+      console.log("createCheckoutSession result:", result)
+
+      if (!result || !result.clientSecret) {
+        console.error("No client secret returned, result:", result)
+        throw new Error("No client secret returned from server")
       }
+
       console.log("Client secret received successfully")
-      return clientSecret
+      return result.clientSecret
     } catch (err) {
       console.error("Checkout error:", err)
+      console.error("Error details:", JSON.stringify(err, Object.getOwnPropertyNames(err)))
+
       const errorMessage = err instanceof Error ? err.message : "Failed to start checkout"
-      setError(errorMessage)
+      setError(`Checkout failed: ${errorMessage}`)
       throw err
     }
   }, [selectedPlan])
