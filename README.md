@@ -99,3 +99,4 @@ This project is configured for deployment on Vercel.
 ## License
 
 © 2026 HeatCheck HQ. All rights reserved.
+# Force deployment
