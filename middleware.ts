@@ -32,15 +32,17 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count }
 }
 
-// Clean up old entries periodically
-setInterval(() => {
+// Clean up stale entries inline during rate limit checks
+function cleanupRateLimit() {
   const now = Date.now()
-  for (const [key, record] of rateLimit.entries()) {
-    if (now > record.resetTime) {
-      rateLimit.delete(key)
+  if (rateLimit.size > 1000) {
+    for (const [key, record] of rateLimit.entries()) {
+      if (now > record.resetTime) {
+        rateLimit.delete(key)
+      }
     }
   }
-}, RATE_LIMIT_WINDOW)
+}
 
 export async function middleware(request: NextRequest) {
   // --- Supabase session refresh ---
@@ -74,6 +76,7 @@ export async function middleware(request: NextRequest) {
 
   // Apply rate limiting to API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    cleanupRateLimit()
     const key = getRateLimitKey(request)
     const { allowed, remaining } = checkRateLimit(key)
 
