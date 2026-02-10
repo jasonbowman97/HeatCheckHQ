@@ -11,7 +11,9 @@ interface SEOProps {
   keywords?: string[]
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.com"
+const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL && process.env.NEXT_PUBLIC_BASE_URL.startsWith('http'))
+  ? process.env.NEXT_PUBLIC_BASE_URL
+  : "https://heatcheckhq.com"
 const siteName = "HeatCheck HQ"
 const defaultImage = `${baseUrl}/og-image.png`
 
