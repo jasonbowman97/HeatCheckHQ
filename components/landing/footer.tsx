@@ -15,8 +15,8 @@ export function Footer() {
               <span className="text-sm font-semibold text-foreground">HeatCheck HQ</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Advanced sports analytics for MLB, NBA, and NFL. 12 dashboards.
-              100+ metrics. Updated daily.
+              Data-driven insight tools for MLB, NBA, and NFL.
+              Updated daily.
             </p>
           </div>
 

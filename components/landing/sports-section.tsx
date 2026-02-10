@@ -54,11 +54,11 @@ export function SportsSection() {
               Dashboards
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              9 dashboards. 3 trend trackers. Zero fluff.
+              Purpose-built dashboards for every sport
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Every sport gets purpose-built dashboards tailored to its unique
-              data points and the edges that actually matter.
+              Each sport gets its own set of analytics tools tailored to the data points and
+              insights that matter most.
             </p>
           </div>
         </FadeIn>

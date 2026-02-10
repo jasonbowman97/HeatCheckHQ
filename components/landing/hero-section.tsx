@@ -1,26 +1,28 @@
 import Link from "next/link"
-import { ArrowRight, BarChart3, TrendingUp, Flame } from "lucide-react"
+import { ArrowRight, Activity, Crosshair, Flame } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
-import { CountUp } from "@/components/ui/count-up"
 
 const dashboardPreviews = [
   {
     sport: "MLB",
-    label: "Pitching Stats",
-    cols: ["Pitcher", "ERA", "K%", "CSW%", "HR/9", "Barrel%"],
-    href: "/mlb/pitching-stats",
+    label: "NRFI",
+    icon: Activity,
+    description: "No Run First Inning probabilities, pitcher matchups, and streak data.",
+    href: "/mlb/nrfi",
   },
   {
     sport: "NBA",
     label: "First Basket",
-    cols: ["Player", "Tip Win%", "1st Shot%", "1st Bsk Made", "Rank"],
+    icon: Crosshair,
+    description: "Tip-off win rates, first shot percentages, and player rankings.",
     href: "/nba/first-basket",
   },
   {
     sport: "NFL",
     label: "Matchup",
-    cols: ["Stat", "Away", "Rank", "Home", "Rank"],
+    icon: Flame,
+    description: "Side-by-side team stats, positional splits, and game log trends.",
     href: "/nfl/matchup",
   },
 ]
@@ -38,23 +40,22 @@ export function HeroSection() {
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-medium text-muted-foreground">
-                12 dashboards across MLB, NBA, and NFL
+                Data-driven insights across MLB, NBA, and NFL
               </span>
             </div>
           </FadeIn>
 
           <FadeIn delay={0.2}>
             <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-foreground text-balance md:text-6xl lg:text-7xl">
-              Spot the edge{" "}
-              <span className="text-primary">before the line moves</span>
+              Find the trends{" "}
+              <span className="text-primary">that matter</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.3}>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              NRFI probabilities, first basket rankings, pitcher arsenals,
-              head-to-head breakdowns, and hot/cold trend alerts -- all updated
-              daily and built for sharps who need data, not noise.
+              Data-driven insight tools to help you spot sports trends across MLB, NBA,
+              and NFL -- updated daily and built for smarter decisions.
             </p>
           </FadeIn>
 
@@ -67,83 +68,39 @@ export function HeroSection() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="bg-transparent h-12 px-8 text-base border-border text-foreground hover:bg-secondary" asChild>
-                <Link href="#dashboards">See all dashboards</Link>
+                <Link href="#pricing">View pricing</Link>
               </Button>
             </div>
           </FadeIn>
 
-          {/* Three mini dashboard previews */}
+          {/* Three sport preview cards */}
           <div className="mt-20 w-full grid gap-4 md:grid-cols-3">
             {dashboardPreviews.map((preview, index) => (
               <FadeIn key={preview.label} delay={0.5 + index * 0.1}>
                 <Link
                   href={preview.href}
-                  className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
+                  className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
                 >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded">
-                      {preview.sport}
-                    </span>
-                    <span className="text-xs font-medium text-foreground">{preview.label}</span>
-                  </div>
-                  <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${preview.cols.length}, 1fr)` }}>
-                    {preview.cols.map((col, i) => (
-                      <div key={`${col}-${i}`} className="h-2 rounded bg-secondary/80">
-                        <span className="sr-only">{col}</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                        <preview.icon className="h-4 w-4 text-primary" />
                       </div>
-                    ))}
-                  </div>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={`row-${preview.label}-${i}`} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${preview.cols.length}, 1fr)` }}>
-                      {preview.cols.map((_, j) => (
-                        <div
-                          key={`cell-${preview.label}-${i}-${j}`}
-                          className={`h-2 rounded ${
-                            j === 0
-                              ? "bg-secondary/50"
-                              : i + j < 3
-                                ? "bg-primary/25"
-                                : i + j > 5
-                                  ? "bg-destructive/20"
-                                  : "bg-secondary/40"
-                          }`}
-                        />
-                      ))}
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          {preview.sport}
+                        </span>
+                        <p className="text-sm font-semibold text-foreground">{preview.label}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {preview.description}
+                  </p>
                 </Link>
               </FadeIn>
             ))}
-          </div>
-
-          {/* Stat highlights */}
-          <div className="mt-16 grid grid-cols-3 gap-8 md:gap-16">
-            <FadeIn delay={0.8}>
-              <div className="flex flex-col items-center gap-1">
-                <BarChart3 className="h-5 w-5 text-primary mb-2" />
-                <CountUp value={12} className="text-2xl font-bold text-foreground md:text-3xl" />
-                <span className="text-xs text-muted-foreground md:text-sm">Dashboards</span>
-              </div>
-            </FadeIn>
-            <FadeIn delay={0.9}>
-              <div className="flex flex-col items-center gap-1">
-                <TrendingUp className="h-5 w-5 text-accent mb-2" />
-                <CountUp value={100} suffix="+" className="text-2xl font-bold text-foreground md:text-3xl" />
-                <span className="text-xs text-muted-foreground md:text-sm">Tracked Metrics</span>
-              </div>
-            </FadeIn>
-            <FadeIn delay={1.0}>
-              <div className="flex flex-col items-center gap-1">
-                <Flame className="h-5 w-5 text-primary mb-2" />
-                <CountUp value={3} className="text-2xl font-bold text-foreground md:text-3xl" />
-                <span className="text-xs text-muted-foreground md:text-sm">Trend Trackers</span>
-              </div>
-            </FadeIn>
           </div>
         </div>
       </div>
