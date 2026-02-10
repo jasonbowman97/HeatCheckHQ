@@ -16,8 +16,8 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
 
   const product = PRODUCTS.find((p) => p.id === planId) ?? PRODUCTS[0]
 
-  // Check if user already has a Stripe customer ID
-  const { data: profile, error: profileError } = await supabase
+  // Check if user already has a profile and Stripe customer ID
+  let { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("stripe_customer_id")
     .eq("id", user.id)
@@ -25,7 +25,7 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
 
   // If profile doesn't exist, create it first
   if (profileError || !profile) {
-    await supabase
+    const { data: newProfile, error: insertError } = await supabase
       .from("profiles")
       .insert({
         id: user.id,
@@ -34,10 +34,18 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
       })
       .select()
       .single()
+
+    if (insertError) {
+      console.error("Failed to create profile:", insertError)
+      throw new Error("Failed to create user profile")
+    }
+
+    profile = newProfile
   }
 
   let customerId = profile?.stripe_customer_id
 
+  // Create Stripe customer if doesn't exist
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email,
@@ -45,10 +53,15 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
     })
     customerId = customer.id
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({ stripe_customer_id: customerId })
       .eq("id", user.id)
+
+    if (updateError) {
+      console.error("Failed to update profile with Stripe customer ID:", updateError)
+      // Continue anyway since we have the customerId
+    }
   }
 
   const session = await stripe.checkout.sessions.create({
