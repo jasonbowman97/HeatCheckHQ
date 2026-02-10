@@ -25,6 +25,25 @@ export default function CheckoutPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
+  // Define fetchClientSecret first (before any conditional returns)
+  const fetchClientSecret = useCallback(async () => {
+    try {
+      console.log("Fetching client secret for plan:", selectedPlan)
+      const { clientSecret } = await createCheckoutSession(selectedPlan)
+      if (!clientSecret) {
+        console.error("No client secret returned")
+        throw new Error("No client secret returned")
+      }
+      console.log("Client secret received successfully")
+      return clientSecret
+    } catch (err) {
+      console.error("Checkout error:", err)
+      const errorMessage = err instanceof Error ? err.message : "Failed to start checkout"
+      setError(errorMessage)
+      throw err
+    }
+  }, [selectedPlan])
+
   // Check authentication on mount
   useEffect(() => {
     async function checkAuth() {
@@ -77,24 +96,6 @@ export default function CheckoutPage() {
       </div>
     )
   }
-
-  const fetchClientSecret = useCallback(async () => {
-    try {
-      console.log("Fetching client secret for plan:", selectedPlan)
-      const { clientSecret } = await createCheckoutSession(selectedPlan)
-      if (!clientSecret) {
-        console.error("No client secret returned")
-        throw new Error("No client secret returned")
-      }
-      console.log("Client secret received successfully")
-      return clientSecret
-    } catch (err) {
-      console.error("Checkout error:", err)
-      const errorMessage = err instanceof Error ? err.message : "Failed to start checkout"
-      setError(errorMessage)
-      throw err
-    }
-  }, [selectedPlan])
 
   return (
     <div className="min-h-screen bg-background">
