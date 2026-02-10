@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
+import { HotHittersSection } from "@/components/trends/hot-hitters-section"
 import { mlbTrends, mlbCategories } from "@/lib/mlb-trends-data"
 import { getMLBStreakTrends } from "@/lib/mlb-streaks"
 
@@ -68,7 +69,14 @@ export default async function MLBTrendsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
+      <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-12">
+        {/* Hot Hitters - scans ALL players, not just leaders */}
+        <HotHittersSection />
+
+        {/* Separator */}
+        <div className="border-t border-border" />
+
+        {/* Existing trends dashboard (hot/cold streaks from top players) */}
         <TrendsDashboard
           trends={trends}
           categories={mlbCategories}

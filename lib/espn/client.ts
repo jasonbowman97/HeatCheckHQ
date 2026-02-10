@@ -72,6 +72,22 @@ export function fetchGameSummary(eventId: string) {
   )
 }
 
+/* ── Team Roster (all players on a team) ── */
+export function fetchMLBTeamRoster(teamId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/baseball/mlb/teams/${teamId}/roster`
+  )
+}
+
+/* ── All active MLB athletes via core API ── */
+const CORE_BASE = "https://sports.core.api.espn.com/v3/sports"
+
+export function fetchMLBActiveAthletes(page = 1, limit = 500) {
+  return espnFetch<Record<string, unknown>>(
+    `${CORE_BASE}/baseball/mlb/athletes?limit=${limit}&page=${page}&active=true`
+  )
+}
+
 /* ── Helpers ── */
 function todayESPN(): string {
   const d = new Date()
