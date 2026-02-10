@@ -4,7 +4,6 @@
   "private": true,
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "preinstall": "rm -rf node_modules || true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
