@@ -79,17 +79,19 @@ export function Navbar() {
               </button>
 
               {openDropdown === sport.sport && (
-                <div className="absolute top-full left-0 mt-2 w-48 rounded-lg border border-border bg-card p-1.5 shadow-xl shadow-background/50">
-                  {sport.pages.map((page) => (
-                    <Link
-                      key={page.href}
-                      href={page.href}
-                      className="block rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      onClick={() => setOpenDropdown(null)}
-                    >
-                      {page.name}
-                    </Link>
-                  ))}
+                <div className="absolute top-full left-0 pt-2 w-48">
+                  <div className="rounded-lg border border-border bg-card p-1.5 shadow-xl shadow-background/50">
+                    {sport.pages.map((page) => (
+                      <Link
+                        key={page.href}
+                        href={page.href}
+                        className="block rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        onClick={() => setOpenDropdown(null)}
+                      >
+                        {page.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
