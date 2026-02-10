@@ -16,6 +16,7 @@ const sports = [
       { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
       { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },
+      { name: "Hot Hitters", href: "/mlb/hot-hitters", description: "Active hitting, XBH, and HR streaks across all players" },
     ],
   },
   {

@@ -28,6 +28,7 @@ export function Footer() {
               <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
               <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
               <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
+              <Link href="/mlb/hot-hitters" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hot Hitters</Link>
             </div>
           </div>
 
