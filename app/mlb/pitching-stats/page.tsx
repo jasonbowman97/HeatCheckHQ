@@ -12,7 +12,19 @@ import type { PitchingLeader } from "@/lib/mlb-api"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-function transformLeaders(leaders: PitchingLeader[]): PitcherStats[] {
+/** Enriched leader from /api/mlb/pitching (PitchingLeader + Statcast fields) */
+interface EnrichedPitchingLeader extends PitchingLeader {
+  exitVelocityAgainst?: number
+  barrelPctAgainst?: number
+  hardHitPctAgainst?: number
+  xBA?: number
+  xSLG?: number
+  xwOBA?: number
+  whiffPct?: number
+  avgFastball?: number
+}
+
+function transformLeaders(leaders: EnrichedPitchingLeader[]): PitcherStats[] {
   return leaders.map((l) => ({
     id: String(l.id),
     name: l.name,
@@ -21,15 +33,15 @@ function transformLeaders(leaders: PitchingLeader[]): PitcherStats[] {
     era: l.era,
     kPerGame: l.inningsPitched > 0 ? (l.strikeOuts / l.inningsPitched) * 9 : 0,
     kPct: l.inningsPitched > 0 ? ((l.strikeOuts / (l.inningsPitched * 3 + l.strikeOuts + l.walks)) * 100) : 0,
-    cswPct: 0, // not available from MLB Stats API
+    cswPct: l.whiffPct ?? 0, // Use Statcast whiff% as proxy for CSW%
     inningsPitched: l.inningsPitched,
     oppKPctL30: 0,
     hr9: l.inningsPitched > 0 ? (l.homeRuns / l.inningsPitched) * 9 : 0,
-    barrelPct: 0,
-    hardHitPct: 0,
-    hrFbPct: 0,
-    flyBallPct: 0,
-    pulledAirPct: 0,
+    barrelPct: l.barrelPctAgainst ?? 0,
+    hardHitPct: l.hardHitPctAgainst ?? 0,
+    hrFbPct: 0, // Not available from Statcast leaderboard
+    flyBallPct: 0, // Not available from Statcast leaderboard
+    pulledAirPct: 0, // Not available from Statcast leaderboard
     arsenal: [],
   }))
 }
@@ -40,7 +52,7 @@ export default function PitchingStatsPage() {
   const [handFilter, setHandFilter] = useState<HandFilter>("ALL")
   const [selectedPitcher, setSelectedPitcher] = useState<PitcherStats | null>(null)
 
-  const { data, isLoading } = useSWR<{ leaders: PitchingLeader[] }>("/api/mlb/pitching", fetcher, {
+  const { data, isLoading } = useSWR<{ leaders: EnrichedPitchingLeader[]; hasStatcast: boolean }>("/api/mlb/pitching", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })

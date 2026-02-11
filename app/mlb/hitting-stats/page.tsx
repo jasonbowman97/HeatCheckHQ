@@ -16,7 +16,19 @@ import type { BattingLeader } from "@/lib/mlb-api"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-function transformBattingLeaders(leaders: BattingLeader[]): Player[] {
+/** Enriched leader from /api/mlb/batting (BattingLeader + Statcast fields) */
+interface EnrichedBattingLeader extends BattingLeader {
+  exitVelocity?: number
+  barrelPct?: number
+  hardHitPct?: number
+  xBA?: number
+  xSLG?: number
+  xwOBA?: number
+  whiffPct?: number
+  batSpeed?: number
+}
+
+function transformBattingLeaders(leaders: EnrichedBattingLeader[]): Player[] {
   return leaders.map((l) => ({
     id: String(l.id),
     name: l.name,
@@ -27,12 +39,12 @@ function transformBattingLeaders(leaders: BattingLeader[]): Player[] {
     slg: l.slg,
     xbh: l.doubles + l.triples + l.homeRuns,
     hr: l.homeRuns,
-    ballsLaunched: 0, // Not available from API
-    exitVelo: 0, // Not available from API
-    barrelPct: 0, // Not available from API
-    hardHitPct: 0, // Not available from API
-    flyBallPct: 0, // Not available from API
-    pulledAirPct: 0, // Not available from API
+    ballsLaunched: 0,
+    exitVelo: l.exitVelocity ?? 0,
+    barrelPct: l.barrelPct ?? 0,
+    hardHitPct: l.hardHitPct ?? 0,
+    flyBallPct: 0, // Not available from Statcast leaderboard
+    pulledAirPct: 0, // Not available from Statcast leaderboard
   }))
 }
 
@@ -50,7 +62,7 @@ export default function Page() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   // Live data
-  const { data: liveData } = useSWR<{ leaders: BattingLeader[] }>("/api/mlb/batting", fetcher, {
+  const { data: liveData } = useSWR<{ leaders: EnrichedBattingLeader[]; hasStatcast: boolean }>("/api/mlb/batting", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
