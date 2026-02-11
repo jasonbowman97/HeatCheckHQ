@@ -13,8 +13,8 @@ interface APIGame {
   gamePk: number
   gameDate: string
   status: string
-  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
-  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
+  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
+  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
   venue: string
   weather: { condition: string; temp: string; wind: string } | null
 }
@@ -29,7 +29,7 @@ function transformToNrfi(games: APIGame[]): NrfiPitcher[] {
         time,
         team: g.away.abbreviation,
         player: g.away.probablePitcher.fullName,
-        hand: "R",
+        hand: g.away.probablePitcher.hand ?? "R",
         record: "--",
         nrfiPct: 0,
         streak: 0,
@@ -46,7 +46,7 @@ function transformToNrfi(games: APIGame[]): NrfiPitcher[] {
         time,
         team: g.home.abbreviation,
         player: g.home.probablePitcher.fullName,
-        hand: "R",
+        hand: g.home.probablePitcher.hand ?? "R",
         record: "--",
         nrfiPct: 0,
         streak: 0,

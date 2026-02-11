@@ -27,8 +27,8 @@ interface MLBScheduleResponse {
       gameDate: string
       status: { detailedState: string }
       teams: {
-        away: { team: { id: number; name: string; abbreviation: string }; probablePitcher?: { id: number; fullName: string } }
-        home: { team: { id: number; name: string; abbreviation: string }; probablePitcher?: { id: number; fullName: string } }
+        away: { team: { id: number; name: string; abbreviation: string }; probablePitcher?: { id: number; fullName: string; pitchHand?: { code: string } } }
+        home: { team: { id: number; name: string; abbreviation: string }; probablePitcher?: { id: number; fullName: string; pitchHand?: { code: string } } }
       }
       venue: { name: string }
       weather?: { condition: string; temp: string; wind: string }
@@ -40,8 +40,8 @@ export interface ScheduleGame {
   gamePk: number
   gameDate: string
   status: string
-  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
-  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
+  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
+  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
   venue: string
   weather: { condition: string; temp: string; wind: string } | null
 }
@@ -61,7 +61,7 @@ export async function getSchedule(date?: string): Promise<{ games: ScheduleGame[
       name: g.teams.away.team.name,
       abbreviation: g.teams.away.team.abbreviation ?? g.teams.away.team.name.slice(0, 3).toUpperCase(),
       probablePitcher: g.teams.away.probablePitcher
-        ? { id: g.teams.away.probablePitcher.id, fullName: g.teams.away.probablePitcher.fullName }
+        ? { id: g.teams.away.probablePitcher.id, fullName: g.teams.away.probablePitcher.fullName, hand: (g.teams.away.probablePitcher.pitchHand?.code === "L" ? "L" : "R") as "L" | "R" }
         : null,
     },
     home: {
@@ -69,7 +69,7 @@ export async function getSchedule(date?: string): Promise<{ games: ScheduleGame[
       name: g.teams.home.team.name,
       abbreviation: g.teams.home.team.abbreviation ?? g.teams.home.team.name.slice(0, 3).toUpperCase(),
       probablePitcher: g.teams.home.probablePitcher
-        ? { id: g.teams.home.probablePitcher.id, fullName: g.teams.home.probablePitcher.fullName }
+        ? { id: g.teams.home.probablePitcher.id, fullName: g.teams.home.probablePitcher.fullName, hand: (g.teams.home.probablePitcher.pitchHand?.code === "L" ? "L" : "R") as "L" | "R" }
         : null,
     },
     venue: g.venue.name,
