@@ -13,3 +13,9 @@ node_modules
 build.log
 next-env.d.ts
 _backup
+
+# OneDrive artifacts
+Origin
+desktop.ini
+*- Copy*
+*\ (1)*
