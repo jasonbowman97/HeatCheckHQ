@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "preinstall": "rm -rf node_modules 2>/dev/null; true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
