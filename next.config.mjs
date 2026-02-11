@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Force redeploy: 2026-02-11
 const nextConfig = {
   typescript: {
     // Enable strict type checking in production
