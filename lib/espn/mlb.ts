@@ -7,7 +7,6 @@ import "server-only"
 import {
   fetchMLBScoreboard,
   fetchMLBLeaders,
-  fetchAthleteGameLog,
   fetchMLBTeamRoster,
   fetchMLBTeams,
 } from "./client"
@@ -284,42 +283,87 @@ export interface GameLogEntry {
 
 export async function getPlayerGameLog(athleteId: string): Promise<GameLogEntry[]> {
   try {
-    const raw = await fetchAthleteGameLog(athleteId)
-    // The gamelog endpoint returns a complex nested structure.
-    // We extract the seasonTypes → categories → events chain.
-    const seasonTypes = (raw as Record<string, unknown>).seasonTypes as Array<Record<string, unknown>> | undefined
-    if (!seasonTypes?.length) return []
+    // Use MLB Stats API (official, reliable) instead of deprecated ESPN gamelog endpoint
+    const year = new Date().getFullYear()
+    const res = await fetch(
+      `https://statsapi.mlb.com/api/v1/people/${athleteId}/stats?stats=gameLog&season=${year}&group=hitting`,
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) {
+      // Try pitching stats if hitting returns nothing useful
+      const pitchRes = await fetch(
+        `https://statsapi.mlb.com/api/v1/people/${athleteId}/stats?stats=gameLog&season=${year}&group=pitching`,
+        { next: { revalidate: 3600 } }
+      )
+      if (!pitchRes.ok) return []
+      const pitchData = await pitchRes.json()
+      return parseMLBStatsGameLog(pitchData)
+    }
 
-    const entries: GameLogEntry[] = []
-    const regularSeason = seasonTypes.find((st) => (st.displayName as string)?.includes("Regular")) ?? seasonTypes[0]
-    const categories = (regularSeason?.categories ?? []) as Array<Record<string, unknown>>
+    const data = await res.json()
+    const entries = parseMLBStatsGameLog(data)
 
-    if (!categories.length) return entries
-
-    // Find batting or pitching category
-    const cat = categories[0]
-    const labels = (cat.labels ?? []) as string[]
-    const events = (cat.events ?? []) as Array<Record<string, unknown>>
-
-    for (const evt of events.slice(0, 20)) { // last 20 games
-      const statsArr = (evt.stats ?? []) as Array<string | number>
-      const statMap: Record<string, string | number> = {}
-      labels.forEach((label, i) => {
-        statMap[label] = statsArr[i] ?? 0
-      })
-
-      entries.push({
-        date: (evt.eventDate as string) ?? "",
-        opponent: (evt.opponent as Record<string, unknown>)?.abbreviation as string ?? "",
-        stats: statMap,
-      })
+    // If no hitting entries, try pitching
+    if (entries.length === 0) {
+      const pitchRes = await fetch(
+        `https://statsapi.mlb.com/api/v1/people/${athleteId}/stats?stats=gameLog&season=${year}&group=pitching`,
+        { next: { revalidate: 3600 } }
+      )
+      if (pitchRes.ok) {
+        const pitchData = await pitchRes.json()
+        return parseMLBStatsGameLog(pitchData)
+      }
     }
 
     return entries
   } catch (err) {
-    console.error(`[ESPN] Failed to fetch game log for ${athleteId}:`, err)
+    console.error(`[MLB Stats API] Failed to fetch game log for ${athleteId}:`, err)
     return []
   }
+}
+
+/** Parse MLB Stats API gameLog response into our GameLogEntry format */
+function parseMLBStatsGameLog(data: Record<string, unknown>): GameLogEntry[] {
+  const entries: GameLogEntry[] = []
+  const stats = (data.stats ?? []) as Array<Record<string, unknown>>
+  if (!stats.length) return entries
+
+  const splits = (stats[0].splits ?? []) as Array<Record<string, unknown>>
+
+  for (const split of splits.slice(0, 20)) {
+    const stat = (split.stat ?? {}) as Record<string, unknown>
+    const opponent = (split.opponent ?? {}) as Record<string, unknown>
+    const date = (split.date as string) ?? ""
+
+    // Map MLB Stats API field names to match what streak detectors expect
+    const statMap: Record<string, string | number> = {}
+    // Hitting stats
+    if (stat.hits !== undefined) statMap.H = stat.hits as number
+    if (stat.atBats !== undefined) statMap.AB = stat.atBats as number
+    if (stat.runs !== undefined) statMap.R = stat.runs as number
+    if (stat.homeRuns !== undefined) statMap.HR = stat.homeRuns as number
+    if (stat.rbi !== undefined) statMap.RBI = stat.rbi as number
+    if (stat.doubles !== undefined) statMap["2B"] = stat.doubles as number
+    if (stat.triples !== undefined) statMap["3B"] = stat.triples as number
+    if (stat.baseOnBalls !== undefined) statMap.BB = stat.baseOnBalls as number
+    if (stat.strikeOuts !== undefined) statMap.SO = stat.strikeOuts as number
+    if (stat.stolenBases !== undefined) statMap.SB = stat.stolenBases as number
+    if (stat.avg !== undefined) statMap.AVG = stat.avg as string
+    // Pitching stats
+    if (stat.inningsPitched !== undefined) statMap.IP = stat.inningsPitched as string
+    if (stat.earnedRuns !== undefined) statMap.ER = stat.earnedRuns as number
+    if (stat.era !== undefined) statMap.ERA = stat.era as string
+    if (stat.wins !== undefined) statMap.W = stat.wins as number
+    if (stat.losses !== undefined) statMap.L = stat.losses as number
+
+    entries.push({
+      date,
+      opponent: (opponent.abbreviation as string) ?? (opponent.name as string) ?? "",
+      stats: statMap,
+    })
+  }
+
+  return entries
 }
 
 /* ════════════════════════════════════════════

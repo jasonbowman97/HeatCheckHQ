@@ -5,6 +5,7 @@
  */
 
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+const LEADERS_BASE = "https://site.api.espn.com/apis/site/v3/sports/football/nfl"
 
 async function espnFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { next: { revalidate: 43200 } })
@@ -117,8 +118,32 @@ export interface NFLLeaderCategory {
 }
 
 export async function getNFLLeaders(): Promise<NFLLeaderCategory[]> {
-  const raw = await espnFetch<{ leaders: NFLLeaderCategory[] }>("/leaders")
-  return raw.leaders ?? []
+  const res = await fetch(`${LEADERS_BASE}/leaders`, { next: { revalidate: 43200 } })
+  if (!res.ok) throw new Error(`ESPN NFL v3 ${res.status}: /leaders`)
+  const raw = await res.json()
+
+  // v3 structure: { leaders: { categories: [...] } }
+  const categories = (raw.leaders?.categories ?? []) as Array<{ name: string; displayName?: string; leaders: Array<Record<string, unknown>> }>
+
+  return categories.map((cat) => ({
+    name: cat.name,
+    displayName: cat.displayName ?? cat.name,
+    leaders: (cat.leaders ?? []).map((l) => {
+      const athlete = (l.athlete ?? {}) as Record<string, unknown>
+      const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
+      const position = (athlete.position ?? {}) as Record<string, unknown>
+      return {
+        athlete: {
+          id: String(athlete.id ?? ""),
+          displayName: (athlete.displayName as string) ?? "",
+          position: { abbreviation: (position.abbreviation as string) ?? "" },
+          team: { abbreviation: (team.abbreviation as string) ?? "" },
+        },
+        value: (l.value as number) ?? 0,
+        displayValue: (l.displayValue as string) ?? "0",
+      }
+    }),
+  }))
 }
 
 /* ------------------------------------------------------------------ */
