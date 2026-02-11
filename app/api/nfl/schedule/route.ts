@@ -1,7 +1,7 @@
 import { getNFLScoreboard } from "@/lib/nfl-api"
 import { NextResponse } from "next/server"
 
-export const revalidate = 43200
+export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {

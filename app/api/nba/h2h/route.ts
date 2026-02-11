@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getNBAScoreboard, getNBATeamSummary } from "@/lib/nba-api"
 
-export const revalidate = 43200
+export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {
