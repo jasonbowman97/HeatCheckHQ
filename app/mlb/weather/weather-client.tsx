@@ -15,16 +15,17 @@ const PARK_FACTORS: Record<string, number> = {
   "citizens bank": 1.06, fenway: 1.05, "yankee stadium": 1.04, "camden yards": 1.03,
   chase: 1.01, dodger: 0.98, busch: 0.97, "citi field": 0.95, petco: 0.94,
   "minute maid": 0.94, "globe life": 0.93, "t-mobile": 0.93, oracle: 0.92,
-  oakland: 0.90, tropicana: 0.96, loanDepot: 0.97, "target field": 1.02,
+  oakland: 0.90, tropicana: 0.96, loandepot: 0.97, "target field": 1.02,
   "angel stadium": 0.96, "pnc park": 0.97, "truist park": 1.01, "rogers centre": 1.02,
+  "comerica": 1.00,
 }
 
 function getWindDir(windStr: string): StadiumWeather["windDir"] {
   const lower = windStr.toLowerCase()
   if (lower.includes("out") || lower.includes("lf") || lower.includes("cf") || lower.includes("rf")) return "Out"
   if (lower.includes("in")) return "In"
-  if (lower.includes("l to r") || lower.includes("left to right")) return "L-R"
-  if (lower.includes("r to l") || lower.includes("right to left")) return "R-L"
+  if (lower.includes("l to r") || lower.includes("left to right") || lower.includes("l-r")) return "L-R"
+  if (lower.includes("r to l") || lower.includes("right to left") || lower.includes("r-l")) return "R-L"
   return "Calm"
 }
 
@@ -52,20 +53,50 @@ function getParkFactor(venue: string): number {
   return 1.0
 }
 
-function estimateImpacts(temp: number, windSpeed: number, windDir: StadiumWeather["windDir"], parkFactor: number, isRoof: boolean) {
-  // Base impact from park factor
+/**
+ * Estimate weather impact on scoring.
+ *
+ * Factors combined:
+ * 1. Park factor (historical run environment)
+ * 2. Temperature (warmer = more elastic baseballs, further carry)
+ * 3. Wind speed + direction (out boosts HR, in suppresses, cross-wind partial)
+ * 4. Altitude (thinner air at elevation = more fly ball carry)
+ * 5. Humidity (higher humidity = slightly less air density = marginal carry boost)
+ */
+function estimateImpacts(
+  temp: number,
+  windSpeed: number,
+  windDir: StadiumWeather["windDir"],
+  parkFactor: number,
+  isRoof: boolean,
+  altitudeFt: number,
+  humidity: number,
+) {
+  // 1. Base impact from park factor
   const parkPct = Math.round((parkFactor - 1) * 100)
 
-  // Temperature impact (each degree above 75 adds ~0.2% to runs)
+  // 2. Temperature impact (each degree above 75 adds ~0.2% to runs)
   const tempBoost = isRoof ? 0 : Math.round((temp - 75) * 0.2)
 
-  // Wind impact (out = boost, in = suppress)
-  const windMult = windDir === "Out" ? 1 : windDir === "In" ? -1 : 0
+  // 3. Wind impact — direction matters for each hit type
+  //    Out: full boost | In: full suppress | Cross-wind: ~30% effect (affects pulled fly balls)
+  const windMult = windDir === "Out" ? 1 : windDir === "In" ? -1 : (windDir === "L-R" || windDir === "R-L") ? 0.3 : 0
   const windBoost = isRoof ? 0 : Math.round(windSpeed * 0.4 * windMult)
 
-  const runsImpact = parkPct + tempBoost + windBoost
-  const hrImpact = parkPct + Math.round(windBoost * 1.5) // wind affects HR more
-  const xbhImpact = parkPct + Math.round(tempBoost * 0.5) + Math.round(windBoost * 0.3)
+  // 4. Altitude impact — air density drops ~3% per 1000ft
+  //    At 5200ft (Coors), fly balls carry ~9% further
+  //    This is SEPARATE from park factor (park factor captures historical run scoring,
+  //    altitude captures the physics of fly ball carry on a given day)
+  const altBoost = isRoof ? 0 : Math.round((altitudeFt / 1000) * 1.7)
+
+  // 5. Humidity impact — contrary to popular belief, humid air is LESS dense than dry air
+  //    (water vapor is lighter than N2/O2). Effect is small: ~0.5% per 20% humidity above 50%
+  const humidityBoost = isRoof ? 0 : Math.round((humidity - 50) * 0.025)
+
+  // Combine for different hit types
+  const runsImpact = parkPct + tempBoost + windBoost + Math.round(altBoost * 0.3) + humidityBoost
+  const hrImpact = parkPct + Math.round(windBoost * 1.5) + altBoost + humidityBoost // altitude + wind affect HR most
+  const xbhImpact = parkPct + Math.round(tempBoost * 0.5) + Math.round(windBoost * 0.3) + Math.round(altBoost * 0.5)
   const hitsImpact = Math.round(parkPct * 0.3) + Math.round(tempBoost * 0.2)
 
   return {
@@ -76,27 +107,35 @@ function estimateImpacts(temp: number, windSpeed: number, windDir: StadiumWeathe
   }
 }
 
-interface APIGame {
+interface APIWeatherGame {
   gamePk: number
   gameDate: string
   status: string
   away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
   home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string } | null }
   venue: string
+  indoor: boolean
+  altitudeFt: number
   weather: { condition: string; temp: string; wind: string } | null
+  liveHumidity: number | null
+  liveFeelsLike: number | null
+  weatherSource: string
 }
 
-function transformToWeatherData(games: APIGame[]): StadiumWeather[] {
+function transformToWeatherData(games: APIWeatherGame[]): StadiumWeather[] {
   return games.map((g) => {
     const temp = g.weather ? Number.parseInt(g.weather.temp, 10) || 72 : 72
     const windStr = g.weather?.wind ?? ""
     const windSpeed = getWindSpeed(windStr)
     const windDir = getWindDir(windStr)
     const condStr = g.weather?.condition ?? ""
-    const isRoof = !g.weather || condStr.toLowerCase().includes("dome") || condStr.toLowerCase().includes("roof")
+    const isRoof = g.indoor || (!g.weather && g.indoor) || condStr.toLowerCase().includes("dome") || condStr.toLowerCase().includes("roof")
     const condition = isRoof && !g.weather ? "Roof Closed" : getCondition(condStr)
     const parkFactor = getParkFactor(g.venue)
-    const impacts = estimateImpacts(temp, windSpeed, windDir, parkFactor, isRoof)
+    const altitudeFt = g.altitudeFt ?? 0
+    // Use live humidity from OpenWeather if available, otherwise estimate 50%
+    const humidity = g.liveHumidity ?? 50
+    const impacts = estimateImpacts(temp, windSpeed, windDir, parkFactor, isRoof, altitudeFt, humidity)
     const time = new Date(g.gameDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
 
     return {
@@ -107,7 +146,7 @@ function transformToWeatherData(games: APIGame[]): StadiumWeather[] {
       windSpeed,
       windDir: isRoof ? "Calm" as const : windDir,
       condition,
-      humidity: 50, // MLB API doesn't provide humidity
+      humidity,
       ...impacts,
     }
   })
@@ -131,10 +170,15 @@ export function WeatherPageClient() {
     day: "numeric",
   })
 
-  const { data, isLoading } = useSWR<{ games: APIGame[]; date: string }>(`/api/mlb/schedule?date=${dateParam}`, fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 43200000, // 12 hours
-  })
+  // Use the weather API which includes altitude, humidity, and offseason gating
+  const { data, isLoading } = useSWR<{ games: APIWeatherGame[]; date: string; hasLiveWeather: boolean; isOffseason: boolean }>(
+    `/api/mlb/weather?date=${dateParam}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 43200000, // 12 hours
+    },
+  )
 
   // Transform live data or fall back to static
   const liveGames = data?.games ?? []
@@ -143,6 +187,8 @@ export function WeatherPageClient() {
     : stadiumWeatherData
 
   const isLive = liveGames.length > 0
+  const hasLiveWeather = data?.hasLiveWeather ?? false
+  const isOffseason = data?.isOffseason ?? false
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,19 +238,24 @@ export function WeatherPageClient() {
             <h1 className="text-2xl font-bold text-foreground text-balance">
               Daily Stadium Weather Report
             </h1>
-            {isLive && (
+            {isLive && hasLiveWeather && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
-                Live
+                Live Weather
+              </span>
+            )}
+            {isLive && !hasLiveWeather && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-md">
+                MLB Data
               </span>
             )}
             {!isLive && !isLoading && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
-                No games scheduled
+                {isOffseason ? "Offseason - Sample Data" : "No games scheduled"}
               </span>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            How park conditions, wind, and temperature impact today{"'"}s games.
+            How park conditions, wind, altitude, and temperature impact today{"'"}s games.
           </p>
         </div>
 
