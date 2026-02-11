@@ -84,7 +84,7 @@ interface H2HApiData {
 type DvpRank = { pg: number; sg: number; sf: number; pf: number; c: number }
 
 // BettingPros uses slightly different abbreviations for a few teams
-const ESPN_TO_BP: Record<string, string> = { UTAH: "UTH", GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP", WSH: "WAS" }
+const ESPN_TO_BP: Record<string, string> = { UTAH: "UTH", GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP", WSH: "WAS", PHX: "PHO" }
 function bpAbbr(espn: string) { return ESPN_TO_BP[espn] ?? espn }
 
 function espnToH2HGames(
