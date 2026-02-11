@@ -108,8 +108,12 @@ export async function getNBATeams(): Promise<NBATeamRecord[]> {
 
 export interface NBATeamSummary {
   record: string
+  homeRecord: string
+  awayRecord: string
+  streak: number // positive = W streak, negative = L streak
   ppg: number
   oppPpg: number
+  pointDiff: number
   injuries: { name: string; status: string; detail: string }[]
 }
 
@@ -117,15 +121,27 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
   try {
     const raw = await espnFetch<{
       team: {
-        record?: { items?: { summary?: string; stats?: { name: string; value: number }[] }[] }
+        record?: { items?: { summary?: string; type?: string; stats?: { name: string; value: number }[] }[] }
         injuries?: { items?: { athlete: { displayName: string }; status: string; details?: { detail?: string } }[] }[]
       }
     }>(`/teams/${teamId}`)
 
-    const recordItem = raw.team?.record?.items?.[0]
-    const record = recordItem?.summary ?? "0-0"
-    const ppg = recordItem?.stats?.find((s: { name: string }) => s.name === "pointsFor")?.value ?? 0
-    const oppPpg = recordItem?.stats?.find((s: { name: string }) => s.name === "pointsAgainst")?.value ?? 0
+    const items = raw.team?.record?.items ?? []
+    const overall = items[0]
+    const homeItem = items.find((i) => i.type === "home") ?? items[1]
+    const awayItem = items.find((i) => i.type === "road") ?? items[2]
+
+    const record = overall?.summary ?? "0-0"
+    const homeRecord = homeItem?.summary ?? "0-0"
+    const awayRecord = awayItem?.summary ?? "0-0"
+
+    const getStat = (item: typeof overall, name: string) =>
+      item?.stats?.find((s: { name: string }) => s.name === name)?.value ?? 0
+
+    const ppg = getStat(overall, "pointsFor") || getStat(overall, "avgPointsFor")
+    const oppPpg = getStat(overall, "pointsAgainst") || getStat(overall, "avgPointsAgainst")
+    const streak = getStat(overall, "streak")
+    const pointDiff = getStat(overall, "pointDifferential")
 
     const injuries: NBATeamSummary["injuries"] = []
     for (const group of raw.team?.injuries ?? []) {
@@ -138,9 +154,65 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
       }
     }
 
-    return { record, ppg, oppPpg, injuries }
+    return { record, homeRecord, awayRecord, streak, ppg, oppPpg, pointDiff, injuries }
   } catch {
     return null
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Team Schedule (for H2H history & last N games)                     */
+/* ------------------------------------------------------------------ */
+
+export interface NBAGameResult {
+  id: string
+  date: string
+  opponentId: string
+  opponentAbbr: string
+  home: boolean
+  teamScore: number
+  opponentScore: number
+  won: boolean
+}
+
+export async function getNBATeamSchedule(teamId: string): Promise<NBAGameResult[]> {
+  try {
+    const year = new Date().getFullYear()
+    const raw = await espnFetch<{
+      events: {
+        id: string
+        date: string
+        competitions: {
+          competitors: { homeAway: string; team: { id: string; abbreviation: string }; score?: { displayValue?: string } }[]
+          status?: { type?: { completed?: boolean } }
+        }[]
+      }[]
+    }>(`/teams/${teamId}/schedule?season=${year}`)
+
+    const results: NBAGameResult[] = []
+    for (const ev of raw.events ?? []) {
+      const comp = ev.competitions?.[0]
+      if (!comp?.status?.type?.completed) continue
+      const us = comp.competitors?.find((c) => c.team?.id === teamId)
+      const them = comp.competitors?.find((c) => c.team?.id !== teamId)
+      if (!us || !them) continue
+      const teamScore = Number(us.score?.displayValue) || 0
+      const opponentScore = Number(them.score?.displayValue) || 0
+      if (teamScore === 0 && opponentScore === 0) continue
+      results.push({
+        id: ev.id,
+        date: ev.date,
+        opponentId: them.team?.id ?? "",
+        opponentAbbr: them.team?.abbreviation ?? "???",
+        home: us.homeAway === "home",
+        teamScore,
+        opponentScore,
+        won: teamScore > opponentScore,
+      })
+    }
+    return results
+  } catch {
+    return []
   }
 }
 

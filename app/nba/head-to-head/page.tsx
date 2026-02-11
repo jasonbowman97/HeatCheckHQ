@@ -41,20 +41,25 @@ function mapInjuryStatus(status: string): InjuredPlayer["status"] {
   return "Day-To-Day"
 }
 
-function buildMomentum(summary: NBATeamSummary | undefined): NBAGame["awayMomentum"] {
+interface LastRecord { last5: { wins: number; losses: number }; last10: { wins: number; losses: number } }
+
+function buildMomentum(summary: NBATeamSummary | undefined, lastRec?: LastRecord): NBAGame["awayMomentum"] {
   if (!summary) return { ...emptyMomentum }
-  const record = summary.record // e.g. "35-20"
-  const [wins, losses] = record.split("-").map(Number)
+  const streak = summary.streak ?? 0
   return {
-    ...emptyMomentum,
-    streak: record,
+    trend: summary.ppg > summary.oppPpg ? "Trending Up" : summary.ppg < summary.oppPpg ? "Trending Down" : "Steady",
+    streak: streak > 0 ? `W${streak}` : streak < 0 ? `L${Math.abs(streak)}` : "—",
+    streakType: streak >= 0 ? "W" : "L",
+    last5: lastRec?.last5 ?? { wins: 0, losses: 0 },
+    last10: lastRec?.last10 ?? { wins: 0, losses: 0 },
     ppg: Math.round(summary.ppg * 10) / 10,
     oppPpg: Math.round(summary.oppPpg * 10) / 10,
-    last10: { wins: Math.min(wins, 10), losses: Math.min(losses, 10) },
-    last5: { wins: Math.min(wins, 5), losses: Math.min(losses, 5) },
-    trend: summary.ppg > summary.oppPpg ? "Trending Up" : summary.ppg < summary.oppPpg ? "Trending Down" : "Steady",
-    homeRecord: record,
-    awayRecord: record,
+    atsRecord: "N/A",
+    ouRecord: "N/A",
+    homeRecord: summary.homeRecord ?? "N/A",
+    homePpg: 0,
+    awayRecord: summary.awayRecord ?? "N/A",
+    awayPpg: 0,
   }
 }
 
@@ -67,11 +72,27 @@ function buildInjuries(summary: NBATeamSummary | undefined): InjuredPlayer[] {
   }))
 }
 
-function espnToH2HGames(espnGames: NBAScheduleGame[], summaries: Record<string, NBATeamSummary>): NBAGame[] {
+interface H2HApiData {
+  record: string
+  awayAvgPts: number
+  homeAvgPts: number
+  avgTotal: number
+  margin: string
+  recentMeetings: { date: string; awayScore: number; homeScore: number; total: number; winner: string }[]
+}
+
+function espnToH2HGames(
+  espnGames: NBAScheduleGame[],
+  summaries: Record<string, NBATeamSummary>,
+  h2hData: Record<string, H2HApiData | null>,
+  lastRecords: Record<string, LastRecord>,
+): NBAGame[] {
   return espnGames.map((g) => {
     const time = new Date(g.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
     const awaySummary = summaries[g.awayTeam.id]
     const homeSummary = summaries[g.homeTeam.id]
+    const h2h = h2hData[g.id]
+
     return {
       id: g.id,
       awayTeam: g.awayTeam.abbreviation,
@@ -83,9 +104,11 @@ function espnToH2HGames(espnGames: NBAScheduleGame[], summaries: Record<string, 
       venue: g.venue,
       awayInjuries: buildInjuries(awaySummary),
       homeInjuries: buildInjuries(homeSummary),
-      h2hHistory: { record: "N/A", awayAvgPts: 0, homeAvgPts: 0, avgTotal: 0, margin: "N/A", recentMeetings: [] },
-      awayMomentum: buildMomentum(awaySummary),
-      homeMomentum: buildMomentum(homeSummary),
+      h2hHistory: h2h
+        ? { ...h2h, recentMeetings: h2h.recentMeetings.map((m) => ({ ...m, time: "" })) }
+        : { record: "N/A", awayAvgPts: 0, homeAvgPts: 0, avgTotal: 0, margin: "N/A", recentMeetings: [] },
+      awayMomentum: buildMomentum(awaySummary, lastRecords[g.awayTeam.id]),
+      homeMomentum: buildMomentum(homeSummary, lastRecords[g.homeTeam.id]),
       awayDefense: { ...emptyDefense },
       homeDefense: { ...emptyDefense },
     }
@@ -93,12 +116,17 @@ function espnToH2HGames(espnGames: NBAScheduleGame[], summaries: Record<string, 
 }
 
 export default function NBAH2HPage() {
-  const { data, isLoading } = useSWR<{ games: NBAScheduleGame[]; summaries: Record<string, NBATeamSummary> }>("/api/nba/h2h", fetcher, {
+  const { data, isLoading } = useSWR<{
+    games: NBAScheduleGame[]
+    summaries: Record<string, NBATeamSummary>
+    h2hData: Record<string, H2HApiData | null>
+    lastRecords: Record<string, LastRecord>
+  }>("/api/nba/h2h", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
 
-  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}) : null), [data])
+  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {}) : null), [data])
 
   // Merge: use live games for the matchup selector but fall back to static for detailed stats
   const allGames = liveGames ?? staticGames
