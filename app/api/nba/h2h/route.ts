@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule } from "@/lib/nba-api"
 import type { NBAGameResult } from "@/lib/nba-api"
+import { scrapeDvpData } from "@/lib/bettingpros-scraper"
 
 export const dynamic = "force-dynamic"
 
@@ -73,8 +74,8 @@ export async function GET(request: Request) {
       teamIds.add(g.homeTeam.id)
     }
 
-    // Fetch team summaries + schedules in parallel
-    const [summaryEntries, scheduleEntries] = await Promise.all([
+    // Fetch team summaries + schedules + DVP in parallel
+    const [summaryEntries, scheduleEntries, dvpData] = await Promise.all([
       Promise.all(
         Array.from(teamIds).map(async (id) => {
           const summary = await getNBATeamSummary(id)
@@ -87,6 +88,7 @@ export async function GET(request: Request) {
           return [id, schedule] as const
         })
       ),
+      scrapeDvpData().catch(() => null),
     ])
 
     const summaries = Object.fromEntries(summaryEntries.filter(([, v]) => v !== null))
@@ -112,9 +114,12 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ games, summaries, h2hData, lastRecords })
+    // Build DVP rankings lookup (BettingPros team abbreviations -> rankings per position)
+    const dvpRankings: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }> = dvpData?.rankings ?? {}
+
+    return NextResponse.json({ games, summaries, h2hData, lastRecords, dvpRankings })
   } catch (e) {
     console.error("[NBA H2H API]", e)
-    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {} })
+    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {}, dvpRankings: {} })
   }
 }

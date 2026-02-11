@@ -6,8 +6,9 @@ import { Loader2 } from "lucide-react"
 import { NBAHeader } from "@/components/nba/nba-header"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { FirstBasketTable } from "@/components/nba/first-basket-table"
-import { todayGames as staticGames, type TimeFrame } from "@/lib/nba-first-basket-data"
+import { todayGames as staticGames } from "@/lib/nba-first-basket-data"
 import type { NBAScheduleGame } from "@/lib/nba-api"
+import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 import {
   Select,
   SelectContent,
@@ -33,20 +34,55 @@ function toLiveGames(espnGames: NBAScheduleGame[]) {
 export default function NBAFirstBasketPage() {
   const [date, setDate] = useState(new Date())
   const [gameFilter, setGameFilter] = useState("all")
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>("season")
-  const [sortColumn, setSortColumn] = useState("firstBasketPerGmPct")
+  const [sortColumn, setSortColumn] = useState("firstBasketPct")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
-  const { data, isLoading } = useSWR<{ games: NBAScheduleGame[] }>(
+  const { data: scheduleData, isLoading: scheduleLoading } = useSWR<{ games: NBAScheduleGame[] }>(
     `/api/nba/schedule?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
-  const liveGamesList = useMemo(() => (data?.games?.length ? toLiveGames(data.games) : null), [data])
+  const { data: fbData, isLoading: fbLoading } = useSWR<{
+    players: BPFirstBasketPlayer[]
+    teams: BPTeamTipoff[]
+  }>("/api/nba/first-basket", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 43200000,
+  })
+
+  const isLoading = scheduleLoading || fbLoading
+
+  const liveGamesList = useMemo(() => (scheduleData?.games?.length ? toLiveGames(scheduleData.games) : null), [scheduleData])
   const games = liveGamesList ?? staticGames
   const isLive = !!liveGamesList
+  const hasLiveStats = !!fbData?.players?.length
+
+  // Get today's team abbreviations for filtering players
+  const todayTeams = useMemo(() => {
+    const teams = new Set<string>()
+    for (const g of games) {
+      teams.add(g.away)
+      teams.add(g.home)
+    }
+    return teams
+  }, [games])
+
+  // Filter first basket players to today's teams
+  const filteredPlayers = useMemo(() => {
+    if (!fbData?.players?.length) return []
+    return fbData.players.filter((p) => todayTeams.has(p.team))
+  }, [fbData, todayTeams])
+
+  // Build team tipoff lookup
+  const teamTipoffs = useMemo(() => {
+    const map: Record<string, BPTeamTipoff> = {}
+    for (const t of fbData?.teams ?? []) {
+      map[t.team] = t
+    }
+    return map
+  }, [fbData])
 
   const handlePrevDay = useCallback(() => {
     setDate((prev) => {
@@ -82,14 +118,14 @@ export default function NBAFirstBasketPage() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-foreground">First Basket Analysis</h2>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            {isLive && (
+            {hasLiveStats && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live
               </span>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Track which players score the first basket of the game. Filter by matchup and time frame to spot trends.
+            Track which players score the first basket of the game. Filter by matchup to spot trends.
           </p>
         </div>
 
@@ -113,32 +149,6 @@ export default function NBAFirstBasketPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Time frame toggle */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Range</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(
-                [
-                  { key: "season", label: "Season" },
-                  { key: "L10", label: "L10" },
-                  { key: "L5", label: "L5" },
-                ] as const
-              ).map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => setTimeFrame(option.key)}
-                  className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                    timeFrame === option.key
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -166,11 +176,13 @@ export default function NBAFirstBasketPage() {
 
         {/* Table */}
         <FirstBasketTable
-          timeFrame={timeFrame}
+          players={filteredPlayers}
+          teamTipoffs={teamTipoffs}
           gameFilter={gameFilter}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onSort={handleSort}
+          isLive={hasLiveStats}
         />
       </main>
     </div>
