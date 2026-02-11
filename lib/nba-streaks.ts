@@ -19,32 +19,39 @@ interface NBAGameLogEntry {
 
 /** Parse ESPN NBA gamelog response into flat stat entries */
 function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
+  // Labels are at the top level, not inside categories
+  const labels = (raw.labels ?? []) as string[]
+  // Event metadata (dates, opponents) is at the top level keyed by eventId
+  const eventMeta = (raw.events ?? {}) as Record<string, Record<string, unknown>>
+
   const seasonTypes = raw.seasonTypes as Array<Record<string, unknown>> | undefined
   if (!seasonTypes?.length) return []
 
   const entries: NBAGameLogEntry[] = []
   const regularSeason = seasonTypes.find((st) => (st.displayName as string)?.includes("Regular")) ?? seasonTypes[0]
+  // Categories are split by month (january, december, etc.) — iterate all of them
   const categories = (regularSeason?.categories ?? []) as Array<Record<string, unknown>>
-  if (!categories.length) return entries
 
-  const cat = categories[0]
-  const labels = (cat.labels ?? []) as string[]
-  const events = (cat.events ?? []) as Array<Record<string, unknown>>
-
-  for (const evt of events.slice(0, 20)) {
-    const statsArr = (evt.stats ?? []) as Array<string | number>
-    const statMap: Record<string, number> = {}
-    labels.forEach((label, i) => {
-      statMap[label] = Number(statsArr[i]) || 0
-    })
-    entries.push({
-      date: (evt.eventDate as string) ?? "",
-      opponent: (evt.opponent as Record<string, unknown>)?.abbreviation as string ?? "",
-      stats: statMap,
-    })
+  for (const cat of categories) {
+    const events = (cat.events ?? []) as Array<Record<string, unknown>>
+    for (const evt of events) {
+      const eventId = evt.eventId as string
+      const statsArr = (evt.stats ?? []) as Array<string | number>
+      const statMap: Record<string, number> = {}
+      labels.forEach((label, i) => {
+        statMap[label] = Number(statsArr[i]) || 0
+      })
+      // Get date and opponent from top-level event metadata
+      const meta = eventMeta[eventId]
+      const opponent = (meta?.opponent as Record<string, unknown>)?.abbreviation as string ?? ""
+      const date = (meta?.gameDate as string) ?? ""
+      entries.push({ date, opponent, stats: statMap })
+    }
   }
 
-  return entries
+  // Sort by date descending (most recent first) and limit to 20
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return entries.slice(0, 20)
 }
 
 /** Detect NBA scoring/rebounding/assist streaks */
@@ -188,17 +195,15 @@ async function getAllNBAPlayers(): Promise<Array<{ id: string; name: string; tea
       const raw = await fetchNBATeamRoster(id)
       const athletes = (raw.athletes ?? []) as Array<Record<string, unknown>>
       const players: Array<{ id: string; name: string; team: string; position: string }> = []
-      for (const group of athletes) {
-        const items = (group.items ?? []) as Array<Record<string, unknown>>
-        for (const item of items) {
-          const pos = (item.position as Record<string, unknown>)?.abbreviation as string ?? ""
-          players.push({
-            id: item.id as string,
-            name: (item.displayName as string) ?? (item.fullName as string) ?? "",
-            team: abbr,
-            position: pos,
-          })
-        }
+      for (const athlete of athletes) {
+        // ESPN roster returns athletes directly (not nested in groups)
+        const pos = (athlete.position as Record<string, unknown>)?.abbreviation as string ?? ""
+        players.push({
+          id: athlete.id as string,
+          name: (athlete.displayName as string) ?? (athlete.fullName as string) ?? "",
+          team: abbr,
+          position: pos,
+        })
       }
       return players
     } catch { return [] }
