@@ -96,21 +96,17 @@ export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
   if (!res.ok) throw new Error(`BettingPros first basket ${res.status}`)
   const html = await res.text()
 
-  // Extract firstBasketStats — it's a JS object with numeric keys containing JSON arrays
-  // Pattern: firstBasketStats: {0: {...}, 1: {...}, ...}
+  // Extract firstBasketStats — it's a JSON array: [{name:"played",...}, ...]
   const statsMarker = "firstBasketStats:"
   const statsIdx = html.indexOf(statsMarker)
   if (statsIdx === -1) throw new Error("Could not find firstBasketStats in HTML")
 
-  // Find the opening brace after "firstBasketStats:"
-  let braceStart = html.indexOf("{", statsIdx + statsMarker.length)
-  if (braceStart === -1) throw new Error("Could not find firstBasketStats opening brace")
-  const statsBlock = extractBalanced(html, braceStart)
+  // Find the opening bracket after "firstBasketStats:"
+  const bracketStart = html.indexOf("[", statsIdx + statsMarker.length)
+  if (bracketStart === -1) throw new Error("Could not find firstBasketStats opening bracket")
+  const statsBlock = extractBalanced(html, bracketStart)
 
-  // The stats block has numeric keys like {0: {...}, 1: {...}}
-  // Convert JS object literal to JSON by quoting the numeric keys
-  const jsonFixed = statsBlock.replace(/(\{|,)\s*(\d+)\s*:/g, '$1"$2":')
-  const fbStats: Record<string, FBCategory> = JSON.parse(jsonFixed)
+  const fbStatsArr: FBCategory[] = JSON.parse(statsBlock)
 
   // Build player lookup from categories
   const playedMap = new Map<string, { played: number; started: number; teamGames: number }>()
@@ -118,7 +114,7 @@ export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
   const fsMap = new Map<string, { value: number; home: number; away: number }>()
   const playerInfo = new Map<string, { name: string; team: string; position: string; image: string }>()
 
-  for (const cat of Object.values(fbStats)) {
+  for (const cat of fbStatsArr) {
     if (cat.name === "played" && cat.type === "player") {
       for (const p of cat.participants) {
         playedMap.set(p.participant.id, {
@@ -185,11 +181,11 @@ export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
 
   // Build team tipoff data
   const teams: BPTeamTipoff[] = []
-  for (const cat of Object.values(fbStats)) {
+  for (const cat of fbStatsArr) {
     if (cat.name === "tipoff_win" && cat.type === "team") {
       for (const p of cat.participants) {
         const teamAbbr = p.participant.team?.abbreviation ?? p.participant.id
-        const tfbCat = Object.values(fbStats).find((c) => c.name === "team_first_basket")
+        const tfbCat = fbStatsArr.find((c) => c.name === "team_first_basket")
         const tfb = tfbCat?.participants.find((t) => (t.participant.team?.abbreviation ?? t.participant.id) === teamAbbr)
         teams.push({
           team: teamAbbr,
