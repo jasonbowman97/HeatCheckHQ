@@ -7,7 +7,7 @@
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
 
 async function espnFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 3600 } })
+  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 43200 } })
   if (!res.ok) throw new Error(`ESPN NBA ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import useSWR from "swr"
 import { Flame, Zap, Target, Loader2 } from "lucide-react"
 import type { HotHitter } from "@/lib/hot-hitters"
@@ -90,17 +90,27 @@ const fallbackHitters: HotHitter[] = [
 
 export function HotHittersSection() {
   const [activeTab, setActiveTab] = useState<StreakTab>("hitting")
+  const [teamFilter, setTeamFilter] = useState<string>("All")
   const { data, isLoading } = useSWR<{ streaks: HotHitter[]; cached?: boolean }>(
     "/api/hot-hitters",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   const liveStreaks = data?.streaks ?? []
   const hasLiveData = liveStreaks.length > 0
   const streaks = hasLiveData ? liveStreaks : fallbackHitters
 
-  const filtered = streaks.filter((h) => h.streakType === activeTab)
+  const teams = useMemo(() => {
+    const set = new Set(streaks.map((h) => h.team))
+    return Array.from(set).sort()
+  }, [streaks])
+
+  const filtered = streaks.filter((h) => {
+    if (h.streakType !== activeTab) return false
+    if (teamFilter !== "All" && h.team !== teamFilter) return false
+    return true
+  })
   const activeTabInfo = tabs.find((t) => t.key === activeTab)!
 
   return (
@@ -153,6 +163,20 @@ export function HotHittersSection() {
           )
         })}
       </div>
+
+      {/* Team filter */}
+      {teams.length > 1 && (
+        <select
+          value={teamFilter}
+          onChange={(e) => setTeamFilter(e.target.value)}
+          className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary w-fit"
+        >
+          <option value="All">All Teams</option>
+          {teams.map((team) => (
+            <option key={team} value={team}>{team}</option>
+          ))}
+        </select>
+      )}
 
       {/* Tab description */}
       <p className="text-xs text-muted-foreground">

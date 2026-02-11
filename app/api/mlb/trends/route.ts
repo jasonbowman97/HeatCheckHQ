@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getBattingLeaders, getPitchingLeaders } from "@/lib/mlb-api"
 import { buildTrends } from "@/lib/trends-builder"
 
-export const revalidate = 3600
+export const revalidate = 43200
 
 export async function GET() {
   try {

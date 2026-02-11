@@ -37,14 +37,14 @@ export default function DefenseVsPositionPage() {
   const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: TodayMatchup[] }>(
     viewMode === "matchups" ? "/api/nba/defense-vs-position?mode=matchups" : null,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
   const { data: rankingsData, isLoading: rankingsLoading } = useSWR<{ rankings: PositionRankingRow[] }>(
     viewMode === "rankings" ? `/api/nba/defense-vs-position?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   const matchups = matchupsData?.matchups ?? []
@@ -146,7 +146,7 @@ export default function DefenseVsPositionPage() {
           {viewMode === "matchups" && (
             <>
               {/* Position filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
                 <div className="flex rounded-lg border border-border overflow-hidden">
                   <button
@@ -176,7 +176,7 @@ export default function DefenseVsPositionPage() {
               </div>
 
               {/* Stat filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
                 <div className="flex rounded-lg border border-border overflow-hidden">
                   <button
@@ -210,7 +210,7 @@ export default function DefenseVsPositionPage() {
           {viewMode === "rankings" && (
             <>
               {/* Position selector */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
                 <div className="flex rounded-lg border border-border overflow-hidden">
                   {POSITIONS.map((pos) => (
@@ -230,7 +230,7 @@ export default function DefenseVsPositionPage() {
               </div>
 
               {/* Stat selector */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
                 <div className="flex rounded-lg border border-border overflow-hidden">
                   {STAT_CATEGORIES.map((cat) => (

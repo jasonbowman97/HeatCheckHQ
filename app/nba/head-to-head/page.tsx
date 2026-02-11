@@ -95,7 +95,7 @@ function espnToH2HGames(espnGames: NBAScheduleGame[], summaries: Record<string, 
 export default function NBAH2HPage() {
   const { data, isLoading } = useSWR<{ games: NBAScheduleGame[]; summaries: Record<string, NBATeamSummary> }>("/api/nba/h2h", fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000,
+    dedupingInterval: 43200000,
   })
 
   const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}) : null), [data])

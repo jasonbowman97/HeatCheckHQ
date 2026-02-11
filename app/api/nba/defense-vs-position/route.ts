@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getTodayMatchupInsights, getPositionRankings } from "@/lib/nba-defense-vs-position"
 import type { Position, StatCategory } from "@/lib/nba-defense-vs-position"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 43200
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)

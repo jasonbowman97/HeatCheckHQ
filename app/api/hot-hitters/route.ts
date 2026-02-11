@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { getHotHitters } from "@/lib/hot-hitters"
 
-// Cache the response for 1 hour since scanning all players is expensive
-export const revalidate = 3600
+// Cache the response for 12 hours since scanning all players is expensive
+export const revalidate = 43200
 
 // In-memory cache to avoid re-scanning during the same server lifetime
 let cachedData: { data: Awaited<ReturnType<typeof getHotHitters>>; timestamp: number } | null = null
-const CACHE_TTL = 60 * 60 * 1000 // 1 hour
+const CACHE_TTL = 12 * 60 * 60 * 1000 // 12 hours
 
 export async function GET() {
   try {

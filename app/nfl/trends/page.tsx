@@ -4,8 +4,7 @@ import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { nflTrends, nflCategories } from "@/lib/nfl-trends-data"
 import { getNFLStreakTrends } from "@/lib/nfl-streaks"
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 43200
 
 export const metadata = {
   title: "HeatCheck HQ - NFL Active Streaks",
