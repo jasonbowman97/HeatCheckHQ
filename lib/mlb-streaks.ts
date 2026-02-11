@@ -4,7 +4,8 @@
  */
 import "server-only"
 
-import { getMLBBattingLeaders, getMLBPitchingLeaders, getPlayerGameLog } from "./espn/mlb"
+import { getPlayerGameLog } from "./espn/mlb"
+import { getBattingLeaders, getPitchingLeaders } from "./mlb-api"
 import { detectHittingStreaks, detectPitchingStreaks, type StreakResult } from "./streak-detector"
 import type { Trend } from "./trends-types"
 
@@ -15,8 +16,8 @@ import type { Trend } from "./trends-types"
 export async function getMLBStreakTrends(): Promise<Trend[]> {
   try {
     const [batters, pitchers] = await Promise.all([
-      getMLBBattingLeaders(),
-      getMLBPitchingLeaders(),
+      getBattingLeaders(),
+      getPitchingLeaders(),
     ])
 
     const allStreaks: StreakResult[] = []
@@ -25,14 +26,14 @@ export async function getMLBStreakTrends(): Promise<Trend[]> {
     const topBatters = batters.slice(0, 30)
     const batterPromises = topBatters.map(async (batter) => {
       try {
-        const gameLogs = await getPlayerGameLog(batter.id)
+        const gameLogs = await getPlayerGameLog(String(batter.id))
         if (gameLogs.length < 5) return [] // Need at least 5 games
 
         return detectHittingStreaks(
-          batter.id,
+          String(batter.id),
           batter.name,
           batter.team,
-          batter.position,
+          batter.pos,
           gameLogs
         )
       } catch (err) {
@@ -45,11 +46,11 @@ export async function getMLBStreakTrends(): Promise<Trend[]> {
     const topPitchers = pitchers.slice(0, 20)
     const pitcherPromises = topPitchers.map(async (pitcher) => {
       try {
-        const gameLogs = await getPlayerGameLog(pitcher.id)
+        const gameLogs = await getPlayerGameLog(String(pitcher.id))
         if (gameLogs.length < 3) return [] // Need at least 3 games
 
         return detectPitchingStreaks(
-          pitcher.id,
+          String(pitcher.id),
           pitcher.name,
           pitcher.team,
           "SP",

@@ -4,9 +4,52 @@
  */
 import "server-only"
 
-import { getPlayerGameLog } from "./espn/mlb" // Using same ESPN gamelog endpoint
 import type { StreakResult } from "./streak-detector"
 import type { Trend } from "./trends-types"
+import type { GameLogEntry } from "./espn/mlb"
+
+const NFL_WEB_BASE = "https://site.web.api.espn.com/apis/common/v3/sports/football/nfl"
+
+/** Fetch NFL player game log from the correct NFL endpoint */
+async function getNFLPlayerGameLog(athleteId: string): Promise<GameLogEntry[]> {
+  try {
+    const res = await fetch(`${NFL_WEB_BASE}/athletes/${athleteId}/gamelog`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 43200 },
+    })
+    if (!res.ok) return []
+    const raw = await res.json()
+
+    const seasonTypes = raw.seasonTypes as Array<Record<string, unknown>> | undefined
+    if (!seasonTypes?.length) return []
+
+    const entries: GameLogEntry[] = []
+    const regularSeason = seasonTypes.find((st) => (st.displayName as string)?.includes("Regular")) ?? seasonTypes[0]
+    const categories = (regularSeason?.categories ?? []) as Array<Record<string, unknown>>
+    if (!categories.length) return entries
+
+    const cat = categories[0]
+    const labels = (cat.labels ?? []) as string[]
+    const events = (cat.events ?? []) as Array<Record<string, unknown>>
+
+    for (const evt of events.slice(0, 20)) {
+      const statsArr = (evt.stats ?? []) as Array<string | number>
+      const statMap: Record<string, string | number> = {}
+      labels.forEach((label, i) => {
+        statMap[label] = statsArr[i] ?? 0
+      })
+      entries.push({
+        date: (evt.eventDate as string) ?? "",
+        opponent: (evt.opponent as Record<string, unknown>)?.abbreviation as string ?? "",
+        stats: statMap,
+      })
+    }
+
+    return entries
+  } catch {
+    return []
+  }
+}
 
 /**
  * Detect NFL passing streaks from game logs
@@ -260,41 +303,61 @@ function calculateCurrentStreak(games: boolean[]): number {
  */
 export async function getNFLStreakTrends(): Promise<Trend[]> {
   try {
-    // Top NFL players (would need ESPN NFL leaders endpoint)
-    const topQBIds = ["14876", "3916", "3139", "16757", "4361"] // Example QB IDs
-    const topRBIds = ["3116385", "4040715", "4242335"] // Example RB IDs
-    const topWRIds = ["3042519", "4035687", "4038524"] // Example WR IDs
+    // Dynamically fetch NFL leaders from ESPN v3
+    const res = await fetch(
+      "https://site.api.espn.com/apis/site/v3/sports/football/nfl/leaders",
+      { next: { revalidate: 43200 } }
+    )
+    if (!res.ok) {
+      console.error(`[NFL Streaks] Leaders endpoint returned ${res.status}`)
+      return []
+    }
+    const data = await res.json()
+    // v3 structure: { leaders: { categories: [...] } }
+    const categories = (data.leaders?.categories ?? []) as Array<{
+      name: string
+      leaders: Array<{ athlete: { id: string; displayName: string }; team: { abbreviation: string } }>
+    }>
+
+    // Extract top players by category
+    const passingCat = categories.find((c) => c.name === "passingYards")
+    const rushingCat = categories.find((c) => c.name === "rushingYards")
+    const receivingCat = categories.find((c) => c.name === "receivingYards")
+
+    const topQBs = (passingCat?.leaders ?? []).slice(0, 5)
+    const topRBs = (rushingCat?.leaders ?? []).slice(0, 5)
+    const topWRs = (receivingCat?.leaders ?? []).slice(0, 5)
 
     const allStreaks: StreakResult[] = []
 
     // Analyze all positions in parallel
-    const qbPromises = topQBIds.map(async (playerId) => {
+    const qbPromises = topQBs.map(async (leader) => {
       try {
-        const gameLogs = await getPlayerGameLog(playerId)
+        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
         if (gameLogs.length < 4) return []
-        return detectPassingStreaks(playerId, "QB Player", "NFL", gameLogs)
+        return detectPassingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
       } catch (err) {
         console.error(`[NFL Streaks] Failed to fetch QB game log:`, err)
         return []
       }
     })
 
-    const rbPromises = topRBIds.map(async (playerId) => {
+    const rbPromises = topRBs.map(async (leader) => {
       try {
-        const gameLogs = await getPlayerGameLog(playerId)
+        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
         if (gameLogs.length < 4) return []
-        return detectRushingStreaks(playerId, "RB Player", "NFL", gameLogs)
+        return detectRushingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
       } catch (err) {
         console.error(`[NFL Streaks] Failed to fetch RB game log:`, err)
         return []
       }
     })
 
-    const wrPromises = topWRIds.map(async (playerId) => {
+    const wrPromises = topWRs.map(async (leader) => {
       try {
-        const gameLogs = await getPlayerGameLog(playerId)
+        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
         if (gameLogs.length < 4) return []
-        return detectReceivingStreaks(playerId, "WR Player", "NFL", gameLogs)
+        return detectReceivingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
       } catch (err) {
         console.error(`[NFL Streaks] Failed to fetch WR game log:`, err)
         return []

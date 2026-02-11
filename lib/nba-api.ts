@@ -5,10 +5,17 @@
  */
 
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
+const LEADERS_BASE = "https://site.api.espn.com/apis/site/v3/sports/basketball/nba"
 
 async function espnFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { next: { revalidate: 43200 } })
   if (!res.ok) throw new Error(`ESPN NBA ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
+async function espnFetchV3<T>(path: string): Promise<T> {
+  const res = await fetch(`${LEADERS_BASE}${path}`, { next: { revalidate: 3600 } })
+  if (!res.ok) throw new Error(`ESPN NBA v3 ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
 
@@ -154,8 +161,29 @@ export interface NBALeaderCategory {
 }
 
 export async function getNBALeaders(): Promise<NBALeaderCategory[]> {
-  const raw = await espnFetch<{ leaders: NBALeaderCategory[] }>("/leaders")
-  return raw.leaders ?? []
+  const raw = await espnFetchV3<{ leaders: { categories: Array<{ name: string; displayName?: string; leaders: Array<Record<string, unknown>> }> } }>("/leaders")
+  const categories = raw.leaders?.categories ?? []
+
+  // Normalize v3 response to match expected shape
+  return categories.map((cat) => ({
+    name: cat.name,
+    displayName: cat.displayName ?? cat.name,
+    leaders: (cat.leaders ?? []).map((l) => {
+      const athlete = (l.athlete ?? {}) as Record<string, unknown>
+      const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
+      const position = (athlete.position ?? {}) as Record<string, unknown>
+      return {
+        athlete: {
+          id: String(athlete.id ?? ""),
+          displayName: (athlete.displayName as string) ?? "",
+          position: { abbreviation: (position.abbreviation as string) ?? "" },
+          team: { abbreviation: (team.abbreviation as string) ?? "" },
+        },
+        value: (l.value as number) ?? 0,
+        displayValue: (l.displayValue as string) ?? "0",
+      }
+    }),
+  }))
 }
 
 /* ------------------------------------------------------------------ */
