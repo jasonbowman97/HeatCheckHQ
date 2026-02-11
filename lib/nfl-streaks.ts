@@ -324,54 +324,56 @@ export async function getNFLStreakTrends(): Promise<Trend[]> {
     const rushingCat = categories.find((c) => c.name === "rushingYards")
     const receivingCat = categories.find((c) => c.name === "receivingYards")
 
-    const topQBs = (passingCat?.leaders ?? []).slice(0, 5)
-    const topRBs = (rushingCat?.leaders ?? []).slice(0, 5)
-    const topWRs = (receivingCat?.leaders ?? []).slice(0, 5)
+    // Scan top 15 per position (expanded from 5)
+    const topQBs = (passingCat?.leaders ?? []).slice(0, 15)
+    const topRBs = (rushingCat?.leaders ?? []).slice(0, 15)
+    const topWRs = (receivingCat?.leaders ?? []).slice(0, 15)
+
+    console.log(`[NFL Streaks] Scanning ${topQBs.length} QBs, ${topRBs.length} RBs, ${topWRs.length} WRs`)
 
     const allStreaks: StreakResult[] = []
+    const BATCH = 10
 
-    // Analyze all positions in parallel
-    const qbPromises = topQBs.map(async (leader) => {
-      try {
-        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
-        if (gameLogs.length < 4) return []
-        return detectPassingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
-      } catch (err) {
-        console.error(`[NFL Streaks] Failed to fetch QB game log:`, err)
-        return []
-      }
-    })
+    // Process QBs in batches
+    for (let i = 0; i < topQBs.length; i += BATCH) {
+      const batch = topQBs.slice(i, i + BATCH)
+      const results = await Promise.all(batch.map(async (leader) => {
+        try {
+          const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
+          if (gameLogs.length < 4) return []
+          return detectPassingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
+        } catch { return [] }
+      }))
+      allStreaks.push(...results.flat())
+    }
 
-    const rbPromises = topRBs.map(async (leader) => {
-      try {
-        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
-        if (gameLogs.length < 4) return []
-        return detectRushingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
-      } catch (err) {
-        console.error(`[NFL Streaks] Failed to fetch RB game log:`, err)
-        return []
-      }
-    })
+    // Process RBs in batches
+    for (let i = 0; i < topRBs.length; i += BATCH) {
+      const batch = topRBs.slice(i, i + BATCH)
+      const results = await Promise.all(batch.map(async (leader) => {
+        try {
+          const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
+          if (gameLogs.length < 4) return []
+          return detectRushingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
+        } catch { return [] }
+      }))
+      allStreaks.push(...results.flat())
+    }
 
-    const wrPromises = topWRs.map(async (leader) => {
-      try {
-        const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
-        if (gameLogs.length < 4) return []
-        return detectReceivingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
-      } catch (err) {
-        console.error(`[NFL Streaks] Failed to fetch WR game log:`, err)
-        return []
-      }
-    })
+    // Process WRs in batches
+    for (let i = 0; i < topWRs.length; i += BATCH) {
+      const batch = topWRs.slice(i, i + BATCH)
+      const results = await Promise.all(batch.map(async (leader) => {
+        try {
+          const gameLogs = await getNFLPlayerGameLog(leader.athlete.id)
+          if (gameLogs.length < 4) return []
+          return detectReceivingStreaks(leader.athlete.id, leader.athlete.displayName, leader.team?.abbreviation ?? "NFL", gameLogs)
+        } catch { return [] }
+      }))
+      allStreaks.push(...results.flat())
+    }
 
-    // Wait for all positions in parallel
-    const [qbResults, rbResults, wrResults] = await Promise.all([
-      Promise.all(qbPromises),
-      Promise.all(rbPromises),
-      Promise.all(wrPromises)
-    ])
-
-    allStreaks.push(...qbResults.flat(), ...rbResults.flat(), ...wrResults.flat())
+    console.log(`[NFL Streaks] Found ${allStreaks.length} total streaks`)
 
     // Convert to Trend format
     const trends: Trend[] = allStreaks.map((streak, idx) => ({
@@ -394,7 +396,7 @@ export async function getNFLStreakTrends(): Promise<Trend[]> {
     const hotTrends = trends.filter((t) => t.type === "hot").sort((a, b) => b.streakLength - a.streakLength)
     const coldTrends = trends.filter((t) => t.type === "cold").sort((a, b) => b.streakLength - a.streakLength)
 
-    return [...hotTrends.slice(0, 12), ...coldTrends.slice(0, 6)]
+    return [...hotTrends.slice(0, 20), ...coldTrends.slice(0, 10)]
   } catch (err) {
     console.error("[NFL Streaks] Failed to generate trends:", err)
     return []

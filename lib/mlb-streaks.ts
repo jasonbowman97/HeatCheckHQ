@@ -1,75 +1,69 @@
 /**
  * MLB Streak Detection
- * Fetches player leaders and analyzes their game logs to find active streaks.
+ * Scans ALL rostered MLB players (not just leaders) to find active streaks.
+ * Uses batched concurrency to avoid overwhelming the MLB Stats API.
  */
 import "server-only"
 
-import { getPlayerGameLog } from "./espn/mlb"
-import { getBattingLeaders, getPitchingLeaders } from "./mlb-api"
+import { getPlayerGameLog, getAllMLBBatters } from "./espn/mlb"
+import { getPitchingLeaders } from "./mlb-api"
 import { detectHittingStreaks, detectPitchingStreaks, type StreakResult } from "./streak-detector"
 import type { Trend } from "./trends-types"
 
+const BATCH_SIZE = 15
+
 /**
- * Fetch MLB trends based on active player streaks (not just season totals)
- * This analyzes recent game logs to find hot/cold performers.
+ * Fetch MLB trends based on active player streaks across ALL rostered players.
+ * Scans every position player via team rosters + top 40 pitchers.
  */
 export async function getMLBStreakTrends(): Promise<Trend[]> {
   try {
-    const [batters, pitchers] = await Promise.all([
-      getBattingLeaders(),
+    // Fetch all rostered batters + pitching leaders in parallel
+    const [allBatters, pitchers] = await Promise.all([
+      getAllMLBBatters(),
       getPitchingLeaders(),
     ])
 
+    console.log(`[MLB Streaks] Scanning ${allBatters.length} batters + ${Math.min(pitchers.length, 40)} pitchers`)
+
     const allStreaks: StreakResult[] = []
 
-    // Analyze top 30 batters for streaks - PARALLEL FETCHING
-    const topBatters = batters.slice(0, 30)
-    const batterPromises = topBatters.map(async (batter) => {
-      try {
-        const gameLogs = await getPlayerGameLog(String(batter.id))
-        if (gameLogs.length < 5) return [] // Need at least 5 games
+    // Analyze ALL rostered batters in batches
+    for (let i = 0; i < allBatters.length; i += BATCH_SIZE) {
+      const batch = allBatters.slice(i, i + BATCH_SIZE)
+      const batchResults = await Promise.all(
+        batch.map(async (batter) => {
+          try {
+            const gameLogs = await getPlayerGameLog(batter.id)
+            if (gameLogs.length < 5) return []
+            return detectHittingStreaks(batter.id, batter.name, batter.team, batter.position, gameLogs)
+          } catch {
+            return []
+          }
+        })
+      )
+      allStreaks.push(...batchResults.flat())
+    }
 
-        return detectHittingStreaks(
-          String(batter.id),
-          batter.name,
-          batter.team,
-          batter.pos,
-          gameLogs
-        )
-      } catch (err) {
-        console.error(`[MLB Streaks] Failed to fetch game log for ${batter.name}:`, err)
-        return []
-      }
-    })
+    // Analyze top 40 pitchers in batches
+    const topPitchers = pitchers.slice(0, 40)
+    for (let i = 0; i < topPitchers.length; i += BATCH_SIZE) {
+      const batch = topPitchers.slice(i, i + BATCH_SIZE)
+      const batchResults = await Promise.all(
+        batch.map(async (pitcher) => {
+          try {
+            const gameLogs = await getPlayerGameLog(String(pitcher.id))
+            if (gameLogs.length < 3) return []
+            return detectPitchingStreaks(String(pitcher.id), pitcher.name, pitcher.team, "SP", gameLogs)
+          } catch {
+            return []
+          }
+        })
+      )
+      allStreaks.push(...batchResults.flat())
+    }
 
-    // Analyze top 20 pitchers for streaks - PARALLEL FETCHING
-    const topPitchers = pitchers.slice(0, 20)
-    const pitcherPromises = topPitchers.map(async (pitcher) => {
-      try {
-        const gameLogs = await getPlayerGameLog(String(pitcher.id))
-        if (gameLogs.length < 3) return [] // Need at least 3 games
-
-        return detectPitchingStreaks(
-          String(pitcher.id),
-          pitcher.name,
-          pitcher.team,
-          "SP",
-          gameLogs
-        )
-      } catch (err) {
-        console.error(`[MLB Streaks] Failed to fetch game log for ${pitcher.name}:`, err)
-        return []
-      }
-    })
-
-    // Wait for all in parallel
-    const [batterResults, pitcherResults] = await Promise.all([
-      Promise.all(batterPromises),
-      Promise.all(pitcherPromises)
-    ])
-
-    // Flatten results
-    allStreaks.push(...batterResults.flat(), ...pitcherResults.flat())
+    console.log(`[MLB Streaks] Found ${allStreaks.length} total streaks`)
 
     // Convert streak results to Trend format
     const trends: Trend[] = allStreaks.map((streak, idx) => ({
@@ -92,8 +86,8 @@ export async function getMLBStreakTrends(): Promise<Trend[]> {
     const hotTrends = trends.filter((t) => t.type === "hot").sort((a, b) => b.streakLength - a.streakLength)
     const coldTrends = trends.filter((t) => t.type === "cold").sort((a, b) => b.streakLength - a.streakLength)
 
-    // Return top 12 hot + top 6 cold
-    return [...hotTrends.slice(0, 12), ...coldTrends.slice(0, 6)]
+    // Return top 20 hot + top 10 cold (expanded from 12+6 since we scan more players)
+    return [...hotTrends.slice(0, 20), ...coldTrends.slice(0, 10)]
   } catch (err) {
     console.error("[MLB Streaks] Failed to generate trends:", err)
     return []

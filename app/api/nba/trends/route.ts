@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getNBALeaders } from "@/lib/nba-api"
+import { getNBAStreakTrends } from "@/lib/nba-streaks"
 import { buildTrends } from "@/lib/trends-builder"
 
 export const revalidate = 3600
@@ -14,7 +15,11 @@ const CATEGORY_MAP: Record<string, { name: string; statLabel: string; hotPrefix:
 
 export async function GET() {
   try {
-    const espnCategories = await getNBALeaders()
+    // Fetch both leader-based trends and game-log streak trends in parallel
+    const [espnCategories, streakTrends] = await Promise.all([
+      getNBALeaders(),
+      getNBAStreakTrends().catch(() => []),
+    ])
 
     const categoryInputs = Object.entries(CATEGORY_MAP)
       .map(([espnName, config]) => {
@@ -34,8 +39,29 @@ export async function GET() {
       })
       .filter(Boolean) as Parameters<typeof buildTrends>[0]
 
-    const trends = buildTrends(categoryInputs, "nba")
-    return NextResponse.json({ trends, source: "live" })
+    const leaderTrends = buildTrends(categoryInputs, "nba")
+
+    // Merge: streak trends first (from all players), then leader-based trends
+    // De-duplicate by player name + category
+    const seen = new Set<string>()
+    const merged = []
+
+    for (const t of streakTrends) {
+      const key = `${t.playerName}-${t.category}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(t)
+      }
+    }
+    for (const t of leaderTrends) {
+      const key = `${t.playerName}-${t.category}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(t)
+      }
+    }
+
+    return NextResponse.json({ trends: merged, source: "live" })
   } catch {
     return NextResponse.json({ trends: [], source: "error" }, { status: 200 })
   }
