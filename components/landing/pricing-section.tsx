@@ -8,39 +8,51 @@ const plans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Explore the dashboards and see the data.",
-    cta: "Create free account",
+    description: "Preview the dashboards with limited data.",
+    cta: "Get started free",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "1 sport (MLB, NBA, or NFL)", included: true },
-      { text: "Season-level overview stats", included: true },
-      { text: "5 dashboard views per day", included: true },
-      { text: "Basic trend alerts", included: true },
-      { text: "Full trend tracker access", included: false },
-      { text: "Pitch arsenal drill-downs", included: false },
-      { text: "H2H analysis & injury reports", included: false },
-      { text: "NRFI & first basket dashboards", included: false },
-      { text: "Custom date filtering", included: false },
+      { text: "NRFI, Weather & First Basket (no account)", included: true },
+      { text: "Defense vs Position & all Trends pages", included: true },
+      { text: "Full dashboard access", included: false },
+      { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
+      { text: "Head-to-Head & NFL Matchup", included: false },
     ],
   },
   {
-    name: "Pro",
+    name: "Pro Monthly",
     price: "$12",
     period: "/month",
-    description: "Unlimited access to every dashboard and feature.",
-    cta: "Start 7-day free trial",
+    description:
+      "Full access to every dashboard, trend, and insight across all sports.",
+    cta: "Get Pro",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
-      { text: "All 3 sports -- MLB, NBA, NFL", included: true },
-      { text: "All 12 dashboards, unlimited views", included: true },
-      { text: "Full hot & cold trend trackers", included: true },
-      { text: "Pitch arsenal drill-downs", included: true },
-      { text: "H2H analysis, momentum & injuries", included: true },
-      { text: "NRFI, first basket, and matchup tools", included: true },
-      { text: "Time-range & custom date filtering", included: true },
-      { text: "RHP/LHP and handedness splits", included: true },
-      { text: "Defense vs position breakdowns", included: true },
+      { text: "Everything in Free", included: true },
+      { text: "Hot Hitters, Hitting & Pitching Stats", included: true },
+      { text: "Head-to-Head & NFL Matchup", included: true },
+      { text: "All dashboards across MLB, NBA, NFL", included: true },
+      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Cancel anytime", included: true },
+    ],
+  },
+  {
+    name: "Pro Annual",
+    price: "$100",
+    period: "/year",
+    description:
+      "Same full access as monthly. Pay once, save $44 over 12 months.",
+    cta: "Get Pro Annual",
+    ctaVariant: "default" as const,
+    savings: "Save $44",
+    highlights: [
+      { text: "Everything in Pro Monthly", included: true },
+      { text: "Just $8.33/mo billed annually", included: true },
+      { text: "All dashboards across MLB, NBA, NFL", included: true },
+      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Cancel anytime", included: true },
+      { text: "Best value", included: true },
     ],
   },
 ]
@@ -55,16 +67,16 @@ export function PricingSection() {
               Pricing
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              Start free. Unlock everything for $12/mo.
+              Start free. Unlock everything with Pro.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              The free tier lets you explore the data. Go Pro to get full access to
-              all 12 dashboards and every filtering tool.
+              Preview the data for free, then go Pro for full access to every dashboard, filter,
+              and insight. Save with an annual plan.
             </p>
           </div>
         </FadeIn>
 
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
           {plans.map((plan, index) => (
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
@@ -79,6 +91,11 @@ export function PricingSection() {
                   Most Popular
                 </div>
               )}
+              {(plan as Record<string, unknown>).savings ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-primary-foreground">
+                  {String((plan as Record<string, unknown>).savings)}
+                </div>
+              ) : null}
 
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
@@ -116,7 +133,7 @@ export function PricingSection() {
                   size="lg"
                   asChild
                 >
-                  <Link href="/mlb/hitting-stats">{plan.cta}</Link>
+                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"}>{plan.cta}</Link>
                 </Button>
               </div>
               </div>

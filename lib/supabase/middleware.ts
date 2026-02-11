@@ -1,0 +1,43 @@
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
+            request.cookies.set(name, value),
+          )
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          )
+        },
+      },
+    },
+  )
+
+  // IMPORTANT: Do not run code between createServerClient and
+  // supabase.auth.getUser().
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // We don't redirect here — access control is handled at the page level
+  // with blurred previews and upgrade prompts. The middleware just
+  // refreshes the session token.
+
+  return supabaseResponse
+}

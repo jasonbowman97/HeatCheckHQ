@@ -33,6 +33,27 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
+  // Content Security Policy headers
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com",
+              "connect-src 'self' https://api.stripe.com https://*.supabase.co wss://*.supabase.co",
+              "frame-src 'self' https://js.stripe.com",
+              "img-src 'self' data: https:",
+              "style-src 'self' 'unsafe-inline'",
+            ].join('; '),
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig

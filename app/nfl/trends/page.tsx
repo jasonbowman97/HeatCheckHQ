@@ -4,8 +4,7 @@ import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { nflTrends, nflCategories } from "@/lib/nfl-trends-data"
 import { getNFLStreakTrends } from "@/lib/nfl-streaks"
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 43200
 
 export const metadata = {
   title: "HeatCheck HQ - NFL Active Streaks",
@@ -50,9 +49,6 @@ export default async function NFLTrendsPage() {
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
             <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Matchup
-            </Link>
-            <Link href="/nfl/redzone" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Redzone
             </Link>
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
               Trends

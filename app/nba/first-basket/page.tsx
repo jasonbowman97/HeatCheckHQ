@@ -41,7 +41,7 @@ export default function NBAFirstBasketPage() {
   const { data, isLoading } = useSWR<{ games: NBAScheduleGame[] }>(
     `/api/nba/schedule?date=${dateParam}`,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   const liveGamesList = useMemo(() => (data?.games?.length ? toLiveGames(data.games) : null), [data])
@@ -116,7 +116,7 @@ export default function NBAFirstBasketPage() {
           </div>
 
           {/* Time frame toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Range</span>
             <div className="flex rounded-lg border border-border overflow-hidden">
               {(

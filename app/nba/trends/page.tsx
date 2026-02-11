@@ -4,8 +4,7 @@ import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { nbaTrends, nbaCategories } from "@/lib/nba-trends-data"
 import { getNBAStreakTrends } from "@/lib/nba-streaks"
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 43200
 
 export const metadata = {
   title: "HeatCheck HQ - NBA Active Streaks",
@@ -50,6 +49,9 @@ export default async function NBATrendsPage() {
             </Link>
             <Link href="/nba/head-to-head" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               H2H
+            </Link>
+            <Link href="/nba/defense-vs-position" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Def vs Pos
             </Link>
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
               Trends

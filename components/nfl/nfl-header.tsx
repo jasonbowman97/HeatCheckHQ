@@ -37,12 +37,6 @@ export function NFLHeader() {
             Matchup
           </span>
           <Link
-            href="/nfl/redzone"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-          >
-            Redzone
-          </Link>
-          <Link
             href="/nfl/trends"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >

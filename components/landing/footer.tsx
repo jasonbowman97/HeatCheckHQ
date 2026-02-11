@@ -15,8 +15,8 @@ export function Footer() {
               <span className="text-sm font-semibold text-foreground">HeatCheck HQ</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Advanced sports analytics for MLB, NBA, and NFL. 12 dashboards.
-              100+ metrics. Updated daily.
+              Data-driven insight tools for MLB, NBA, and NFL.
+              Updated daily.
             </p>
           </div>
 
@@ -24,9 +24,10 @@ export function Footer() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">MLB</p>
             <div className="flex flex-col gap-2">
+              <Link href="/mlb/hot-hitters" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hot Hitters</Link>
               <Link href="/mlb/hitting-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hitting Stats</Link>
-              <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
               <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
+              <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
               <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>
@@ -37,6 +38,7 @@ export function Footer() {
             <div className="flex flex-col gap-2">
               <Link href="/nba/first-basket" className="text-xs text-muted-foreground hover:text-foreground transition-colors">First Basket</Link>
               <Link href="/nba/head-to-head" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Head-to-Head</Link>
+              <Link href="/nba/defense-vs-position" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Def vs Position</Link>
               <Link href="/nba/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // Rate limiting store (in-memory, consider Redis for production)
 const rateLimit = new Map<string, { count: number; resetTime: number }>()
@@ -31,21 +32,51 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count }
 }
 
-// Clean up old entries periodically
-setInterval(() => {
+// Clean up stale entries inline during rate limit checks
+function cleanupRateLimit() {
   const now = Date.now()
-  for (const [key, record] of rateLimit.entries()) {
-    if (now > record.resetTime) {
-      rateLimit.delete(key)
+  if (rateLimit.size > 1000) {
+    for (const [key, record] of rateLimit.entries()) {
+      if (now > record.resetTime) {
+        rateLimit.delete(key)
+      }
     }
   }
-}, RATE_LIMIT_WINDOW)
+}
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next()
+export async function middleware(request: NextRequest) {
+  // --- Supabase session refresh ---
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
+            request.cookies.set(name, value),
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          )
+        },
+      },
+    },
+  )
+
+  // Refresh session - must call getUser() to keep sessions alive
+  await supabase.auth.getUser()
+
+  const response = supabaseResponse
 
   // Apply rate limiting to API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    cleanupRateLimit()
     const key = getRateLimitKey(request)
     const { allowed, remaining } = checkRateLimit(key)
 
@@ -70,18 +101,18 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Security Headers
+  // Security Headers -- start from supabaseResponse headers to preserve cookies
   const headers = new Headers(response.headers)
 
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com",
-    "frame-src 'self' https://vercel.live",
+    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co",
+    "frame-src 'self' https://vercel.live https://js.stripe.com https://*.supabase.co",
     "media-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -128,7 +159,12 @@ export function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 200, headers })
   }
 
-  return NextResponse.next({ headers })
+  // Apply all security headers to the supabase response (preserving its cookies)
+  headers.forEach((value, key) => {
+    response.headers.set(key, value)
+  })
+
+  return response
 }
 
 export const config = {

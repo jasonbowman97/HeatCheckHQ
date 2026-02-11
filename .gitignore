@@ -6,9 +6,10 @@ instrumentation-client.js
 instrumentation-client.ts
 
 # Common ignores
-node_modules/
-.next/
+node_modules
+.next
 .env*.local
 .DS_Store
 build.log
 next-env.d.ts
+_backup

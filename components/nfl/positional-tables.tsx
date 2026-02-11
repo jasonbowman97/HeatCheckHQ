@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useMemo } from "react"
+import { ArrowUpDown } from "lucide-react"
 import type { PassingPlayer, RushingPlayer, ReceivingPlayer, GameLogEntry } from "@/lib/nfl-matchup-data"
 
 function GameLogChips({ logs, label }: { logs: GameLogEntry[]; label: "TDs" | "Att" | "Rec" }) {
@@ -37,6 +39,8 @@ interface SideBySideProps {
    Shared half-table used by every section.
    Using <table> guarantees columns stay aligned across all rows.
    ============================================================ */
+type SortCol = "col2" | "col3"
+
 function HalfTable({
   teamLabel,
   col2Header,
@@ -58,6 +62,26 @@ function HalfTable({
     gameLogs: GameLogEntry[]
   }[]
 }) {
+  const [sortCol, setSortCol] = useState<SortCol>("col2")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+
+  function handleSort(col: SortCol) {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"))
+    } else {
+      setSortCol(col)
+      setSortDir("desc")
+    }
+  }
+
+  const sorted = useMemo(() => {
+    return [...players].sort((a, b) => {
+      const av = a[sortCol]
+      const bv = b[sortCol]
+      return sortDir === "desc" ? bv - av : av - bv
+    })
+  }, [players, sortCol, sortDir])
+
   return (
     <div className="p-4 overflow-x-auto">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -70,10 +94,16 @@ function HalfTable({
               Player
             </th>
             <th className="text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pb-2 px-3 whitespace-nowrap w-[80px]">
-              {col2Header}
+              <button type="button" onClick={() => handleSort("col2")} className={`inline-flex items-center gap-1 transition-colors ${sortCol === "col2" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                {col2Header}
+                <ArrowUpDown className={`h-3 w-3 ${sortCol === "col2" ? "opacity-100" : "opacity-40"}`} />
+              </button>
             </th>
             <th className="text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pb-2 px-3 whitespace-nowrap w-[70px]">
-              {col3Header}
+              <button type="button" onClick={() => handleSort("col3")} className={`inline-flex items-center gap-1 transition-colors ${sortCol === "col3" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                {col3Header}
+                <ArrowUpDown className={`h-3 w-3 ${sortCol === "col3" ? "opacity-100" : "opacity-40"}`} />
+              </button>
             </th>
             <th className="text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pb-2 pl-4 whitespace-nowrap">
               {logHeader}
@@ -81,7 +111,7 @@ function HalfTable({
           </tr>
         </thead>
         <tbody>
-          {players.map((p) => (
+          {sorted.map((p) => (
             <tr key={p.name} className="border-b border-border/30 last:border-b-0">
               <td className="py-2.5 pr-4">
                 <div className="flex items-center gap-2">

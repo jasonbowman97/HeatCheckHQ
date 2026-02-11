@@ -4,13 +4,13 @@
  * No API key required.
  *
  * We cache at the route-handler level using Next.js
- * `export const revalidate = 3600` (once per hour).
+ * `export const revalidate = 43200` (twice per day).
  */
 
 const BASE = "https://statsapi.mlb.com/api/v1"
 
 async function mlbFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 3600 } })
+  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 43200 } })
   if (!res.ok) throw new Error(`MLB API ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
@@ -114,8 +114,9 @@ export interface BattingLeader {
 }
 
 export async function getBattingLeaders(): Promise<BattingLeader[]> {
+  const currentSeason = new Date().getFullYear()
   const raw = await mlbFetch<MLBStatsResponse>(
-    `/stats?stats=season&group=hitting&season=2025&sportId=1&limit=60&order=desc&sortStat=onBasePlusSlugging&fields=stats,splits,player,id,fullName,team,abbreviation,name,stat,gamesPlayed,atBats,runs,hits,doubles,triples,homeRuns,rbi,stolenBases,avg,obp,slg,ops,position,abbreviation`
+    `/stats?stats=season&group=hitting&season=${currentSeason}&sportId=1&limit=60&order=desc&sortStat=onBasePlusSlugging&fields=stats,splits,player,id,fullName,team,abbreviation,name,stat,gamesPlayed,atBats,runs,hits,doubles,triples,homeRuns,rbi,stolenBases,avg,obp,slg,ops,position,abbreviation`
   )
   const splits = raw.stats?.[0]?.splits ?? []
   return splits.map((s) => ({
@@ -163,8 +164,9 @@ export interface PitchingLeader {
 }
 
 export async function getPitchingLeaders(): Promise<PitchingLeader[]> {
+  const currentSeason = new Date().getFullYear()
   const raw = await mlbFetch<MLBStatsResponse>(
-    `/stats?stats=season&group=pitching&season=2025&sportId=1&limit=60&order=asc&sortStat=earnedRunAverage&fields=stats,splits,player,id,fullName,team,abbreviation,name,stat,wins,losses,era,gamesPlayed,gamesStarted,inningsPitched,strikeOuts,baseOnBalls,whip,avg,homeRuns,saves,position,abbreviation`
+    `/stats?stats=season&group=pitching&season=${currentSeason}&sportId=1&limit=60&order=asc&sortStat=earnedRunAverage&fields=stats,splits,player,id,fullName,team,abbreviation,name,stat,wins,losses,era,gamesPlayed,gamesStarted,inningsPitched,strikeOuts,baseOnBalls,whip,avg,homeRuns,saves,position,abbreviation`
   )
   const splits = raw.stats?.[0]?.splits ?? []
   return splits.map((s) => ({

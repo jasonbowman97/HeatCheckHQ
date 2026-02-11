@@ -84,7 +84,7 @@ export default function NrfiPage() {
 
   const { data, isLoading } = useSWR<{ games: APIGame[]; date: string }>(`/api/mlb/schedule?date=${dateParam}`, fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000,
+    dedupingInterval: 43200000,
   })
 
   const liveNrfi = useMemo(() => {

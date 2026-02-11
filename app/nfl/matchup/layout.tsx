@@ -1,3 +1,4 @@
+import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
@@ -20,5 +21,5 @@ export default function MatchupLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <ProtectedPage pathname="/nfl/matchup">{children}</ProtectedPage>
 }

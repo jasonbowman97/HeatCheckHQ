@@ -4,8 +4,7 @@ import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { mlbTrends, mlbCategories } from "@/lib/mlb-trends-data"
 import { getMLBStreakTrends } from "@/lib/mlb-streaks"
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 43200
 
 export const metadata = {
   title: "HeatCheck HQ - MLB Active Streaks",
@@ -42,14 +41,17 @@ export default async function MLBTrendsPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-end">
+            <Link href="/mlb/hot-hitters" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Hot Hitters
+            </Link>
             <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Hitting Stats
             </Link>
-            <Link href="/mlb/nrfi" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NRFI
-            </Link>
             <Link href="/mlb/pitching-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Pitching Stats
+            </Link>
+            <Link href="/mlb/nrfi" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              NRFI
             </Link>
             <Link href="/mlb/weather" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Weather

@@ -133,7 +133,7 @@ export function WeatherPageClient() {
 
   const { data, isLoading } = useSWR<{ games: APIGame[]; date: string }>(`/api/mlb/schedule?date=${dateParam}`, fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000, // 1 hour
+    dedupingInterval: 43200000, // 12 hours
   })
 
   // Transform live data or fall back to static

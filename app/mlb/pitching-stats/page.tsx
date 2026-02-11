@@ -42,7 +42,7 @@ export default function PitchingStatsPage() {
 
   const { data, isLoading } = useSWR<{ leaders: PitchingLeader[] }>("/api/mlb/pitching", fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000,
+    dedupingInterval: 43200000,
   })
 
   const isLive = !!data?.leaders?.length
@@ -103,17 +103,17 @@ export default function PitchingStatsPage() {
           <>
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Hand:</span>
-                <div className="flex items-center rounded-lg border border-border bg-card overflow-hidden">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hand</span>
+                <div className="flex rounded-lg border border-border overflow-hidden">
                   {(["ALL", "L", "R"] as const).map((h) => (
                     <button
                       key={h}
                       onClick={() => setHandFilter(h)}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                         handFilter === h
                           ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                          : "bg-card text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {h === "ALL" ? "All" : `${h}HP`}

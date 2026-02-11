@@ -114,7 +114,7 @@ export default function NFLMatchupPage() {
   const { data: scheduleData, isLoading: scheduleLoading } = useSWR<{ games: GameOption[] }>(
     "/api/nfl/schedule",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   const liveGames = useMemo<GameOption[]>(() => scheduleData?.games ?? [], [scheduleData])
@@ -130,7 +130,7 @@ export default function NFLMatchupPage() {
   const { data: matchupData, isLoading: matchupLoading } = useSWR<{ matchup: LiveMatchup | null }>(
     hasLiveGames ? matchupUrl : null,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Determine which matchup to display

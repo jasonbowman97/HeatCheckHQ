@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type { Trend } from "@/lib/trends-types"
 import { TrendCard } from "./trend-card"
-import { TrendingUp, TrendingDown } from "lucide-react"
+import { TrendingUp, TrendingDown, ArrowUpDown } from "lucide-react"
+
+type SortOption = "streak" | "name"
 
 interface TrendsDashboardProps {
   trends: Trend[]
@@ -16,20 +18,42 @@ interface TrendsDashboardProps {
 export function TrendsDashboard({ trends, categories, title, subtitle, isLive }: TrendsDashboardProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "hot" | "cold">("all")
   const [activeCategory, setActiveCategory] = useState<string>("All")
+  const [activeTeam, setActiveTeam] = useState<string>("All")
+  const [sortBy, setSortBy] = useState<SortOption>("streak")
 
-  const filtered = trends.filter((t) => {
-    if (activeFilter !== "all" && t.type !== activeFilter) return false
-    if (activeCategory !== "All" && t.category !== activeCategory) return false
-    return true
-  })
+  // Derive unique teams from the data
+  const teams = useMemo(() => {
+    const set = new Set(trends.map((t) => t.team))
+    return Array.from(set).sort()
+  }, [trends])
+
+  const filtered = useMemo(() => {
+    let result = trends.filter((t) => {
+      if (activeFilter !== "all" && t.type !== activeFilter) return false
+      if (activeCategory !== "All" && t.category !== activeCategory) return false
+      if (activeTeam !== "All" && t.team !== activeTeam) return false
+      return true
+    })
+
+    // Sort
+    if (sortBy === "streak") {
+      result = [...result].sort((a, b) => b.streakLength - a.streakLength)
+    } else {
+      result = [...result].sort((a, b) => a.playerName.localeCompare(b.playerName))
+    }
+
+    return result
+  }, [trends, activeFilter, activeCategory, activeTeam, sortBy])
 
   const hotCount = trends.filter((t) => {
     if (activeCategory !== "All" && t.category !== activeCategory) return false
+    if (activeTeam !== "All" && t.team !== activeTeam) return false
     return t.type === "hot"
   }).length
 
   const coldCount = trends.filter((t) => {
     if (activeCategory !== "All" && t.category !== activeCategory) return false
+    if (activeTeam !== "All" && t.team !== activeTeam) return false
     return t.type === "cold"
   }).length
 
@@ -106,6 +130,30 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
             </button>
           ))}
         </div>
+
+        {/* Team filter */}
+        {teams.length > 1 && (
+          <select
+            value={activeTeam}
+            onChange={(e) => setActiveTeam(e.target.value)}
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="All">All Teams</option>
+            {teams.map((team) => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Sort toggle */}
+        <button
+          type="button"
+          onClick={() => setSortBy((s) => (s === "streak" ? "name" : "streak"))}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          {sortBy === "streak" ? "Streak Length" : "Player Name"}
+        </button>
       </div>
 
       {/* Count label */}

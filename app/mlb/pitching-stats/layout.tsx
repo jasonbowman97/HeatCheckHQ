@@ -1,3 +1,4 @@
+import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
@@ -21,5 +22,5 @@ export default function PitchingStatsLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <ProtectedPage pathname="/mlb/pitching-stats">{children}</ProtectedPage>
 }

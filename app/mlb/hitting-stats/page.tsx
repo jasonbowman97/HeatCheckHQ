@@ -52,7 +52,7 @@ export default function Page() {
   // Live data
   const { data: liveData } = useSWR<{ leaders: BattingLeader[] }>("/api/mlb/batting", fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 3600000,
+    dedupingInterval: 43200000,
   })
   const livePlayers = useMemo(
     () => (liveData?.leaders?.length ? transformBattingLeaders(liveData.leaders) : null),

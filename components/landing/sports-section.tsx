@@ -1,39 +1,42 @@
-import { Activity, Crosshair, Flame, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { FadeIn } from "@/components/ui/fade-in"
+import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
 
 const sports = [
   {
     name: "MLB",
     label: "Baseball",
-    icon: Activity,
+    icon: BaseballIcon,
     accentClass: "text-primary bg-primary/10",
     description:
       "Pitcher arsenals, batter vs. pitcher matchups, NRFI probabilities, and strikeout projections. Drill into every pitch type with heatmap-colored stat breakdowns.",
     dashboards: [
+      { name: "Hot Hitters", href: "/mlb/hot-hitters", description: "Active hitting, XBH, and HR streaks across all players" },
       { name: "Hitting Stats", href: "/mlb/hitting-stats", description: "Batter matchups, exit velo, barrel rates, platoon splits" },
-      { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
+      { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
       { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },
     ],
   },
   {
     name: "NBA",
     label: "Basketball",
-    icon: Crosshair,
+    icon: BasketballIcon,
     accentClass: "text-accent bg-accent/10",
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
     dashboards: [
       { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank by player" },
       { name: "Head-to-Head", href: "/nba/head-to-head", description: "Team H2H, momentum, defense vs position, injuries" },
+      { name: "Def vs Position", href: "/nba/defense-vs-position", description: "Which teams give up the most stats to each position" },
       { name: "Trends", href: "/nba/trends", description: "Scoring runs, 3PT streaks, rebound and assist surges" },
     ],
   },
   {
     name: "NFL",
     label: "Football",
-    icon: Flame,
+    icon: FootballIcon,
     accentClass: "text-primary bg-primary/10",
     description:
       "Full team stat comparisons with league rankings, side-by-side passing, rushing, and receiving breakdowns with recent game log chips.",
@@ -54,11 +57,11 @@ export function SportsSection() {
               Dashboards
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              9 dashboards. 3 trend trackers. Zero fluff.
+              Purpose-built dashboards for every sport
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Every sport gets purpose-built dashboards tailored to its unique
-              data points and the edges that actually matter.
+              Each sport gets its own set of analytics tools tailored to the data points and
+              insights that matter most.
             </p>
           </div>
         </FadeIn>
