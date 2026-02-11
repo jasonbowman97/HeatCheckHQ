@@ -259,6 +259,73 @@ export async function getNFLPlayerOverview(playerId: string): Promise<NFLPlayerS
 }
 
 /* ------------------------------------------------------------------ */
+/*  Team Statistics                                                     */
+/* ------------------------------------------------------------------ */
+
+export interface NFLTeamStats {
+  pointsScored: number
+  pointsScoredRank: number
+  pointsAllowed: number
+  pointsAllowedRank: number
+  passYards: number
+  passYardsRank: number
+  passYardsAllowed: number
+  passYardsAllowedRank: number
+  rushingYards: number
+  rushingYardsRank: number
+  rushingYardsAllowed: number
+  rushingYardsAllowedRank: number
+}
+
+export async function getNFLTeamStats(teamId: string): Promise<NFLTeamStats | null> {
+  try {
+    const raw = await espnFetch<{
+      results: {
+        stats: {
+          categories: {
+            name: string
+            stats: { name: string; displayValue: string; value: number; rank?: number; rankDisplayValue?: string }[]
+          }[]
+        }
+      }
+    }>(`/teams/${teamId}/statistics`)
+
+    const cats = raw.results?.stats?.categories ?? []
+    const findStat = (catName: string, statName: string) => {
+      const cat = cats.find((c) => c.name.toLowerCase().includes(catName.toLowerCase()))
+      return cat?.stats?.find((s) => s.name === statName)
+    }
+
+    // Offensive stats
+    const totalPts = findStat("scoring", "totalPoints") ?? findStat("scoring", "totalPointsPerGame")
+    const passYds = findStat("passing", "netPassingYardsPerGame") ?? findStat("passing", "netPassingYards")
+    const rushYds = findStat("rushing", "rushingYardsPerGame") ?? findStat("rushing", "rushingYards")
+
+    // Defensive stats (opponent categories)
+    const ptsAllowed = findStat("scoring", "pointsAgainst") ?? findStat("defensive", "pointsAgainst")
+    const passYdsAllowed = findStat("defensive", "netPassingYardsAllowed") ?? findStat("passing", "opponentNetPassingYards")
+    const rushYdsAllowed = findStat("defensive", "rushingYardsAllowed") ?? findStat("rushing", "opponentRushingYards")
+
+    return {
+      pointsScored: Math.round((totalPts?.value ?? 0) * 10) / 10,
+      pointsScoredRank: totalPts?.rank ?? 0,
+      pointsAllowed: Math.round((ptsAllowed?.value ?? 0) * 10) / 10,
+      pointsAllowedRank: ptsAllowed?.rank ?? 0,
+      passYards: Math.round((passYds?.value ?? 0) * 10) / 10,
+      passYardsRank: passYds?.rank ?? 0,
+      passYardsAllowed: Math.round((passYdsAllowed?.value ?? 0) * 10) / 10,
+      passYardsAllowedRank: passYdsAllowed?.rank ?? 0,
+      rushingYards: Math.round((rushYds?.value ?? 0) * 10) / 10,
+      rushingYardsRank: rushYds?.rank ?? 0,
+      rushingYardsAllowed: Math.round((rushYdsAllowed?.value ?? 0) * 10) / 10,
+      rushingYardsAllowedRank: rushYdsAllowed?.rank ?? 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Build Full Matchup from Live Data                                  */
 /* ------------------------------------------------------------------ */
 
@@ -270,6 +337,7 @@ export interface LiveMatchupTeam {
   passers: NFLPlayerSeasonStats[]
   rushers: NFLPlayerSeasonStats[]
   receivers: NFLPlayerSeasonStats[]
+  teamStats?: NFLTeamStats | null
 }
 
 export interface LiveMatchup {
@@ -282,7 +350,11 @@ export interface LiveMatchup {
 
 async function buildTeamMatchup(teamId: string): Promise<LiveMatchupTeam | null> {
   try {
-    const roster = await getNFLTeamRoster(teamId)
+    // Fetch roster and team stats in parallel
+    const [roster, teamStats] = await Promise.all([
+      getNFLTeamRoster(teamId),
+      getNFLTeamStats(teamId).catch(() => null),
+    ])
     if (!roster.length) return null
 
     // Pick key starters by position (ESPN lists them roughly by depth chart)
@@ -306,6 +378,7 @@ async function buildTeamMatchup(teamId: string): Promise<LiveMatchupTeam | null>
       passers: stats.filter((s) => s.passing && s.passing.yards > 0),
       rushers: stats.filter((s) => s.rushing && s.rushing.yards > 0),
       receivers: stats.filter((s) => s.receiving && s.receiving.yards > 0),
+      teamStats,
     }
   } catch {
     return null

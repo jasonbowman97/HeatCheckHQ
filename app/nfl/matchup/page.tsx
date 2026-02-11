@@ -55,7 +55,7 @@ function liveToMatchup(live: LiveMatchup): NFLMatchup {
     })
   }
 
-  const blankStats = {
+  const fallbackStats = {
     pointsScored: 0, pointsScoredRank: 0,
     pointsAllowed: 0, pointsAllowedRank: 0,
     passYards: 0, passYardsRank: 0,
@@ -72,7 +72,7 @@ function liveToMatchup(live: LiveMatchup): NFLMatchup {
       name: live.awayTeam.name,
       abbreviation: live.awayTeam.abbreviation,
       spread: "--",
-      stats: blankStats,
+      stats: live.awayTeam.teamStats ?? fallbackStats,
       passing: buildPassers(live.awayTeam),
       rushing: buildRushers(live.awayTeam),
       receiving: buildReceivers(live.awayTeam),
@@ -81,7 +81,7 @@ function liveToMatchup(live: LiveMatchup): NFLMatchup {
       name: live.homeTeam.name,
       abbreviation: live.homeTeam.abbreviation,
       spread: "--",
-      stats: blankStats,
+      stats: live.homeTeam.teamStats ?? fallbackStats,
       passing: buildPassers(live.homeTeam),
       rushing: buildRushers(live.homeTeam),
       receiving: buildReceivers(live.homeTeam),
@@ -230,13 +230,11 @@ export default function NFLMatchupPage() {
           </p>
         </div>
 
-        {/* Team Stats Comparison (only for static data which includes team stats) */}
-        {!isLive && (
-          <TeamStatsComparison
-            away={displayMatchup.away}
-            home={displayMatchup.home}
-          />
-        )}
+        {/* Team Stats Comparison */}
+        <TeamStatsComparison
+          away={displayMatchup.away}
+          home={displayMatchup.home}
+        />
 
         {/* Loading state for matchup data */}
         {matchupLoading && (
