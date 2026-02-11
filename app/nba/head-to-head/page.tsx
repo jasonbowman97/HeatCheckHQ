@@ -81,17 +81,26 @@ interface H2HApiData {
   recentMeetings: { date: string; awayScore: number; homeScore: number; total: number; winner: string }[]
 }
 
+type DvpRank = { pg: number; sg: number; sf: number; pf: number; c: number }
+
+// BettingPros uses slightly different abbreviations for a few teams
+const ESPN_TO_BP: Record<string, string> = { UTAH: "UTH", GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP", WSH: "WAS" }
+function bpAbbr(espn: string) { return ESPN_TO_BP[espn] ?? espn }
+
 function espnToH2HGames(
   espnGames: NBAScheduleGame[],
   summaries: Record<string, NBATeamSummary>,
   h2hData: Record<string, H2HApiData | null>,
   lastRecords: Record<string, LastRecord>,
+  dvpRankings: Record<string, DvpRank>,
 ): NBAGame[] {
   return espnGames.map((g) => {
     const time = new Date(g.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
     const awaySummary = summaries[g.awayTeam.id]
     const homeSummary = summaries[g.homeTeam.id]
     const h2h = h2hData[g.id]
+    const awayDvp = dvpRankings[bpAbbr(g.awayTeam.abbreviation)]
+    const homeDvp = dvpRankings[bpAbbr(g.homeTeam.abbreviation)]
 
     return {
       id: g.id,
@@ -109,8 +118,8 @@ function espnToH2HGames(
         : { record: "N/A", awayAvgPts: 0, homeAvgPts: 0, avgTotal: 0, margin: "N/A", recentMeetings: [] },
       awayMomentum: buildMomentum(awaySummary, lastRecords[g.awayTeam.id]),
       homeMomentum: buildMomentum(homeSummary, lastRecords[g.homeTeam.id]),
-      awayDefense: { ...emptyDefense },
-      homeDefense: { ...emptyDefense },
+      awayDefense: awayDvp ?? { ...emptyDefense },
+      homeDefense: homeDvp ?? { ...emptyDefense },
     }
   })
 }
@@ -121,12 +130,13 @@ export default function NBAH2HPage() {
     summaries: Record<string, NBATeamSummary>
     h2hData: Record<string, H2HApiData | null>
     lastRecords: Record<string, LastRecord>
+    dvpRankings: Record<string, DvpRank>
   }>("/api/nba/h2h", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
 
-  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {}) : null), [data])
+  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {}, data.dvpRankings ?? {}) : null), [data])
 
   // Merge: use live games for the matchup selector but fall back to static for detailed stats
   const allGames = liveGames ?? staticGames
