@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server"
 import { getBattingLeaders, getPitchingLeaders } from "@/lib/mlb-api"
+import { getMLBStreakTrends } from "@/lib/mlb-streaks"
 import { buildTrends } from "@/lib/trends-builder"
 
 export const revalidate = 43200
 
 export async function GET() {
   try {
-    const [batters, pitchers] = await Promise.all([getBattingLeaders(), getPitchingLeaders()])
+    // Fetch both leader-based trends and game-log streak trends in parallel
+    const [batters, pitchers, streakTrends] = await Promise.all([
+      getBattingLeaders(),
+      getPitchingLeaders(),
+      getMLBStreakTrends().catch(() => []),
+    ])
 
-    const trends = buildTrends(
+    const leaderTrends = buildTrends(
       [
         {
           config: { name: "Hitting", statLabel: "AVG", hotPrefix: "Batting", coldPrefix: "Slumping at" },
@@ -42,7 +48,26 @@ export async function GET() {
       "mlb"
     )
 
-    return NextResponse.json({ trends, source: "live" })
+    // Merge: streak trends first (from all rostered players), then leader-based
+    const seen = new Set<string>()
+    const merged = []
+
+    for (const t of streakTrends) {
+      const key = `${t.playerName}-${t.category}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(t)
+      }
+    }
+    for (const t of leaderTrends) {
+      const key = `${t.playerName}-${t.category}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(t)
+      }
+    }
+
+    return NextResponse.json({ trends: merged, source: "live" })
   } catch {
     return NextResponse.json({ trends: [], source: "error" }, { status: 200 })
   }
