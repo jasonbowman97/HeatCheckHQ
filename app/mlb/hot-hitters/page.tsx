@@ -26,7 +26,7 @@ export default function HotHittersPage() {
               Hot Hitters
             </span>
             <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Hitting Stats
+              Hitter vs Pitcher
             </Link>
             <Link href="/mlb/pitching-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Pitching Stats

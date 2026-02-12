@@ -123,7 +123,7 @@ export default function NrfiPage() {
               href="/mlb/hitting-stats"
               className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
             >
-              Hitting Stats
+              Hitter vs Pitcher
             </Link>
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
               NRFI

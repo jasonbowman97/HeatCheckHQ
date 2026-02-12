@@ -3,7 +3,7 @@
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
  * "free"    — Free account required (NBA Def vs Position, all Trends pages)
- * "pro"     — Paid $12/mo subscription (Hitting Stats, Pitching Stats, Hot Hitters, H2H, NFL Matchup)
+ * "pro"     — Paid $12/mo subscription (Hitter vs Pitcher, Pitching Stats, Hot Hitters, H2H, NFL Matchup)
  */
 
 export type AccessTier = "public" | "free" | "pro"
@@ -27,7 +27,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nfl/trends", tier: "free", label: "NFL Trends" },
 
   // Pro subscription required
-  { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitting Stats" },
+  { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },
   { pattern: "/mlb/pitching-stats", tier: "pro", label: "Pitching Stats" },
   { pattern: "/mlb/hot-hitters", tier: "pro", label: "Hot Hitters" },
   { pattern: "/nba/head-to-head", tier: "pro", label: "Head-to-Head" },

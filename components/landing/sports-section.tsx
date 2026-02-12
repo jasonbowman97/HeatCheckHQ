@@ -13,7 +13,7 @@ const sports = [
       "Pitcher arsenals, batter vs. pitcher matchups, NRFI probabilities, and strikeout projections. Drill into every pitch type with heatmap-colored stat breakdowns.",
     dashboards: [
       { name: "Hot Hitters", href: "/mlb/hot-hitters", description: "Active hitting, XBH, and HR streaks across all players" },
-      { name: "Hitting Stats", href: "/mlb/hitting-stats", description: "Batter matchups, exit velo, barrel rates, platoon splits" },
+      { name: "Hitter vs Pitcher", href: "/mlb/hitting-stats", description: "Batter vs pitcher matchups, exit velo, barrel rates, platoon splits" },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
       { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
       { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },

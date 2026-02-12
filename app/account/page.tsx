@@ -134,7 +134,7 @@ export default function AccountPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Upgrade to Pro to unlock all dashboards including Hot Hitters, Hitting Stats, Pitching Stats, Head-to-Head, and NFL Matchup.
+                    Upgrade to Pro to unlock all dashboards including Hot Hitters, Hitter vs Pitcher, Pitching Stats, Head-to-Head, and NFL Matchup.
                   </p>
                   <Button
                     size="sm"
@@ -162,7 +162,7 @@ export default function AccountPage() {
                 { name: "Defense vs Position", available: true },
                 { name: "Trends (all sports)", available: true },
                 { name: "Hot Hitters", available: isPro },
-                { name: "Hitting Stats", available: isPro },
+                { name: "Hitter vs Pitcher", available: isPro },
                 { name: "Pitching Stats", available: isPro },
                 { name: "Head-to-Head", available: isPro },
                 { name: "NFL Matchup", available: isPro },

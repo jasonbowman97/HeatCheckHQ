@@ -206,7 +206,7 @@ export function WeatherPageClient() {
 
           <div className="flex items-center gap-3">
             <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Hitting Stats
+              Hitter vs Pitcher
             </Link>
             <Link href="/mlb/nrfi" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NRFI

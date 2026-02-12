@@ -12,7 +12,7 @@ const sportLinks = [
     sport: "MLB",
     pages: [
       { name: "Hot Hitters", href: "/mlb/hot-hitters", tier: "pro" as Tier },
-      { name: "Hitting Stats", href: "/mlb/hitting-stats", tier: "pro" as Tier },
+      { name: "Hitter vs Pitcher", href: "/mlb/hitting-stats", tier: "pro" as Tier },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", tier: "pro" as Tier },
       { name: "NRFI", href: "/mlb/nrfi", tier: "public" as Tier },
       { name: "Trends", href: "/mlb/trends", tier: "free" as Tier },

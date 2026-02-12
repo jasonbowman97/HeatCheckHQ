@@ -35,7 +35,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
                 {playerName ? playerName : "HeatCheck HQ"}
               </h1>
               {!playerName && (
-                <p className="text-xs text-muted-foreground">Player Hitting Stats</p>
+                <p className="text-xs text-muted-foreground">Hitter vs Pitcher</p>
               )}
               {playerName && (
                 <p className="text-xs text-muted-foreground">Game Log & At-Bat Analysis</p>
@@ -51,7 +51,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
             Hot Hitters
           </Link>
           <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-            Hitting Stats
+            Hitter vs Pitcher
           </span>
           <Link
             href="/mlb/pitching-stats"

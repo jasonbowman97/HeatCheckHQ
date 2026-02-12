@@ -2,8 +2,8 @@ import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "MLB Hitting Stats - Player Statistics Dashboard | HeatCheck HQ",
-  description: "Comprehensive MLB hitting statistics dashboard. View batting averages, home runs, RBIs, OPS, exit velocity, barrel rates, and batter vs pitcher matchups with real-time data.",
+  title: "MLB Hitter vs Pitcher - Matchup Statistics Dashboard | HeatCheck HQ",
+  description: "Comprehensive MLB hitter vs pitcher matchup dashboard. View batting averages, home runs, RBIs, OPS, exit velocity, barrel rates, and batter vs pitcher splits with real-time data.",
   path: "/mlb/hitting-stats",
   keywords: [
     "MLB hitting stats",
