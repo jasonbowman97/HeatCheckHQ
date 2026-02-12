@@ -12,11 +12,11 @@ const plans = [
     cta: "Get started free",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "NRFI, Weather & First Basket (no account)", included: true },
+      { text: "NRFI, Weather, First Basket & H2H (no account)", included: true },
       { text: "Defense vs Position & all Trends pages", included: true },
       { text: "Full dashboard access", included: false },
       { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
-      { text: "Head-to-Head & NFL Matchup", included: false },
+      { text: "NFL Matchup", included: false },
     ],
   },
   {
@@ -31,7 +31,7 @@ const plans = [
     highlights: [
       { text: "Everything in Free", included: true },
       { text: "Hot Hitters, Hitting & Pitching Stats", included: true },
-      { text: "Head-to-Head & NFL Matchup", included: true },
+      { text: "NFL Matchup", included: true },
       { text: "All dashboards across MLB, NBA, NFL", included: true },
       { text: "Real-time data & advanced filtering", included: true },
       { text: "Cancel anytime", included: true },

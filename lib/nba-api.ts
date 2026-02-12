@@ -138,8 +138,8 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
     const getStat = (item: typeof overall, name: string) =>
       item?.stats?.find((s: { name: string }) => s.name === name)?.value ?? 0
 
-    const ppg = getStat(overall, "pointsFor") || getStat(overall, "avgPointsFor")
-    const oppPpg = getStat(overall, "pointsAgainst") || getStat(overall, "avgPointsAgainst")
+    const ppg = getStat(overall, "avgPointsFor") || getStat(overall, "pointsFor")
+    const oppPpg = getStat(overall, "avgPointsAgainst") || getStat(overall, "pointsAgainst")
     const streak = getStat(overall, "streak")
     const pointDiff = getStat(overall, "pointDifferential")
 
