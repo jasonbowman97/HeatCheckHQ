@@ -10,9 +10,11 @@ import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRank
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const POSITIONS: { key: Position; label: string }[] = [
-  { key: "G", label: "Guards" },
-  { key: "F", label: "Forwards" },
-  { key: "C", label: "Centers" },
+  { key: "PG", label: "PG" },
+  { key: "SG", label: "SG" },
+  { key: "SF", label: "SF" },
+  { key: "PF", label: "PF" },
+  { key: "C", label: "C" },
 ]
 
 const STAT_CATEGORIES: { key: StatCategory; label: string }[] = [
@@ -79,7 +81,7 @@ export default function DefenseVsPositionPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("matchups")
   const [filterPosition, setFilterPosition] = useState<Position | "ALL">("ALL")
   const [filterStat, setFilterStat] = useState<StatCategory | "ALL">("ALL")
-  const [rankPosition, setRankPosition] = useState<Position>("G")
+  const [rankPosition, setRankPosition] = useState<Position>("PG")
   const [rankStat, setRankStat] = useState<StatCategory>("PTS")
 
   // Matchups data (always fetch so we have today's teams for rankings highlight)
@@ -176,7 +178,7 @@ export default function DefenseVsPositionPage() {
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-sm text-muted-foreground">
-            Which teams allow the most stats to each position, mapped to tonight{"'"}s players.
+            Which teams allow the most stats to each position — PG, SG, SF, PF, C.
           </p>
         </div>
 
@@ -246,9 +248,7 @@ export default function DefenseVsPositionPage() {
 /* ── Rank badge color ── */
 
 function rankBadgeClass(rank: number): string {
-  if (rank === 1) return "bg-red-500/15 text-red-400 border-red-500/20"
-  if (rank === 2) return "bg-orange-500/15 text-orange-400 border-orange-500/20"
-  if (rank === 3) return "bg-amber-500/15 text-amber-400 border-amber-500/20"
+  if (rank <= 3) return "bg-red-500/15 text-red-400 border-red-500/20"
   return "bg-secondary text-muted-foreground border-border"
 }
 
@@ -257,13 +257,21 @@ function statUnit(category: string): string {
   if (category.toLowerCase().includes("rebound")) return "RPG"
   if (category.toLowerCase().includes("assist")) return "APG"
   if (category.toLowerCase().includes("3-pointer")) return "3PM/G"
+  if (category.toLowerCase().includes("steal")) return "SPG"
+  if (category.toLowerCase().includes("block")) return "BPG"
   return "/G"
 }
 
-function positionLabel(pos: Position): string {
-  if (pos === "G") return "Guards"
-  if (pos === "F") return "Forwards"
-  return "Centers"
+const POSITION_LABELS: Record<string, string> = {
+  PG: "Point Guards",
+  SG: "Shooting Guards",
+  SF: "Small Forwards",
+  PF: "Power Forwards",
+  C: "Centers",
+}
+
+function positionLabel(pos: string): string {
+  return POSITION_LABELS[pos] ?? pos
 }
 
 /* ── Matchups View ── */
@@ -294,9 +302,8 @@ function MatchupsView({
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">
-            Scanning box scores to build defensive rankings...
+            Loading defensive rankings...
           </p>
-          <p className="text-xs text-muted-foreground">This may take a moment on first load</p>
         </div>
       </div>
     )
@@ -379,7 +386,7 @@ function MatchupsView({
               ) : (
                 <div className="flex flex-col">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                    Last 14 Days
+                    Season Averages
                   </p>
                   {displayInsights.map((insight, i) => (
                     <div
@@ -397,7 +404,7 @@ function MatchupsView({
                       <span className="text-sm text-muted-foreground flex-1 min-w-0">
                         <span className="text-foreground font-medium">{insight.teamAbbr}</span>
                         {" allow "}
-                        <span className={`font-semibold ${insight.rank <= 2 ? "text-primary" : "text-foreground"}`}>
+                        <span className={`font-semibold ${insight.rank <= 2 ? "text-red-400" : "text-foreground"}`}>
                           {insight.rankLabel}
                         </span>
                         {" "}{insight.statCategory} to {positionLabel(insight.position)}
@@ -409,12 +416,6 @@ function MatchupsView({
                       </span>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
                         {statUnit(insight.statCategory)}
-                      </span>
-
-                      {/* Pipe + player name */}
-                      <span className="shrink-0 text-xs text-muted-foreground mx-0.5">|</span>
-                      <span className="shrink-0 text-sm font-bold text-foreground whitespace-nowrap">
-                        {insight.playerName}
                       </span>
                     </div>
                   ))}
@@ -483,7 +484,7 @@ function RankingsView({
           {statLabel} Allowed to {positionLabel(position)} — All 30 Teams
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ranked from most allowed (worst defense) to least. Based on last 14 days of box scores.
+          Ranked from most allowed (worst defense) to least.
         </p>
       </div>
 
@@ -496,7 +497,6 @@ function RankingsView({
               <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                 Avg {statLabel} Allowed
               </th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">GP</th>
               <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48" />
             </tr>
           </thead>
@@ -515,14 +515,13 @@ function RankingsView({
                   }`}
                 >
                   <td className="px-5 py-3">
-                    <span className={`text-sm font-bold ${isTop5 ? "text-primary" : isBottom5 ? "text-blue-400" : "text-foreground"}`}>
+                    <span className={`text-sm font-bold ${isTop5 ? "text-red-400" : isBottom5 ? "text-emerald-400" : "text-foreground"}`}>
                       {row.rank}
                     </span>
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
-                      <span className="text-xs text-muted-foreground hidden md:inline">{row.teamName}</span>
                       {isPlaying && (
                         <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
                           Tonight
@@ -531,18 +530,15 @@ function RankingsView({
                     </div>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-primary" : "text-foreground"}`}>
+                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-red-400" : isBottom5 ? "text-emerald-400" : "text-foreground"}`}>
                       {row.avgAllowed.toFixed(1)}
                     </span>
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <span className="text-xs text-muted-foreground tabular-nums">{row.gamesPlayed}</span>
                   </td>
                   <td className="px-5 py-3">
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          isTop5 ? "bg-primary" : isBottom5 ? "bg-blue-400/60" : "bg-muted-foreground/40"
+                          isTop5 ? "bg-red-400/70" : isBottom5 ? "bg-emerald-400/60" : "bg-muted-foreground/40"
                         }`}
                         style={{ width: `${barWidth}%` }}
                       />
