@@ -30,11 +30,14 @@ export interface NrfiGameData {
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date") ?? undefined
 
+  // Derive season from the requested date (defaults to current year)
+  const season = date ? parseInt(date.slice(0, 4), 10) : new Date().getFullYear()
+
   try {
     // Fetch today's schedule + season linescore data in parallel
     const [schedule, linescores] = await Promise.all([
       getSchedule(date),
-      getSeasonLinescores(),
+      getSeasonLinescores(season),
     ])
 
     const games: NrfiGameData[] = schedule.games.map((g) => {

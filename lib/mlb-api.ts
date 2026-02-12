@@ -114,8 +114,8 @@ interface LinescoreScheduleResponse {
   }[]
 }
 
-// In-memory cache for season linescores
-let _linescoreCache: { data: LinescoreGame[]; fetchedAt: number } | null = null
+// In-memory cache for season linescores (keyed by season year)
+const _linescoreCache: Map<number, { data: LinescoreGame[]; fetchedAt: number }> = new Map()
 const LINESCORE_TTL = 12 * 60 * 60 * 1000 // 12 hours
 
 /**
@@ -126,8 +126,9 @@ export async function getSeasonLinescores(season?: number): Promise<LinescoreGam
   const yr = season ?? new Date().getFullYear()
 
   // Return cache if fresh
-  if (_linescoreCache && Date.now() - _linescoreCache.fetchedAt < LINESCORE_TTL) {
-    return _linescoreCache.data
+  const cached = _linescoreCache.get(yr)
+  if (cached && Date.now() - cached.fetchedAt < LINESCORE_TTL) {
+    return cached.data
   }
 
   // MLB season roughly March 20 - Oct 31
@@ -197,7 +198,7 @@ export async function getSeasonLinescores(season?: number): Promise<LinescoreGam
   // Sort by date
   games.sort((a, b) => a.date.localeCompare(b.date))
 
-  _linescoreCache = { data: games, fetchedAt: Date.now() }
+  _linescoreCache.set(yr, { data: games, fetchedAt: Date.now() })
   return games
 }
 
