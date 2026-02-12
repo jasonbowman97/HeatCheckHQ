@@ -105,6 +105,7 @@ interface BoxScorePlayerStat {
   stl: number
   blk: number
   threepm: number
+  minutes: number
   teamId: string
 }
 
@@ -169,11 +170,13 @@ function parseBoxScorePlayers(summary: Record<string, unknown>): {
           const parts = stats[threePtIdx].split("-")
           threepm = parseInt(parts[0], 10) || 0
         }
+        // Parse minutes (e.g., "34" or "34:12")
+        const minutes = minIdx >= 0 ? parseFloat(stats[minIdx]) || 0 : 0
 
         players.push({
           playerName: athleteInfo.displayName as string,
           position: normalizedPos,
-          pts, reb, ast, stl, blk, threepm,
+          pts, reb, ast, stl, blk, threepm, minutes,
           teamId,
         })
       }
@@ -190,6 +193,10 @@ let cachedRankings: {
   data: TeamDefenseByPosition[]
   timestamp: number
 } | null = null
+
+// Cache: per team, the player with the most total minutes at each position
+// Key: teamId, Value: { G: "Player Name", F: "Player Name", C: "Player Name" }
+let cachedMinutesLeaders: Record<string, Record<Position, string>> | null = null
 
 const CACHE_DURATION_MS = 4 * 60 * 60 * 1000 // 4 hours
 
@@ -271,6 +278,10 @@ export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPositio
       }
     }
 
+    // Track total minutes per player per team (to find primary players at each position)
+    // Key: "teamId:playerName:position" → total minutes
+    const playerMinutes: Record<string, { name: string; teamId: string; position: Position; totalMin: number }> = {}
+
     // Batch fetch box scores (10 at a time)
     const BATCH_SIZE = 10
     for (let i = 0; i < gameIdArray.length; i += BATCH_SIZE) {
@@ -288,8 +299,15 @@ export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPositio
 
         const gameId = batch[j]
 
-        // For each player, the OPPOSING team "allowed" these stats to this position
         for (const player of players) {
+          // Track minutes for this player on their own team
+          const minutesKey = `${player.teamId}:${player.playerName}:${player.position}`
+          if (!playerMinutes[minutesKey]) {
+            playerMinutes[minutesKey] = { name: player.playerName, teamId: player.teamId, position: player.position, totalMin: 0 }
+          }
+          playerMinutes[minutesKey].totalMin += player.minutes
+
+          // For each player, the OPPOSING team "allowed" these stats to this position
           const opposingTeam = teams.find((t) => t.teamId !== player.teamId)
           if (!opposingTeam || !teamAccum[opposingTeam.teamId]) continue
 
@@ -306,6 +324,22 @@ export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPositio
         }
       }
     }
+
+    // Build minutes leaders: for each team+position, find the player with the most total minutes
+    const minutesLeaders: Record<string, Record<Position, string>> = {}
+    for (const entry of Object.values(playerMinutes)) {
+      if (!minutesLeaders[entry.teamId]) {
+        minutesLeaders[entry.teamId] = { G: "", F: "", C: "" }
+      }
+      const current = minutesLeaders[entry.teamId][entry.position]
+      // Find current leader's minutes for comparison
+      const currentKey = `${entry.teamId}:${current}:${entry.position}`
+      const currentMin = playerMinutes[currentKey]?.totalMin ?? 0
+      if (entry.totalMin > currentMin) {
+        minutesLeaders[entry.teamId][entry.position] = entry.name
+      }
+    }
+    cachedMinutesLeaders = minutesLeaders
 
     // 4. Average out the stats per game
     const results: TeamDefenseByPosition[] = allTeams.map((team) => {
@@ -348,12 +382,11 @@ export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPositio
 export async function getTeamRoster(teamId: string): Promise<RosterPlayer[]> {
   try {
     const raw = await fetchNBATeamRoster(teamId)
-    // ESPN NBA roster returns athletes as a FLAT array (not nested group.items)
+    // ESPN NBA roster returns athletes as a FLAT array (alphabetical by last name)
     const athletes = (raw.athletes ?? []) as Array<Record<string, unknown>>
     const players: RosterPlayer[] = []
 
     for (const athlete of athletes) {
-      // Flat array: each element IS the player directly
       const pos = (athlete.position as Record<string, unknown>)?.abbreviation as string ?? ""
       const normalizedPos = normalizePosition(pos)
       if (!normalizedPos) continue
@@ -369,6 +402,11 @@ export async function getTeamRoster(teamId: string): Promise<RosterPlayer[]> {
   } catch {
     return []
   }
+}
+
+/** Get the player with the most minutes at each position for a team (from box score data) */
+export function getMinutesLeader(teamId: string, position: Position): string | null {
+  return cachedMinutesLeaders?.[teamId]?.[position] || null
 }
 
 /* ── Build today's matchup insights ── */
@@ -432,62 +470,45 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
       const awayId = awayTeam.id as string
       const homeId = homeTeam.id as string
 
-      // Fetch rosters for both teams
-      const [awayRoster, homeRoster] = await Promise.all([
-        getTeamRoster(awayId),
-        getTeamRoster(homeId),
-      ])
-
       const insights: MatchupInsight[] = []
 
-      // Pick the most prominent player at each position (ESPN lists starters first in roster)
-      // We cache per-position so we show the same key player across all stat categories
-      const homePrimary: Record<Position, RosterPlayer | undefined> = { G: undefined, F: undefined, C: undefined }
-      const awayPrimary: Record<Position, RosterPlayer | undefined> = { G: undefined, F: undefined, C: undefined }
+      // Use minutes leaders from box score data — the player who has played the
+      // most minutes at each position over the last 14 days is the real primary guy
       for (const pos of POSITIONS) {
-        homePrimary[pos] = homeRoster.find((p) => p.position === pos)
-        awayPrimary[pos] = awayRoster.find((p) => p.position === pos)
-      }
+        const homePlayerName = getMinutesLeader(homeId, pos)
+        const awayPlayerName = getMinutesLeader(awayId, pos)
 
-      // For each team, check what they allow and find opposing player
-      for (const pos of POSITIONS) {
         for (const cat of STAT_CATEGORIES) {
-          // Away team's defense vs this position -> find home player at this position
+          // Away team's defense vs this position -> home player benefits
           const awayRankInfo = getTeamRank(awayId, pos, cat.key)
-          if (awayRankInfo.rank <= 5) {
-            const homePlayer = homePrimary[pos]
-            if (homePlayer) {
-              insights.push({
-                teamAbbr: awayTeam.abbreviation as string,
-                statCategory: cat.label,
-                position: pos,
-                rank: awayRankInfo.rank,
-                rankLabel: rankLabel(awayRankInfo.rank),
-                playerName: homePlayer.name,
-                playerPosition: homePlayer.position,
-                timeframe: "Last 14",
-                avgAllowed: awayRankInfo.avgAllowed,
-              })
-            }
+          if (awayRankInfo.rank <= 5 && homePlayerName) {
+            insights.push({
+              teamAbbr: awayTeam.abbreviation as string,
+              statCategory: cat.label,
+              position: pos,
+              rank: awayRankInfo.rank,
+              rankLabel: rankLabel(awayRankInfo.rank),
+              playerName: homePlayerName,
+              playerPosition: pos,
+              timeframe: "Last 14",
+              avgAllowed: awayRankInfo.avgAllowed,
+            })
           }
 
-          // Home team's defense vs this position -> find away player at this position
+          // Home team's defense vs this position -> away player benefits
           const homeRankInfo = getTeamRank(homeId, pos, cat.key)
-          if (homeRankInfo.rank <= 5) {
-            const awayPlayer = awayPrimary[pos]
-            if (awayPlayer) {
-              insights.push({
-                teamAbbr: homeTeam.abbreviation as string,
-                statCategory: cat.label,
-                position: pos,
-                rank: homeRankInfo.rank,
-                rankLabel: rankLabel(homeRankInfo.rank),
-                playerName: awayPlayer.name,
-                playerPosition: awayPlayer.position,
-                timeframe: "Last 14",
-                avgAllowed: homeRankInfo.avgAllowed,
-              })
-            }
+          if (homeRankInfo.rank <= 5 && awayPlayerName) {
+            insights.push({
+              teamAbbr: homeTeam.abbreviation as string,
+              statCategory: cat.label,
+              position: pos,
+              rank: homeRankInfo.rank,
+              rankLabel: rankLabel(homeRankInfo.rank),
+              playerName: awayPlayerName,
+              playerPosition: pos,
+              timeframe: "Last 14",
+              avgAllowed: homeRankInfo.avgAllowed,
+            })
           }
         }
       }
