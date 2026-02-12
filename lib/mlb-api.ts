@@ -79,6 +79,180 @@ export async function getSchedule(date?: string): Promise<{ games: ScheduleGame[
 }
 
 /* ------------------------------------------------------------------ */
+/*  Season Linescores (for NRFI computation)                           */
+/* ------------------------------------------------------------------ */
+
+export interface LinescoreGame {
+  gamePk: number
+  date: string
+  awayTeamId: number
+  homeTeamId: number
+  awayTeamAbbr: string
+  homeTeamAbbr: string
+  awayPitcherId: number | null
+  homePitcherId: number | null
+  awayPitcherName: string | null
+  homePitcherName: string | null
+  awayFirstInningRuns: number
+  homeFirstInningRuns: number
+}
+
+interface LinescoreScheduleResponse {
+  dates: {
+    date: string
+    games: {
+      gamePk: number
+      status: { codedGameState: string }
+      teams: {
+        away: { team: { id: number; abbreviation?: string; name: string }; probablePitcher?: { id: number; fullName: string } }
+        home: { team: { id: number; abbreviation?: string; name: string }; probablePitcher?: { id: number; fullName: string } }
+      }
+      linescore?: {
+        innings: { num: number; away: { runs?: number }; home: { runs?: number } }[]
+      }
+    }[]
+  }[]
+}
+
+// In-memory cache for season linescores
+let _linescoreCache: { data: LinescoreGame[]; fetchedAt: number } | null = null
+const LINESCORE_TTL = 12 * 60 * 60 * 1000 // 12 hours
+
+/**
+ * Fetch all completed games for the current season with first-inning linescore data.
+ * Uses biweekly chunks and caches aggressively.
+ */
+export async function getSeasonLinescores(season?: number): Promise<LinescoreGame[]> {
+  const yr = season ?? new Date().getFullYear()
+
+  // Return cache if fresh
+  if (_linescoreCache && Date.now() - _linescoreCache.fetchedAt < LINESCORE_TTL) {
+    return _linescoreCache.data
+  }
+
+  // MLB season roughly March 20 - Oct 31
+  const startDate = `${yr}-03-20`
+  const today = new Date().toISOString().slice(0, 10)
+  const endDate = today < `${yr}-11-01` ? today : `${yr}-10-31`
+
+  // Fetch in 14-day chunks
+  const games: LinescoreGame[] = []
+  let chunkStart = new Date(startDate)
+  const end = new Date(endDate)
+
+  const chunkPromises: Promise<LinescoreGame[]>[] = []
+
+  while (chunkStart <= end) {
+    const chunkEnd = new Date(chunkStart)
+    chunkEnd.setDate(chunkEnd.getDate() + 13)
+    if (chunkEnd > end) chunkEnd.setTime(end.getTime())
+
+    const sd = chunkStart.toISOString().slice(0, 10)
+    const ed = chunkEnd.toISOString().slice(0, 10)
+
+    chunkPromises.push(
+      mlbFetch<LinescoreScheduleResponse>(
+        `/schedule?sportId=1&startDate=${sd}&endDate=${ed}&hydrate=linescore,probablePitcher,team&fields=dates,date,games,gamePk,status,codedGameState,teams,away,home,team,id,abbreviation,name,probablePitcher,id,fullName,linescore,innings,num,away,home,runs`
+      ).then((raw) => {
+        const chunk: LinescoreGame[] = []
+        for (const day of raw.dates ?? []) {
+          for (const g of day.games ?? []) {
+            // Only include completed games
+            if (g.status.codedGameState !== "F") continue
+            const firstInning = g.linescore?.innings?.find((i) => i.num === 1)
+            if (!firstInning) continue
+
+            chunk.push({
+              gamePk: g.gamePk,
+              date: day.date,
+              awayTeamId: g.teams.away.team.id,
+              homeTeamId: g.teams.home.team.id,
+              awayTeamAbbr: g.teams.away.team.abbreviation ?? g.teams.away.team.name.slice(0, 3).toUpperCase(),
+              homeTeamAbbr: g.teams.home.team.abbreviation ?? g.teams.home.team.name.slice(0, 3).toUpperCase(),
+              awayPitcherId: g.teams.away.probablePitcher?.id ?? null,
+              homePitcherId: g.teams.home.probablePitcher?.id ?? null,
+              awayPitcherName: g.teams.away.probablePitcher?.fullName ?? null,
+              homePitcherName: g.teams.home.probablePitcher?.fullName ?? null,
+              awayFirstInningRuns: firstInning.away.runs ?? 0,
+              homeFirstInningRuns: firstInning.home.runs ?? 0,
+            })
+          }
+        }
+        return chunk
+      }).catch((err) => {
+        console.error(`[MLB] Linescore chunk ${sd}-${ed} error:`, err)
+        return [] as LinescoreGame[]
+      })
+    )
+
+    chunkStart = new Date(chunkEnd)
+    chunkStart.setDate(chunkStart.getDate() + 1)
+  }
+
+  const chunks = await Promise.all(chunkPromises)
+  for (const chunk of chunks) {
+    games.push(...chunk)
+  }
+
+  // Sort by date
+  games.sort((a, b) => a.date.localeCompare(b.date))
+
+  _linescoreCache = { data: games, fetchedAt: Date.now() }
+  return games
+}
+
+/**
+ * Compute pitcher NRFI stats from linescore data.
+ * Returns { nrfiWins, nrfiLosses, nrfiPct, streak } for a given pitcher.
+ * A pitcher gets an NRFI "win" if they started and NO runs scored in the 1st inning (by EITHER team).
+ */
+export function computePitcherNrfi(pitcherId: number, games: LinescoreGame[]): {
+  nrfiWins: number
+  nrfiLosses: number
+  nrfiPct: number
+  streak: number
+} {
+  // Find all games this pitcher started
+  const starts = games
+    .filter((g) => g.awayPitcherId === pitcherId || g.homePitcherId === pitcherId)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  if (starts.length === 0) return { nrfiWins: 0, nrfiLosses: 0, nrfiPct: 0, streak: 0 }
+
+  let wins = 0
+  let losses = 0
+  const results: boolean[] = [] // true = NRFI, false = RFI
+
+  for (const g of starts) {
+    const totalFirstInningRuns = g.awayFirstInningRuns + g.homeFirstInningRuns
+    const isNrfi = totalFirstInningRuns === 0
+    if (isNrfi) wins++
+    else losses++
+    results.push(isNrfi)
+  }
+
+  // Compute current streak from most recent games
+  let streak = 0
+  if (results.length > 0) {
+    const lastResult = results[results.length - 1]
+    for (let i = results.length - 1; i >= 0; i--) {
+      if (results[i] === lastResult) {
+        streak++
+      } else break
+    }
+    if (!lastResult) streak = -streak // Negative for RFI streak
+  }
+
+  const total = wins + losses
+  return {
+    nrfiWins: wins,
+    nrfiLosses: losses,
+    nrfiPct: total > 0 ? Math.round((wins / total) * 100) : 0,
+    streak,
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Batting Leaders                                                    */
 /* ------------------------------------------------------------------ */
 

@@ -6,60 +6,7 @@ import useSWR from "swr"
 import { BarChart3, ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
-import { nrfiPitchers } from "@/lib/nrfi-data"
-import type { NrfiPitcher } from "@/lib/nrfi-data"
-
-interface APIGame {
-  gamePk: number
-  gameDate: string
-  status: string
-  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
-  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
-  venue: string
-  weather: { condition: string; temp: string; wind: string } | null
-}
-
-function transformToNrfi(games: APIGame[]): NrfiPitcher[] {
-  const rows: NrfiPitcher[] = []
-  for (const g of games) {
-    const time = new Date(g.gameDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
-    if (g.away.probablePitcher) {
-      rows.push({
-        id: `live-${g.away.probablePitcher.id}`,
-        time,
-        team: g.away.abbreviation,
-        player: g.away.probablePitcher.fullName,
-        hand: g.away.probablePitcher.hand ?? "R",
-        record: "--",
-        nrfiPct: 0,
-        streak: 0,
-        hrsAllowed: 0,
-        opponent: g.home.abbreviation,
-        opponentRecord: "--",
-        opponentNrfiStreak: 0,
-        opponentNrfiRank: 0,
-      })
-    }
-    if (g.home.probablePitcher) {
-      rows.push({
-        id: `live-${g.home.probablePitcher.id}`,
-        time,
-        team: g.home.abbreviation,
-        player: g.home.probablePitcher.fullName,
-        hand: g.home.probablePitcher.hand ?? "R",
-        record: "--",
-        nrfiPct: 0,
-        streak: 0,
-        hrsAllowed: 0,
-        opponent: g.away.abbreviation,
-        opponentRecord: "--",
-        opponentNrfiStreak: 0,
-        opponentNrfiRank: 0,
-      })
-    }
-  }
-  return rows
-}
+import type { NrfiGame } from "@/lib/nrfi-data"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -82,26 +29,31 @@ export default function NrfiPage() {
     day: "numeric",
   })
 
-  const { data, isLoading } = useSWR<{ games: APIGame[]; date: string }>(`/api/mlb/schedule?date=${dateParam}`, fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 43200000,
-  })
+  const { data, isLoading } = useSWR<{ games: NrfiGame[]; date: string }>(
+    `/api/mlb/nrfi?date=${dateParam}`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
+  )
 
-  const liveNrfi = useMemo(() => {
-    const games = data?.games ?? []
-    return games.length > 0 ? transformToNrfi(games) : []
-  }, [data])
-  const isLive = liveNrfi.length > 0
+  const games = data?.games ?? []
+  const isLive = games.length > 0 && !isLoading
 
-  // Use live probable pitchers when available, static as fallback
-  const basePitchers = isLive ? liveNrfi : nrfiPitchers
-
-  // Filter by pitcher hand
-  const filteredData = useMemo(() => {
-    if (handFilter === "All") return basePitchers
+  // Filter games by pitcher hand
+  const filteredGames = useMemo(() => {
+    if (handFilter === "All") return games
     const hand = handFilter === "RHP" ? "R" : "L"
-    return basePitchers.filter((p) => p.hand === hand)
-  }, [handFilter, basePitchers])
+    // Keep games where at least one pitcher matches the hand filter
+    return games.filter((g) =>
+      (g.away.pitcher?.hand === hand) || (g.home.pitcher?.hand === hand)
+    )
+  }, [handFilter, games])
+
+  // Count pitchers with NRFI data
+  const pitcherCount = games.reduce((n, g) => {
+    if (g.away.pitcher) n++
+    if (g.home.pitcher) n++
+    return n
+  }, 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,45 +70,29 @@ export default function NrfiPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* MLB sub-nav */}
-            <Link
-              href="/mlb/hitting-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/mlb/hot-hitters" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Hot Hitters
+            </Link>
+            <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Hitter vs Pitcher
+            </Link>
+            <Link href="/mlb/pitching-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Pitching Stats
             </Link>
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
               NRFI
             </span>
-            <Link
-              href="/mlb/pitching-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Pitching Stats
-            </Link>
-            <Link
-              href="/mlb/weather"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/mlb/weather" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Weather
             </Link>
-            <Link
-              href="/mlb/trends"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/mlb/trends" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               Trends
             </Link>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link
-              href="/nba/first-basket"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NBA
             </Link>
-            <Link
-              href="/nfl/matchup"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
           </div>
@@ -177,8 +113,8 @@ export default function NrfiPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             {isLive
-              ? `${liveNrfi.length} probable pitchers for today's slate. NRFI stats show season totals.`
-              : "Probable pitchers and their NRFI track records for today's slate."}
+              ? `${games.length} games, ${pitcherCount} probable starters with NRFI records.`
+              : "Matchup pairs with pitcher NRFI records and streaks."}
           </p>
         </div>
 
@@ -241,8 +177,16 @@ export default function NrfiPage() {
           )}
         </div>
 
-        {/* Data table */}
-        <NrfiTable data={filteredData} />
+        {/* Loading state */}
+        {isLoading && (
+          <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Loading NRFI matchups...</p>
+          </div>
+        )}
+
+        {/* Data */}
+        {!isLoading && <NrfiTable games={filteredGames} />}
       </main>
     </div>
   )
