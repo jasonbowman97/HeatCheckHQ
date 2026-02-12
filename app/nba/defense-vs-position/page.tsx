@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
@@ -26,6 +26,57 @@ const STAT_CATEGORIES: { key: StatCategory; label: string }[] = [
 
 type ViewMode = "matchups" | "rankings"
 
+/* ── Reusable filter button group ── */
+
+function FilterGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  showAll,
+}: {
+  label: string
+  options: { key: T; label: string }[]
+  value: T | "ALL"
+  onChange: (v: T | "ALL") => void
+  showAll?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+      <div className="flex rounded-lg border border-border overflow-hidden">
+        {showAll && (
+          <button
+            onClick={() => onChange("ALL" as T | "ALL")}
+            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+              value === "ALL"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            All
+          </button>
+        )}
+        {options.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => onChange(opt.key)}
+            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+              value === opt.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Page ── */
+
 export default function DefenseVsPositionPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("matchups")
   const [filterPosition, setFilterPosition] = useState<Position | "ALL">("ALL")
@@ -33,9 +84,9 @@ export default function DefenseVsPositionPage() {
   const [rankPosition, setRankPosition] = useState<Position>("PG")
   const [rankStat, setRankStat] = useState<StatCategory>("PTS")
 
-  // Matchups data
+  // Matchups data (always fetch so we have today's teams for rankings highlight)
   const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: TodayMatchup[] }>(
-    viewMode === "matchups" ? "/api/nba/defense-vs-position?mode=matchups" : null,
+    "/api/nba/defense-vs-position?mode=matchups",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
@@ -49,7 +100,17 @@ export default function DefenseVsPositionPage() {
 
   const matchups = matchupsData?.matchups ?? []
   const rankings = rankingsData?.rankings ?? []
-  const isLoading = matchupsLoading || rankingsLoading
+  const isLoading = (viewMode === "matchups" && matchupsLoading) || (viewMode === "rankings" && rankingsLoading)
+
+  // Collect today's team abbreviations for highlighting in rankings
+  const todayTeams = useMemo(() => {
+    const teams = new Set<string>()
+    for (const m of matchups) {
+      teams.add(m.awayTeam.abbr)
+      teams.add(m.homeTeam.abbr)
+    }
+    return teams
+  }, [matchups])
 
   function filterInsights(insights: MatchupInsight[]) {
     return insights.filter((i) => {
@@ -70,9 +131,7 @@ export default function DefenseVsPositionPage() {
                 <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                  HeatCheck HQ
-                </h1>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
                 <p className="text-xs text-muted-foreground">NBA Defense vs Position</p>
               </div>
             </Link>
@@ -97,10 +156,6 @@ export default function DefenseVsPositionPage() {
             <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <span className="text-xs font-medium text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-              2025-26 Season
-            </span>
           </div>
         </div>
       </header>
@@ -109,16 +164,16 @@ export default function DefenseVsPositionPage() {
         {/* Page heading */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Defense VS Position</h2>
+            <Shield className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Defense vs Position</h2>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-sm text-muted-foreground">
-            Find favorable and tough matchups based on team defensive rankings. Shows which teams allow the most stats to each position and maps it to {"today's"} opposing players.
+            Which teams allow the most stats to each position, mapped to tonight{"'"}s players.
           </p>
         </div>
 
-        {/* View mode toggle */}
+        {/* View mode toggle + filters */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
@@ -145,109 +200,15 @@ export default function DefenseVsPositionPage() {
 
           {viewMode === "matchups" && (
             <>
-              {/* Position filter */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    onClick={() => setFilterPosition("ALL")}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      filterPosition === "ALL"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {POSITIONS.map((pos) => (
-                    <button
-                      key={pos.key}
-                      onClick={() => setFilterPosition(pos.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        filterPosition === pos.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stat filter */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    onClick={() => setFilterStat("ALL")}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      filterStat === "ALL"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {STAT_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.key}
-                      onClick={() => setFilterStat(cat.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        filterStat === cat.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterGroup label="Position" options={POSITIONS} value={filterPosition} onChange={setFilterPosition} showAll />
+              <FilterGroup label="Stat" options={STAT_CATEGORIES} value={filterStat} onChange={setFilterStat} showAll />
             </>
           )}
 
           {viewMode === "rankings" && (
             <>
-              {/* Position selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  {POSITIONS.map((pos) => (
-                    <button
-                      key={pos.key}
-                      onClick={() => setRankPosition(pos.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        rankPosition === pos.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stat selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  {STAT_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.key}
-                      onClick={() => setRankStat(cat.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        rankStat === cat.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterGroup label="Position" options={POSITIONS} value={rankPosition} onChange={(v) => { if (v !== "ALL") setRankPosition(v as Position) }} />
+              <FilterGroup label="Stat" options={STAT_CATEGORIES} value={rankStat} onChange={(v) => { if (v !== "ALL") setRankStat(v as StatCategory) }} />
             </>
           )}
         </div>
@@ -267,11 +228,29 @@ export default function DefenseVsPositionPage() {
             isLoading={rankingsLoading}
             position={rankPosition}
             stat={rankStat}
+            todayTeams={todayTeams}
           />
         )}
       </main>
     </div>
   )
+}
+
+/* ── Rank badge color ── */
+
+function rankBadgeClass(rank: number): string {
+  if (rank === 1) return "bg-red-500/15 text-red-400 border-red-500/20"
+  if (rank === 2) return "bg-orange-500/15 text-orange-400 border-orange-500/20"
+  if (rank === 3) return "bg-amber-500/15 text-amber-400 border-amber-500/20"
+  return "bg-secondary text-muted-foreground border-border"
+}
+
+function statUnit(category: string): string {
+  if (category.toLowerCase().includes("point")) return "PPG"
+  if (category.toLowerCase().includes("rebound")) return "RPG"
+  if (category.toLowerCase().includes("assist")) return "APG"
+  if (category.toLowerCase().includes("3-pointer")) return "3PM/G"
+  return "/G"
 }
 
 /* ── Matchups View ── */
@@ -353,6 +332,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
+                      unoptimized
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.awayTeam.abbr}</span>
@@ -366,6 +346,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
+                      unoptimized
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.homeTeam.abbr}</span>
@@ -384,23 +365,42 @@ function MatchupsView({
                 </p>
               ) : (
                 <div className="flex flex-col">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">
-                    2025-26 Season
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                    Last 14 Days
                   </p>
                   {displayInsights.map((insight, i) => (
                     <div
                       key={`${insight.teamAbbr}-${insight.position}-${insight.statCategory}-${i}`}
-                      className="flex items-baseline gap-1.5 py-1.5 border-b border-dashed border-border last:border-0"
+                      className="flex items-center gap-2 py-2 border-b border-dashed border-border/50 last:border-0"
                     >
-                      <span className="text-sm text-muted-foreground">
-                        {insight.teamAbbr} allow{" "}
+                      {/* Rank badge */}
+                      <span
+                        className={`shrink-0 text-[10px] font-bold w-6 h-5 flex items-center justify-center rounded border ${rankBadgeClass(insight.rank)}`}
+                      >
+                        #{insight.rank}
+                      </span>
+
+                      {/* Insight text */}
+                      <span className="text-sm text-muted-foreground flex-1 min-w-0">
+                        <span className="text-foreground font-medium">{insight.teamAbbr}</span>
+                        {" allow "}
                         <span className={`font-semibold ${insight.rank <= 2 ? "text-primary" : "text-foreground"}`}>
                           {insight.rankLabel}
                         </span>
                         {" "}{insight.statCategory} to {insight.position}
                       </span>
-                      <span className="text-sm text-muted-foreground mx-0.5">|</span>
-                      <span className="text-sm font-bold text-foreground">
+
+                      {/* Avg stat */}
+                      <span className="shrink-0 text-xs font-bold text-foreground font-mono tabular-nums">
+                        {insight.avgAllowed.toFixed(1)}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {statUnit(insight.statCategory)}
+                      </span>
+
+                      {/* Pipe + player name */}
+                      <span className="shrink-0 text-xs text-muted-foreground mx-0.5">|</span>
+                      <span className="shrink-0 text-sm font-bold text-foreground whitespace-nowrap">
                         {insight.playerName}
                       </span>
                     </div>
@@ -432,11 +432,13 @@ function RankingsView({
   isLoading,
   position,
   stat,
+  todayTeams,
 }: {
   rankings: PositionRankingRow[]
   isLoading: boolean
   position: Position
   stat: StatCategory
+  todayTeams: Set<string>
 }) {
   const statLabel = STAT_CATEGORIES.find((c) => c.key === stat)?.label ?? stat
 
@@ -465,10 +467,10 @@ function RankingsView({
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-5 py-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">
-          {statLabel} Allowed to {position} -- All 30 Teams
+          {statLabel} Allowed to {position} — All 30 Teams
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ranked from most allowed (worst defense) to least allowed (best defense). Based on last 14 days of box scores.
+          Ranked from most allowed (worst defense) to least. Based on last 14 days of box scores.
         </p>
       </div>
 
@@ -490,11 +492,14 @@ function RankingsView({
               const barWidth = maxVal > 0 ? (row.avgAllowed / maxVal) * 100 : 0
               const isTop5 = row.rank <= 5
               const isBottom5 = row.rank > 25
+              const isPlaying = todayTeams.has(row.teamAbbr)
 
               return (
                 <tr
                   key={row.teamAbbr}
-                  className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
+                  className={`border-b border-border last:border-0 hover:bg-secondary/30 transition-colors ${
+                    isPlaying ? "bg-primary/[0.03]" : ""
+                  }`}
                 >
                   <td className="px-5 py-3">
                     <span className={`text-sm font-bold ${isTop5 ? "text-primary" : isBottom5 ? "text-blue-400" : "text-foreground"}`}>
@@ -502,8 +507,15 @@ function RankingsView({
                     </span>
                   </td>
                   <td className="px-5 py-3">
-                    <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
-                    <span className="text-xs text-muted-foreground ml-2 hidden md:inline">{row.teamName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
+                      <span className="text-xs text-muted-foreground hidden md:inline">{row.teamName}</span>
+                      {isPlaying && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                          Tonight
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-primary" : "text-foreground"}`}>
