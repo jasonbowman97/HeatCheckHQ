@@ -9,6 +9,8 @@ function buildH2H(
   awaySchedule: NBAGameResult[],
   awayTeamId: string,
   homeTeamId: string,
+  awayAbbr: string,
+  homeAbbr: string,
 ) {
   // Find games where away team played against home team (from away team's perspective)
   const meetings = awaySchedule
@@ -31,7 +33,7 @@ function buildH2H(
       awayScore: m.home ? m.opponentScore : m.teamScore,
       homeScore: m.home ? m.teamScore : m.opponentScore,
       total: m.teamScore + m.opponentScore,
-      winner: m.won ? awayTeamId : homeTeamId,
+      winner: m.won ? awayAbbr : homeAbbr,
     }
   })
 
@@ -100,7 +102,7 @@ export async function GET(request: Request) {
       const awaySchedule = schedules[g.awayTeam.id] ?? []
       const homeSchedule = schedules[g.homeTeam.id] ?? []
 
-      h2hData[g.id] = buildH2H(awaySchedule, g.awayTeam.id, g.homeTeam.id)
+      h2hData[g.id] = buildH2H(awaySchedule, g.awayTeam.id, g.homeTeam.id, g.awayTeam.abbreviation, g.homeTeam.abbreviation)
 
       lastRecords[g.awayTeam.id] ??= {
         last5: lastNRecord(awaySchedule, 5),

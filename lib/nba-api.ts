@@ -13,6 +13,13 @@ async function espnFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+/** Short-lived cache for daily/live data (scoreboard, team summaries) */
+async function espnFetchLive<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 300 } })
+  if (!res.ok) throw new Error(`ESPN NBA ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 async function espnFetchV3<T>(path: string): Promise<T> {
   const res = await fetch(`${LEADERS_BASE}${path}`, { next: { revalidate: 3600 } })
   if (!res.ok) throw new Error(`ESPN NBA v3 ${res.status}: ${path}`)
@@ -51,7 +58,7 @@ export interface NBATeamRecord {
 
 export async function getNBAScoreboard(date?: string): Promise<NBAScheduleGame[]> {
   const params = date ? `?dates=${date.replace(/-/g, "")}` : ""
-  const raw = await espnFetch<ESPNScoreboard>(`/scoreboard${params}`)
+  const raw = await espnFetchLive<ESPNScoreboard>(`/scoreboard${params}`)
   return (raw.events ?? []).map((ev) => {
     const away = ev.competitions[0]?.competitors?.find((c: ESPNCompetitor) => c.homeAway === "away")
     const home = ev.competitions[0]?.competitors?.find((c: ESPNCompetitor) => c.homeAway === "home")
@@ -119,7 +126,7 @@ export interface NBATeamSummary {
 
 export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary | null> {
   try {
-    const raw = await espnFetch<{
+    const raw = await espnFetchLive<{
       team: {
         record?: { items?: { summary?: string; type?: string; stats?: { name: string; value: number }[] }[] }
         injuries?: { items?: { athlete: { displayName: string }; status: string; details?: { detail?: string } }[] }[]
