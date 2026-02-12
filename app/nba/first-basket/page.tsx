@@ -5,8 +5,8 @@ import useSWR from "swr"
 import { Loader2 } from "lucide-react"
 import { NBAHeader } from "@/components/nba/nba-header"
 import { DateNavigator } from "@/components/nba/date-navigator"
-import { FirstBasketTable } from "@/components/nba/first-basket-table"
-import { todayGames as staticGames } from "@/lib/nba-first-basket-data"
+import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
+import { TopPicks } from "@/components/nba/top-picks"
 import type { NBAScheduleGame } from "@/lib/nba-api"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 import {
@@ -19,7 +19,17 @@ import {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-function toLiveGames(espnGames: NBAScheduleGame[]) {
+interface GameInfo {
+  id: string
+  away: string
+  home: string
+  label: string
+  time: string
+  venue: string
+  status: string
+}
+
+function toLiveGames(espnGames: NBAScheduleGame[]): GameInfo[] {
   return espnGames.map((g, i) => ({
     id: g.id || `live-${i}`,
     away: g.awayTeam.abbreviation,
@@ -54,9 +64,7 @@ export default function NBAFirstBasketPage() {
 
   const isLoading = scheduleLoading || fbLoading
 
-  const liveGamesList = useMemo(() => (scheduleData?.games?.length ? toLiveGames(scheduleData.games) : null), [scheduleData])
-  const games = liveGamesList ?? staticGames
-  const isLive = !!liveGamesList
+  const games = useMemo(() => (scheduleData?.games?.length ? toLiveGames(scheduleData.games) : []), [scheduleData])
   const hasLiveStats = !!fbData?.players?.length
 
   // Get today's team abbreviations for filtering players
@@ -67,6 +75,16 @@ export default function NBAFirstBasketPage() {
       teams.add(g.home)
     }
     return teams
+  }, [games])
+
+  // Build matchup map: team → { opponent, isHome }
+  const matchupMap = useMemo(() => {
+    const map: Record<string, { opponent: string; isHome: boolean }> = {}
+    for (const g of games) {
+      map[g.home] = { opponent: g.away, isHome: true }
+      map[g.away] = { opponent: g.home, isHome: false }
+    }
+    return map
   }, [games])
 
   // Filter first basket players to today's teams
@@ -83,6 +101,11 @@ export default function NBAFirstBasketPage() {
     }
     return map
   }, [fbData])
+
+  // Build rows for Top Picks (unfiltered by game, sorted by composite)
+  const allRows = useMemo(() => {
+    return buildRows(filteredPlayers, teamTipoffs, matchupMap, "all")
+  }, [filteredPlayers, teamTipoffs, matchupMap])
 
   const handlePrevDay = useCallback(() => {
     setDate((prev) => {
@@ -123,18 +146,21 @@ export default function NBAFirstBasketPage() {
                 Live
               </span>
             )}
+            {!isLoading && games.length > 0 && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                {games.length} Games · Season Stats
+              </span>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Track which players score the first basket of the game. Filter by matchup to spot trends.
+            Track which players score the first basket. Home/away splits highlight tonight{"'"}s context.
           </p>
         </div>
 
         {/* Filters row */}
         <div className="flex flex-wrap items-center gap-4">
-          {/* Date navigator */}
           <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
 
-          {/* Matchup filter */}
           <div className="flex items-center gap-2">
             <Select value={gameFilter} onValueChange={setGameFilter}>
               <SelectTrigger className="w-[180px] h-9 bg-card border-border text-sm">
@@ -153,37 +179,54 @@ export default function NBAFirstBasketPage() {
         </div>
 
         {/* Games strip */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
-          {games.map((game) => (
-            <button
-              key={game.id}
-              onClick={() =>
-                setGameFilter((prev) =>
-                  prev === `${game.away}-${game.home}` ? "all" : `${game.away}-${game.home}`
-                )
-              }
-              className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                gameFilter === `${game.away}-${game.home}`
-                  ? "bg-primary/15 text-primary border border-primary/30"
-                  : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
-              }`}
-            >
-              {game.label}
-            </button>
-          ))}
-        </div>
+        {games.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
+            {games.map((game) => (
+              <button
+                key={game.id}
+                onClick={() =>
+                  setGameFilter((prev) =>
+                    prev === `${game.away}-${game.home}` ? "all" : `${game.away}-${game.home}`
+                  )
+                }
+                className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  gameFilter === `${game.away}-${game.home}`
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+                }`}
+              >
+                {game.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* No games state */}
+        {!isLoading && games.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <p className="text-sm text-muted-foreground">No games scheduled for this date.</p>
+          </div>
+        )}
+
+        {/* Top Picks spotlight */}
+        {allRows.length > 0 && gameFilter === "all" && (
+          <TopPicks rows={allRows} />
+        )}
 
         {/* Table */}
-        <FirstBasketTable
-          players={filteredPlayers}
-          teamTipoffs={teamTipoffs}
-          gameFilter={gameFilter}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-          isLive={hasLiveStats}
-        />
+        {games.length > 0 && (
+          <FirstBasketTable
+            players={filteredPlayers}
+            teamTipoffs={teamTipoffs}
+            gameFilter={gameFilter}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            isLive={hasLiveStats}
+            matchupMap={matchupMap}
+          />
+        )}
       </main>
     </div>
   )
