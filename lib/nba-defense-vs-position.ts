@@ -142,7 +142,8 @@ function parseBoxScorePlayers(summary: Record<string, unknown>): {
       const astIdx = labels.indexOf("AST")
       const stlIdx = labels.indexOf("STL")
       const blkIdx = labels.indexOf("BLK")
-      const threePmIdx = labels.indexOf("3PM")
+      // ESPN uses "3PT" with "made-attempted" format (e.g., "5-14")
+      const threePtIdx = labels.indexOf("3PT")
 
       if (ptsIdx === -1) continue
 
@@ -161,7 +162,12 @@ function parseBoxScorePlayers(summary: Record<string, unknown>): {
         const ast = astIdx >= 0 ? parseFloat(stats[astIdx]) || 0 : 0
         const stl = stlIdx >= 0 ? parseFloat(stats[stlIdx]) || 0 : 0
         const blk = blkIdx >= 0 ? parseFloat(stats[blkIdx]) || 0 : 0
-        const threepm = threePmIdx >= 0 ? parseFloat(stats[threePmIdx]) || 0 : 0
+        // "3PT" is "made-attempted" (e.g., "5-14") — parse just the made portion
+        let threepm = 0
+        if (threePtIdx >= 0 && stats[threePtIdx]) {
+          const parts = stats[threePtIdx].split("-")
+          threepm = parseInt(parts[0], 10) || 0
+        }
 
         players.push({
           playerName: athleteInfo.displayName as string,
@@ -341,23 +347,22 @@ export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPositio
 export async function getTeamRoster(teamId: string): Promise<RosterPlayer[]> {
   try {
     const raw = await fetchNBATeamRoster(teamId)
+    // ESPN NBA roster returns athletes as a FLAT array (not nested group.items)
     const athletes = (raw.athletes ?? []) as Array<Record<string, unknown>>
     const players: RosterPlayer[] = []
 
-    for (const group of athletes) {
-      const items = (group.items ?? []) as Array<Record<string, unknown>>
-      for (const item of items) {
-        const pos = (item.position as Record<string, unknown>)?.abbreviation as string ?? ""
-        const normalizedPos = normalizePosition(pos)
-        if (!normalizedPos) continue
+    for (const athlete of athletes) {
+      // Flat array: each element IS the player directly
+      const pos = (athlete.position as Record<string, unknown>)?.abbreviation as string ?? ""
+      const normalizedPos = normalizePosition(pos)
+      if (!normalizedPos) continue
 
-        players.push({
-          id: item.id as string,
-          name: (item.displayName as string) ?? (item.fullName as string) ?? "",
-          position: normalizedPos,
-          headshot: (item.headshot as Record<string, unknown>)?.href as string | undefined,
-        })
-      }
+      players.push({
+        id: athlete.id as string,
+        name: (athlete.displayName as string) ?? (athlete.fullName as string) ?? "",
+        position: normalizedPos,
+        headshot: (athlete.headshot as Record<string, unknown>)?.href as string | undefined,
+      })
     }
     return players
   } catch {
