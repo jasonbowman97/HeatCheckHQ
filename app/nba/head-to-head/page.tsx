@@ -4,14 +4,12 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import { BarChart3, Loader2 } from "lucide-react"
-import { nbaGames as staticGames } from "@/lib/nba-h2h-data"
 import type { NBAGame } from "@/lib/nba-h2h-data"
 import type { NBAScheduleGame, NBATeamSummary } from "@/lib/nba-api"
 import type { InjuredPlayer } from "@/lib/nba-h2h-data"
 import { H2HMatchupSelector } from "@/components/nba/h2h-matchup-selector"
 import { H2HHistory } from "@/components/nba/h2h-history"
 import { H2HMomentum } from "@/components/nba/h2h-momentum"
-import { H2HDefense } from "@/components/nba/h2h-defense"
 import { H2HInjuries } from "@/components/nba/h2h-injuries"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -31,8 +29,6 @@ const emptyMomentum: NBAGame["awayMomentum"] = {
   awayRecord: "N/A",
   awayPpg: 0,
 }
-
-const emptyDefense: NBAGame["awayDefense"] = { pg: 0, sg: 0, sf: 0, pf: 0, c: 0 }
 
 function mapInjuryStatus(status: string): InjuredPlayer["status"] {
   const lower = status.toLowerCase()
@@ -81,26 +77,17 @@ interface H2HApiData {
   recentMeetings: { date: string; awayScore: number; homeScore: number; total: number; winner: string }[]
 }
 
-type DvpRank = { pg: number; sg: number; sf: number; pf: number; c: number }
-
-// BettingPros uses slightly different abbreviations for a few teams
-const ESPN_TO_BP: Record<string, string> = { UTAH: "UTH", GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP", WSH: "WAS", PHX: "PHO" }
-function bpAbbr(espn: string) { return ESPN_TO_BP[espn] ?? espn }
-
 function espnToH2HGames(
   espnGames: NBAScheduleGame[],
   summaries: Record<string, NBATeamSummary>,
   h2hData: Record<string, H2HApiData | null>,
   lastRecords: Record<string, LastRecord>,
-  dvpRankings: Record<string, DvpRank>,
 ): NBAGame[] {
   return espnGames.map((g) => {
     const time = new Date(g.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
     const awaySummary = summaries[g.awayTeam.id]
     const homeSummary = summaries[g.homeTeam.id]
     const h2h = h2hData[g.id]
-    const awayDvp = dvpRankings[bpAbbr(g.awayTeam.abbreviation)]
-    const homeDvp = dvpRankings[bpAbbr(g.homeTeam.abbreviation)]
 
     return {
       id: g.id,
@@ -118,8 +105,6 @@ function espnToH2HGames(
         : { record: "N/A", awayAvgPts: 0, homeAvgPts: 0, avgTotal: 0, margin: "N/A", recentMeetings: [] },
       awayMomentum: buildMomentum(awaySummary, lastRecords[g.awayTeam.id]),
       homeMomentum: buildMomentum(homeSummary, lastRecords[g.homeTeam.id]),
-      awayDefense: awayDvp ?? { ...emptyDefense },
-      homeDefense: homeDvp ?? { ...emptyDefense },
     }
   })
 }
@@ -130,24 +115,24 @@ export default function NBAH2HPage() {
     summaries: Record<string, NBATeamSummary>
     h2hData: Record<string, H2HApiData | null>
     lastRecords: Record<string, LastRecord>
-    dvpRankings: Record<string, DvpRank>
+    dvpRankings: Record<string, unknown>
   }>("/api/nba/h2h", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
 
-  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {}, data.dvpRankings ?? {}) : null), [data])
+  const games = useMemo(
+    () => data?.games?.length
+      ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {})
+      : [],
+    [data],
+  )
 
-  // Merge: use live games for the matchup selector but fall back to static for detailed stats
-  const allGames = liveGames ?? staticGames
-  const isLive = !!liveGames
+  const isLive = games.length > 0
 
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
-  const activeId = selectedGameId ?? allGames[0]?.id
-  // Try to find a matching static game for full detail, otherwise use the live shell
-  const selectedGame = staticGames.find((g) => g.id === activeId)
-    ?? allGames.find((g) => g.id === activeId)
-    ?? allGames[0]
+  const activeId = selectedGameId ?? games[0]?.id
+  const selectedGame = games.find((g) => g.id === activeId) ?? games[0]
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,79 +145,75 @@ export default function NBAH2HPage() {
                 <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                  HeatCheck HQ
-                </h1>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
                 <p className="text-xs text-muted-foreground">NBA Head-to-Head</p>
               </div>
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/nba/first-basket"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               First Basket
             </Link>
-  <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-  H2H
-  </span>
-  <Link
-    href="/nba/defense-vs-position"
-    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-  >
-  Def vs Pos
-  </Link>
-  <Link
-    href="/nba/trends"
-    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-  >
-  Trends
-  </Link>
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">H2H</span>
+            <Link href="/nba/defense-vs-position" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Def vs Pos
+            </Link>
+            <Link href="/nba/trends" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+              Trends
+            </Link>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link
-              href="/mlb/hitting-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               MLB
             </Link>
-            <Link
-              href="/nfl/matchup"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
+            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
-        <div className="mb-8">
+      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+        {/* Heading */}
+        <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">Team vs Team H2H Analysis</h2>
+            <h2 className="text-xl font-semibold text-foreground">Head-to-Head</h2>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live
               </span>
             )}
+            {!isLoading && games.length > 0 && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                {games.length} Games
+              </span>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Comprehensive matchup analytics with betting insights and injury reports
+          <p className="text-sm text-muted-foreground">
+            Season series, team form, and injury reports for tonight{"'"}s matchups.
           </p>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <H2HMatchupSelector
-            games={allGames}
-            selectedId={activeId}
-            onSelect={setSelectedGameId}
-          />
-          <H2HHistory game={selectedGame} />
-          <H2HMomentum game={selectedGame} />
-          <H2HDefense game={selectedGame} />
-          <H2HInjuries game={selectedGame} />
-        </div>
+        {/* No games state */}
+        {!isLoading && games.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <p className="text-sm text-muted-foreground">No games scheduled for today.</p>
+          </div>
+        )}
+
+        {/* Content */}
+        {selectedGame && (
+          <>
+            <H2HMatchupSelector
+              games={games}
+              selectedId={activeId}
+              onSelect={setSelectedGameId}
+            />
+            <H2HHistory game={selectedGame} />
+            <H2HMomentum game={selectedGame} />
+            <H2HInjuries game={selectedGame} />
+          </>
+        )}
       </main>
     </div>
   )
