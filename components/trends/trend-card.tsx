@@ -59,6 +59,11 @@ export function TrendCard({ trend }: { trend: Trend }) {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
             {trend.statLabel}
           </p>
+          {trend.seasonAvg && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Season avg: <span className="font-semibold text-foreground/70">{trend.seasonAvg}</span>
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <span className="text-[10px] text-muted-foreground">{trend.streakLabel}</span>

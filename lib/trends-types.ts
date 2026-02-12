@@ -14,6 +14,8 @@ export interface Trend {
   /** A key stat value to display prominently */
   statValue: string
   statLabel: string
+  /** Player's season average for the primary stat (e.g. "22.4 PPG") */
+  seasonAvg?: string
   /** Whether this player has a game scheduled today */
   playingToday?: boolean
   /** Opponent abbreviation if playing today */

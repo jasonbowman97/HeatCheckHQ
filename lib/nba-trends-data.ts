@@ -1,6 +1,6 @@
 import type { Trend } from "./trends-types"
 
-export const nbaCategories = ["Scoring", "Threes", "Rebounds", "Assists"]
+export const nbaCategories = ["Scoring", "Threes", "Rebounds", "Assists", "Combos", "Defense", "Turnovers"]
 
 export const nbaTrends: Trend[] = [
   // HOT SCORING

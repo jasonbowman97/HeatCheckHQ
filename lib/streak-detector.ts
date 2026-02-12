@@ -24,6 +24,7 @@ export interface StreakResult {
   recentGames: boolean[]
   currentStreak: number
   statValue: string | number
+  seasonAvg?: string
 }
 
 /**

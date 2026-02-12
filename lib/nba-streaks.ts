@@ -3,6 +3,10 @@
  * Scans NBA rotation players (20+ MPG) for active hot/cold streaks.
  * Uses ESPN gamelog endpoint for individual player data + batched concurrency.
  * Cold streaks are relative to the player's own season average.
+ *
+ * Streak categories align with popular NBA prop markets:
+ * - Scoring (PTS), Threes (3PM), Assists, Rebounds
+ * - Combos (PTS+REB+AST), Defense (STL+BLK)
  */
 import "server-only"
 
@@ -11,7 +15,7 @@ import type { StreakResult } from "./streak-detector"
 import type { Trend } from "./trends-types"
 
 const BATCH_SIZE = 15
-const MIN_MPG = 20 // only scan players averaging 20+ minutes per game
+const MIN_MPG = 20
 
 interface NBAGameLogEntry {
   date: string
@@ -19,7 +23,8 @@ interface NBAGameLogEntry {
   stats: Record<string, number>
 }
 
-/** Parse ESPN NBA gamelog response into flat stat entries */
+/** Parse ESPN NBA gamelog response into flat stat entries.
+ *  Handles hyphenated "made-attempted" fields (FG, 3PT, FT) by splitting them. */
 function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
   const labels = (raw.labels ?? []) as string[]
   const eventMeta = (raw.events ?? {}) as Record<string, Record<string, unknown>>
@@ -38,7 +43,17 @@ function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
       const statsArr = (evt.stats ?? []) as Array<string | number>
       const statMap: Record<string, number> = {}
       labels.forEach((label, i) => {
-        statMap[label] = Number(statsArr[i]) || 0
+        const val = String(statsArr[i] ?? "")
+        // Handle hyphenated made-attempted stats: "7-19" → FGM=7, FGA=19
+        if (val.includes("-") && !val.startsWith("-")) {
+          const [made, attempted] = val.split("-").map(Number)
+          if (label === "FG") { statMap.FGM = made || 0; statMap.FGA = attempted || 0 }
+          else if (label === "3PT") { statMap["3PM"] = made || 0; statMap["3PA"] = attempted || 0 }
+          else if (label === "FT") { statMap.FTM = made || 0; statMap.FTA = attempted || 0 }
+          statMap[label] = made || 0 // also store the "made" under the original label
+        } else {
+          statMap[label] = Number(val) || 0
+        }
       })
       const meta = eventMeta[eventId]
       const opponent = (meta?.opponent as Record<string, unknown>)?.abbreviation as string ?? ""
@@ -51,21 +66,36 @@ function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
   return entries.slice(0, 20)
 }
 
-/** Calculate average of a stat across all game log entries */
 function seasonAvg(gameLogs: NBAGameLogEntry[], stat: string): number {
   if (gameLogs.length === 0) return 0
-  const total = gameLogs.reduce((s, g) => s + (g.stats[stat] ?? 0), 0)
-  return total / gameLogs.length
+  return gameLogs.reduce((s, g) => s + (g.stats[stat] ?? 0), 0) / gameLogs.length
 }
 
-/** Check if a player is a rotation player (20+ MPG) */
 function isRotationPlayer(gameLogs: NBAGameLogEntry[]): boolean {
   if (gameLogs.length < 5) return false
-  const avgMin = seasonAvg(gameLogs, "MIN")
-  return avgMin >= MIN_MPG
+  return seasonAvg(gameLogs, "MIN") >= MIN_MPG
 }
 
-/** Detect NBA streaks — hot streaks use fixed thresholds, cold streaks are relative */
+function calcStreak(games: boolean[]): number {
+  let streak = 0
+  for (let i = games.length - 1; i >= 0; i--) {
+    if (games[i]) streak++
+    else break
+  }
+  return streak
+}
+
+/** Helper: PTS+REB+AST combo */
+function pra(g: NBAGameLogEntry): number {
+  return (g.stats.PTS ?? 0) + (g.stats.REB ?? 0) + (g.stats.AST ?? 0)
+}
+
+/** Helper: Stocks (STL+BLK) */
+function stocks(g: NBAGameLogEntry): number {
+  return (g.stats.STL ?? 0) + (g.stats.BLK ?? 0)
+}
+
+/** Detect all NBA streaks for a single player */
 function detectNBAStreaks(
   playerId: string,
   playerName: string,
@@ -76,13 +106,16 @@ function detectNBAStreaks(
   const streaks: StreakResult[] = []
   const last10 = gameLogs.slice(0, 10).reverse()
 
-  // Season averages for relative cold streak detection
+  // Season averages
   const avgPts = seasonAvg(gameLogs, "PTS")
   const avgReb = seasonAvg(gameLogs, "REB")
   const avgAst = seasonAvg(gameLogs, "AST")
-  const avg3pm = seasonAvg(gameLogs, "3PM") || seasonAvg(gameLogs, "FG3M")
+  const avg3pm = seasonAvg(gameLogs, "3PM")
+  const avgPra = gameLogs.length > 0 ? gameLogs.reduce((s, g) => s + pra(g), 0) / gameLogs.length : 0
+  const avgStocks = gameLogs.length > 0 ? gameLogs.reduce((s, g) => s + stocks(g), 0) / gameLogs.length : 0
+  const avgTO = seasonAvg(gameLogs, "TO")
 
-  // === HOT STREAKS ===
+  // ═══ HOT STREAKS ═══
 
   // 1. 20+ point games streak
   const bigScoringGames = last10.map((g) => (g.stats.PTS ?? 0) >= 20)
@@ -95,6 +128,7 @@ function detectNBAStreaks(
       streakDescription: `${scoringStreak} straight games with 20+ points`,
       recentGames: bigScoringGames, currentStreak: scoringStreak,
       statValue: `${recentAvg.toFixed(1)} PPG`,
+      seasonAvg: `${avgPts.toFixed(1)} PPG`,
     })
   }
 
@@ -109,10 +143,28 @@ function detectNBAStreaks(
       streakDescription: `${eliteStreak} straight games with 30+ points`,
       recentGames: elite, currentStreak: eliteStreak,
       statValue: `${recentAvg.toFixed(1)} PPG`,
+      seasonAvg: `${avgPts.toFixed(1)} PPG`,
     })
   }
 
-  // 3. Double-double streak
+  // 3. Scoring above their line: last 5 avg is 20%+ above season avg
+  if (avgPts >= 15) {
+    const last5 = gameLogs.slice(0, 5)
+    const last5Avg = last5.reduce((s, g) => s + (g.stats.PTS ?? 0), 0) / last5.length
+    if (last5Avg >= avgPts * 1.2) {
+      const aboveGames = last10.map((g) => (g.stats.PTS ?? 0) > avgPts)
+      streaks.push({
+        playerId, playerName, team, position,
+        streakType: "hot", category: "Scoring", statLabel: "Above Season Avg",
+        streakDescription: `Averaging ${last5Avg.toFixed(1)} PPG over last 5 (season: ${avgPts.toFixed(1)})`,
+        recentGames: aboveGames, currentStreak: calcStreak(aboveGames),
+        statValue: `${last5Avg.toFixed(1)} PPG`,
+        seasonAvg: `${avgPts.toFixed(1)} PPG`,
+      })
+    }
+  }
+
+  // 4. Double-double streak
   const ddGames = last10.map((g) => {
     const stats = [g.stats.PTS ?? 0, g.stats.REB ?? 0, g.stats.AST ?? 0, g.stats.STL ?? 0, g.stats.BLK ?? 0]
     return stats.filter((s) => s >= 10).length >= 2
@@ -121,28 +173,48 @@ function detectNBAStreaks(
   if (ddStreak >= 4) {
     streaks.push({
       playerId, playerName, team, position,
-      streakType: "hot", category: "Scoring", statLabel: "Double-Doubles",
+      streakType: "hot", category: "Combos", statLabel: "Double-Doubles",
       streakDescription: `${ddStreak} straight double-doubles`,
       recentGames: ddGames, currentStreak: ddStreak,
       statValue: `${ddStreak}G`,
+      seasonAvg: `${avgPts.toFixed(0)}/${avgReb.toFixed(0)}/${avgAst.toFixed(0)}`,
     })
   }
 
-  // 4. 3-pointer streak (3+ per game in 7 of last 10)
-  const threeGames = last10.map((g) => (g.stats["3PM"] ?? g.stats.FG3M ?? 0) >= 3)
+  // 5. PRA combo — hitting high combined totals consistently
+  if (avgPra >= 25) {
+    const praThreshold = Math.round(avgPra * 1.15) // 15% above their avg PRA
+    const praGames = last10.map((g) => pra(g) >= praThreshold)
+    const praStreak = calcStreak(praGames)
+    if (praStreak >= 5) {
+      const recentPra = last10.reduce((s, g) => s + pra(g), 0) / last10.length
+      streaks.push({
+        playerId, playerName, team, position,
+        streakType: "hot", category: "Combos", statLabel: `${praThreshold}+ PRA`,
+        streakDescription: `${praStreak} straight games with ${praThreshold}+ PTS+REB+AST`,
+        recentGames: praGames, currentStreak: praStreak,
+        statValue: `${recentPra.toFixed(1)} PRA`,
+        seasonAvg: `${avgPra.toFixed(1)} PRA`,
+      })
+    }
+  }
+
+  // 6. 3-pointer streak (3+ per game in 7 of last 10)
+  const threeGames = last10.map((g) => (g.stats["3PM"] ?? 0) >= 3)
   const threeCount = threeGames.filter(Boolean).length
   if (threeCount >= 7) {
-    const recent3pm = last10.reduce((s, g) => s + (g.stats["3PM"] ?? g.stats.FG3M ?? 0), 0) / last10.length
+    const recent3pm = last10.reduce((s, g) => s + (g.stats["3PM"] ?? 0), 0) / last10.length
     streaks.push({
       playerId, playerName, team, position,
       streakType: "hot", category: "Threes", statLabel: "3+ 3PM Games",
       streakDescription: `${threeCount} games with 3+ threes in last ${last10.length}`,
       recentGames: threeGames, currentStreak: calcStreak(threeGames),
       statValue: `${recent3pm.toFixed(1)} 3PM/G`,
+      seasonAvg: `${avg3pm.toFixed(1)} 3PM/G`,
     })
   }
 
-  // 5. Assist streak (8+)
+  // 7. Assist streak (8+)
   const assistGames = last10.map((g) => (g.stats.AST ?? 0) >= 8)
   const assistStreak = calcStreak(assistGames)
   if (assistStreak >= 4) {
@@ -153,10 +225,11 @@ function detectNBAStreaks(
       streakDescription: `${assistStreak} straight games with 8+ assists`,
       recentGames: assistGames, currentStreak: assistStreak,
       statValue: `${recentAst.toFixed(1)} APG`,
+      seasonAvg: `${avgAst.toFixed(1)} APG`,
     })
   }
 
-  // 6. Rebounding streak (10+)
+  // 8. Rebounding streak (10+)
   const rebGames = last10.map((g) => (g.stats.REB ?? 0) >= 10)
   const rebStreak = calcStreak(rebGames)
   if (rebStreak >= 4) {
@@ -167,12 +240,30 @@ function detectNBAStreaks(
       streakDescription: `${rebStreak} straight games with 10+ rebounds`,
       recentGames: rebGames, currentStreak: rebStreak,
       statValue: `${recentReb.toFixed(1)} RPG`,
+      seasonAvg: `${avgReb.toFixed(1)} RPG`,
     })
   }
 
-  // === COLD STREAKS (relative to player's own season average) ===
+  // 9. Defensive props — steals+blocks streak (3+ combined)
+  if (avgStocks >= 1.5) {
+    const stockGames = last10.map((g) => stocks(g) >= 3)
+    const stockStreak = calcStreak(stockGames)
+    if (stockStreak >= 4) {
+      const recentStocks = last10.reduce((s, g) => s + stocks(g), 0) / last10.length
+      streaks.push({
+        playerId, playerName, team, position,
+        streakType: "hot", category: "Defense", statLabel: "3+ STL+BLK",
+        streakDescription: `${stockStreak} straight games with 3+ steals+blocks`,
+        recentGames: stockGames, currentStreak: stockStreak,
+        statValue: `${recentStocks.toFixed(1)} STK/G`,
+        seasonAvg: `${avgStocks.toFixed(1)} STK/G`,
+      })
+    }
+  }
 
-  // Cold Scoring: 3+ straight games scoring well below their average (< 60% of avg)
+  // ═══ COLD STREAKS (relative to season average) ═══
+
+  // Cold Scoring: 3+ straight under 60% of season avg
   if (avgPts >= 12) {
     const coldThreshold = avgPts * 0.6
     const coldScoring = last10.map((g) => (g.stats.PTS ?? 0) < coldThreshold)
@@ -185,13 +276,14 @@ function detectNBAStreaks(
         streakDescription: `${coldStreak} straight under ${Math.round(coldThreshold)} pts (avg: ${avgPts.toFixed(1)})`,
         recentGames: coldScoring, currentStreak: coldStreak,
         statValue: `${recentAvg.toFixed(1)} PPG`,
+        seasonAvg: `${avgPts.toFixed(1)} PPG`,
       })
     }
   }
 
-  // Cold 3-Point: 3+ straight games with 0 threes when they normally hit 1.5+/game
+  // Cold 3-Point: 3+ straight with 0 threes for 1.5+ 3PM/G shooters
   if (avg3pm >= 1.5) {
-    const coldThrees = last10.map((g) => (g.stats["3PM"] ?? g.stats.FG3M ?? 0) === 0)
+    const coldThrees = last10.map((g) => (g.stats["3PM"] ?? 0) === 0)
     const cold3Streak = calcStreak(coldThrees)
     if (cold3Streak >= 3) {
       streaks.push({
@@ -200,11 +292,12 @@ function detectNBAStreaks(
         streakDescription: `${cold3Streak} straight without a three (avg: ${avg3pm.toFixed(1)}/G)`,
         recentGames: coldThrees, currentStreak: cold3Streak,
         statValue: `${cold3Streak}G`,
+        seasonAvg: `${avg3pm.toFixed(1)} 3PM/G`,
       })
     }
   }
 
-  // Cold Rebounds: 3+ straight games well below avg (< 50%) for 8+ RPG players
+  // Cold Rebounds: 3+ straight under 50% of avg for 8+ RPG players
   if (avgReb >= 8) {
     const coldRebThreshold = avgReb * 0.5
     const coldReb = last10.map((g) => (g.stats.REB ?? 0) < coldRebThreshold)
@@ -217,11 +310,12 @@ function detectNBAStreaks(
         streakDescription: `${coldRebStreak} straight under ${Math.round(coldRebThreshold)} reb (avg: ${avgReb.toFixed(1)})`,
         recentGames: coldReb, currentStreak: coldRebStreak,
         statValue: `${recentReb.toFixed(1)} RPG`,
+        seasonAvg: `${avgReb.toFixed(1)} RPG`,
       })
     }
   }
 
-  // Cold Assists: 3+ straight games well below avg (< 50%) for 6+ APG players
+  // Cold Assists: 3+ straight under 50% of avg for 6+ APG players
   if (avgAst >= 6) {
     const coldAstThreshold = avgAst * 0.5
     const coldAst = last10.map((g) => (g.stats.AST ?? 0) < coldAstThreshold)
@@ -234,20 +328,30 @@ function detectNBAStreaks(
         streakDescription: `${coldAstStreak} straight under ${Math.round(coldAstThreshold)} ast (avg: ${avgAst.toFixed(1)})`,
         recentGames: coldAst, currentStreak: coldAstStreak,
         statValue: `${recentAst.toFixed(1)} APG`,
+        seasonAvg: `${avgAst.toFixed(1)} APG`,
+      })
+    }
+  }
+
+  // Cold Turnovers: 3+ straight games with high TOs (>= 150% of avg) for players who avg 2+ TO
+  if (avgTO >= 2) {
+    const toThreshold = Math.ceil(avgTO * 1.5)
+    const highTO = last10.map((g) => (g.stats.TO ?? 0) >= toThreshold)
+    const toStreak = calcStreak(highTO)
+    if (toStreak >= 3) {
+      const recentTO = gameLogs.slice(0, toStreak).reduce((s, g) => s + (g.stats.TO ?? 0), 0) / toStreak
+      streaks.push({
+        playerId, playerName, team, position,
+        streakType: "cold", category: "Turnovers", statLabel: `${toThreshold}+ TO Games`,
+        streakDescription: `${toStreak} straight with ${toThreshold}+ turnovers (avg: ${avgTO.toFixed(1)})`,
+        recentGames: highTO, currentStreak: toStreak,
+        statValue: `${recentTO.toFixed(1)} TO/G`,
+        seasonAvg: `${avgTO.toFixed(1)} TO/G`,
       })
     }
   }
 
   return streaks
-}
-
-function calcStreak(games: boolean[]): number {
-  let streak = 0
-  for (let i = games.length - 1; i >= 0; i--) {
-    if (games[i]) streak++
-    else break
-  }
-  return streak
 }
 
 /** Get ALL NBA players from team rosters */
@@ -308,21 +412,17 @@ async function getTodayGames(): Promise<Map<string, string>> {
 
       const awayTeam = away.team as Record<string, unknown>
       const homeTeam = home.team as Record<string, unknown>
-      const awayAbbr = awayTeam.abbreviation as string
-      const homeAbbr = homeTeam.abbreviation as string
-
-      teamToOpponent.set(awayAbbr, homeAbbr)
-      teamToOpponent.set(homeAbbr, awayAbbr)
+      teamToOpponent.set(awayTeam.abbreviation as string, homeTeam.abbreviation as string)
+      teamToOpponent.set(homeTeam.abbreviation as string, awayTeam.abbreviation as string)
     }
   } catch {
-    // Non-critical — trends still work without playing-today data
+    // Non-critical
   }
   return teamToOpponent
 }
 
 /**
  * Scan NBA rotation players for active streaks.
- * Only players with 20+ MPG are scanned for streak detection.
  */
 export async function getNBAStreakTrends(): Promise<Trend[]> {
   try {
@@ -342,7 +442,6 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
           try {
             const raw = await fetchNBAAthleteGameLog(player.id)
             const gameLogs = parseNBAGameLog(raw)
-            // Skip players who aren't rotation players (< 20 MPG)
             if (!isRotationPlayer(gameLogs)) return []
             scannedCount++
             return detectNBAStreaks(player.id, player.name, player.team, player.position, gameLogs)
@@ -370,6 +469,7 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
         recentGames: streak.recentGames,
         statValue: String(streak.statValue),
         statLabel: streak.statLabel,
+        seasonAvg: streak.seasonAvg,
         playingToday: !!opponent,
         opponent: opponent ?? undefined,
       }
@@ -378,7 +478,7 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
     const hotTrends = trends.filter((t) => t.type === "hot").sort((a, b) => b.streakLength - a.streakLength)
     const coldTrends = trends.filter((t) => t.type === "cold").sort((a, b) => b.streakLength - a.streakLength)
 
-    return [...hotTrends.slice(0, 20), ...coldTrends.slice(0, 10)]
+    return [...hotTrends.slice(0, 25), ...coldTrends.slice(0, 15)]
   } catch (err) {
     console.error("[NBA Streaks] Failed to generate trends:", err)
     return []
@@ -386,17 +486,21 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
 }
 
 function generateDetail(streak: StreakResult): string {
+  const avg = streak.seasonAvg ? ` Season avg: ${streak.seasonAvg}.` : ""
   if (streak.streakType === "hot") {
-    if (streak.category === "Scoring") return `On fire. ${streak.streakDescription}. Elite offensive output.`
-    if (streak.category === "Threes") return `Lights out from deep. ${streak.streakDescription}.`
-    if (streak.category === "Assists") return `Running the offense. ${streak.streakDescription}.`
-    if (streak.category === "Rebounds") return `Dominating the glass. ${streak.streakDescription}.`
+    if (streak.category === "Scoring") return `On fire. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Threes") return `Lights out from deep. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Assists") return `Running the offense. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Rebounds") return `Dominating the glass. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Combos") return `Filling the stat sheet. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Defense") return `Disruptive on defense. ${streak.streakDescription}.${avg}`
   }
   if (streak.streakType === "cold") {
-    if (streak.category === "Scoring") return `Struggling to score. ${streak.streakDescription}.`
-    if (streak.category === "Threes") return `Ice cold from deep. ${streak.streakDescription}.`
-    if (streak.category === "Rebounds") return `Not crashing the boards. ${streak.streakDescription}.`
-    if (streak.category === "Assists") return `Not creating for others. ${streak.streakDescription}.`
+    if (streak.category === "Scoring") return `Struggling to score. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Threes") return `Ice cold from deep. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Rebounds") return `Not crashing the boards. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Assists") return `Not creating for others. ${streak.streakDescription}.${avg}`
+    if (streak.category === "Turnovers") return `Careless with the ball. ${streak.streakDescription}.${avg}`
   }
-  return `Notable trend: ${streak.streakDescription}.`
+  return `Notable trend: ${streak.streakDescription}.${avg}`
 }
