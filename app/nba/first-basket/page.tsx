@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
 import { Loader2 } from "lucide-react"
+import Image from "next/image"
 import { NBAHeader } from "@/components/nba/nba-header"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
@@ -22,7 +23,9 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 interface GameInfo {
   id: string
   away: string
+  awayLogo?: string
   home: string
+  homeLogo?: string
   label: string
   time: string
   venue: string
@@ -33,7 +36,9 @@ function toLiveGames(espnGames: NBAScheduleGame[]): GameInfo[] {
   return espnGames.map((g, i) => ({
     id: g.id || `live-${i}`,
     away: g.awayTeam.abbreviation,
+    awayLogo: g.awayTeam.logo,
     home: g.homeTeam.abbreviation,
+    homeLogo: g.homeTeam.logo,
     label: `${g.awayTeam.abbreviation} @ ${g.homeTeam.abbreviation}`,
     time: new Date(g.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
     venue: g.venue,
@@ -190,13 +195,15 @@ export default function NBAFirstBasketPage() {
                     prev === `${game.away}-${game.home}` ? "all" : `${game.away}-${game.home}`
                   )
                 }
-                className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   gameFilter === `${game.away}-${game.home}`
                     ? "bg-primary/15 text-primary border border-primary/30"
                     : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
                 }`}
               >
+                {game.awayLogo && <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" unoptimized />}
                 {game.label}
+                {game.homeLogo && <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" unoptimized />}
               </button>
             ))}
           </div>

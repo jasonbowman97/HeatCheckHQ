@@ -2,8 +2,10 @@ export interface NBAGame {
   id: string
   awayTeam: string
   awayFull: string
+  awayLogo?: string
   homeTeam: string
   homeFull: string
+  homeLogo?: string
   date: string
   time: string
   venue: string

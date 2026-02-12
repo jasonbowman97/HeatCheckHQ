@@ -7,6 +7,7 @@ import { TeamStatsComparison } from "@/components/nfl/team-stats-comparison"
 import { PassingSection, RushingSection, ReceivingSection } from "@/components/nfl/positional-tables"
 import { getAllMatchups, type NFLMatchup } from "@/lib/nfl-matchup-data"
 import type { LiveMatchup } from "@/lib/nfl-api"
+import Image from "next/image"
 import { Loader2 } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -97,8 +98,10 @@ interface GameOption {
   id: string
   away: string
   awayFull: string
+  awayLogo?: string
   home: string
   homeFull: string
+  homeLogo?: string
   week: string
   venue: string
 }
@@ -164,13 +167,15 @@ export default function NFLMatchupPage() {
                 <button
                   key={g.id}
                   onClick={() => selectGame(g.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     effectiveGameId === g.id
                       ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
                   }`}
                 >
+                  {g.awayLogo && <Image src={g.awayLogo} alt={g.away} width={16} height={16} className="rounded" unoptimized />}
                   {g.away} @ {g.home}
+                  {g.homeLogo && <Image src={g.homeLogo} alt={g.home} width={16} height={16} className="rounded" unoptimized />}
                 </button>
               ))}
             </div>
@@ -210,11 +215,23 @@ export default function NFLMatchupPage() {
         {/* Matchup Header */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
+            {(() => {
+              const game = liveGames.find((g) => g.id === effectiveGameId)
+              return game?.awayLogo ? (
+                <Image src={game.awayLogo} alt={displayMatchup.away.abbreviation} width={32} height={32} className="rounded" unoptimized />
+              ) : null
+            })()}
             <h2 className="text-xl font-bold text-foreground text-balance">
               {displayMatchup.away.name}{" "}
               <span className="text-muted-foreground font-normal">@</span>{" "}
               {displayMatchup.home.name}
             </h2>
+            {(() => {
+              const game = liveGames.find((g) => g.id === effectiveGameId)
+              return game?.homeLogo ? (
+                <Image src={game.homeLogo} alt={displayMatchup.home.abbreviation} width={32} height={32} className="rounded" unoptimized />
+              ) : null
+            })()}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live
