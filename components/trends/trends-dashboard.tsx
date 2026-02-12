@@ -219,7 +219,7 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
         <div className="rounded-xl border border-border bg-card p-12 text-center">
           <p className="text-sm text-muted-foreground">
             {trends.length === 0
-              ? "No active streaks detected. Check back during the MLB season."
+              ? "No active streaks detected. Check back when NBA games are being played."
               : "No trends match the current filters."}
           </p>
         </div>
