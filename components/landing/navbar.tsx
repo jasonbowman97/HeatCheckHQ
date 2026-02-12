@@ -32,6 +32,7 @@ const sportLinks = [
     sport: "NFL",
     pages: [
       { name: "Matchup", href: "/nfl/matchup", tier: "pro" as Tier },
+      { name: "Def vs Pos", href: "/nfl/defense-vs-position", tier: "free" as Tier },
       { name: "Trends", href: "/nfl/trends", tier: "free" as Tier },
     ],
   },
