@@ -224,9 +224,7 @@ export default function NFLMatchupPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             {displayMatchup.week}
-            {isLive
-              ? " — Player stats from current season via ESPN"
-              : " — Sample data (no live games available)"}
+            {!isLive && " — Sample data (no live games available)"}
           </p>
         </div>
 

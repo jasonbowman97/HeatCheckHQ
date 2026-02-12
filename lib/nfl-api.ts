@@ -279,46 +279,58 @@ export interface NFLTeamStats {
 
 export async function getNFLTeamStats(teamId: string): Promise<NFLTeamStats | null> {
   try {
-    const raw = await espnFetch<{
-      results: {
-        stats: {
-          categories: {
-            name: string
-            stats: { name: string; displayValue: string; value: number; rank?: number; rankDisplayValue?: string }[]
-          }[]
+    // Fetch team summary (PPG data) and statistics (yard data) in parallel
+    const [summaryRaw, statsRaw] = await Promise.all([
+      espnFetch<{
+        team: {
+          record?: { items?: { stats?: { name: string; value: number }[] }[] }
         }
-      }
-    }>(`/teams/${teamId}/statistics`)
+      }>(`/teams/${teamId}`),
+      espnFetch<{
+        results: {
+          stats: {
+            categories: {
+              name: string
+              stats: { name: string; value: number }[]
+            }[]
+          }
+        }
+      }>(`/teams/${teamId}/statistics`),
+    ])
 
-    const cats = raw.results?.stats?.categories ?? []
+    // PPG from team summary (per-game averages)
+    const recordStats = summaryRaw.team?.record?.items?.[0]?.stats ?? []
+    const getSummaryStat = (name: string) =>
+      recordStats.find((s) => s.name === name)?.value ?? 0
+
+    const ppg = getSummaryStat("avgPointsFor")
+    const oppPpg = getSummaryStat("avgPointsAgainst")
+
+    // Yards from statistics endpoint (per-game values)
+    const cats = statsRaw.results?.stats?.categories ?? []
     const findStat = (catName: string, statName: string) => {
-      const cat = cats.find((c) => c.name.toLowerCase().includes(catName.toLowerCase()))
+      const cat = cats.find((c) => c.name === catName)
       return cat?.stats?.find((s) => s.name === statName)
     }
 
-    // Offensive stats
-    const totalPts = findStat("scoring", "totalPoints") ?? findStat("scoring", "totalPointsPerGame")
-    const passYds = findStat("passing", "netPassingYardsPerGame") ?? findStat("passing", "netPassingYards")
-    const rushYds = findStat("rushing", "rushingYardsPerGame") ?? findStat("rushing", "rushingYards")
+    const passYds = findStat("passing", "netPassingYardsPerGame") ?? findStat("passing", "passingYardsPerGame")
+    const rushYds = findStat("rushing", "rushingYardsPerGame")
 
-    // Defensive stats (opponent categories)
-    const ptsAllowed = findStat("scoring", "pointsAgainst") ?? findStat("defensive", "pointsAgainst")
-    const passYdsAllowed = findStat("defensive", "netPassingYardsAllowed") ?? findStat("passing", "opponentNetPassingYards")
-    const rushYdsAllowed = findStat("defensive", "rushingYardsAllowed") ?? findStat("rushing", "opponentRushingYards")
-
+    // ESPN public API doesn't expose opponent yard stats —
+    // only points allowed is available from team summary
     return {
-      pointsScored: Math.round((totalPts?.value ?? 0) * 10) / 10,
-      pointsScoredRank: totalPts?.rank ?? 0,
-      pointsAllowed: Math.round((ptsAllowed?.value ?? 0) * 10) / 10,
-      pointsAllowedRank: ptsAllowed?.rank ?? 0,
+      pointsScored: Math.round(ppg * 10) / 10,
+      pointsScoredRank: 0,
+      pointsAllowed: Math.round(oppPpg * 10) / 10,
+      pointsAllowedRank: 0,
       passYards: Math.round((passYds?.value ?? 0) * 10) / 10,
-      passYardsRank: passYds?.rank ?? 0,
-      passYardsAllowed: Math.round((passYdsAllowed?.value ?? 0) * 10) / 10,
-      passYardsAllowedRank: passYdsAllowed?.rank ?? 0,
+      passYardsRank: 0,
+      passYardsAllowed: 0,
+      passYardsAllowedRank: 0,
       rushingYards: Math.round((rushYds?.value ?? 0) * 10) / 10,
-      rushingYardsRank: rushYds?.rank ?? 0,
-      rushingYardsAllowed: Math.round((rushYdsAllowed?.value ?? 0) * 10) / 10,
-      rushingYardsAllowedRank: rushYdsAllowed?.rank ?? 0,
+      rushingYardsRank: 0,
+      rushingYardsAllowed: 0,
+      rushingYardsAllowedRank: 0,
     }
   } catch {
     return null
