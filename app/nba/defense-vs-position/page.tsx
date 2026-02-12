@@ -248,17 +248,18 @@ export default function DefenseVsPositionPage() {
 /* ── Rank badge color ── */
 
 function rankBadgeClass(rank: number): string {
-  if (rank <= 3) return "bg-red-500/15 text-red-400 border-red-500/20"
+  if (rank <= 3) return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
   return "bg-secondary text-muted-foreground border-border"
 }
 
 function statUnit(category: string): string {
-  if (category.toLowerCase().includes("point")) return "PPG"
-  if (category.toLowerCase().includes("rebound")) return "RPG"
-  if (category.toLowerCase().includes("assist")) return "APG"
-  if (category.toLowerCase().includes("3-pointer")) return "3PM/G"
-  if (category.toLowerCase().includes("steal")) return "SPG"
-  if (category.toLowerCase().includes("block")) return "BPG"
+  const c = category.toLowerCase()
+  if (c.includes("3-pointer")) return "3PM/G"
+  if (c.includes("point")) return "PPG"
+  if (c.includes("rebound")) return "RPG"
+  if (c.includes("assist")) return "APG"
+  if (c.includes("steal")) return "SPG"
+  if (c.includes("block")) return "BPG"
   return "/G"
 }
 
@@ -404,7 +405,7 @@ function MatchupsView({
                       <span className="text-sm text-muted-foreground flex-1 min-w-0">
                         <span className="text-foreground font-medium">{insight.teamAbbr}</span>
                         {" allow "}
-                        <span className={`font-semibold ${insight.rank <= 2 ? "text-red-400" : "text-foreground"}`}>
+                        <span className={`font-semibold ${insight.rank <= 2 ? "text-emerald-400" : "text-foreground"}`}>
                           {insight.rankLabel}
                         </span>
                         {" "}{insight.statCategory} to {positionLabel(insight.position)}
@@ -515,7 +516,7 @@ function RankingsView({
                   }`}
                 >
                   <td className="px-5 py-3">
-                    <span className={`text-sm font-bold ${isTop5 ? "text-red-400" : isBottom5 ? "text-emerald-400" : "text-foreground"}`}>
+                    <span className={`text-sm font-bold ${isTop5 ? "text-emerald-400" : isBottom5 ? "text-red-400" : "text-foreground"}`}>
                       {row.rank}
                     </span>
                   </td>
@@ -530,7 +531,7 @@ function RankingsView({
                     </div>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-red-400" : isBottom5 ? "text-emerald-400" : "text-foreground"}`}>
+                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-emerald-400" : isBottom5 ? "text-red-400" : "text-foreground"}`}>
                       {row.avgAllowed.toFixed(1)}
                     </span>
                   </td>
@@ -538,7 +539,7 @@ function RankingsView({
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          isTop5 ? "bg-red-400/70" : isBottom5 ? "bg-emerald-400/60" : "bg-muted-foreground/40"
+                          isTop5 ? "bg-emerald-400/70" : isBottom5 ? "bg-red-400/60" : "bg-muted-foreground/40"
                         }`}
                         style={{ width: `${barWidth}%` }}
                       />
