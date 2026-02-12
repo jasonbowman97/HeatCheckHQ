@@ -11,17 +11,24 @@ export function TrendCard({ trend }: { trend: Trend }) {
           : "border-red-500/20 hover:border-red-500/40"
       }`}
     >
-      {/* Type badge */}
+      {/* Type badge + category + playing today */}
       <div className="flex items-center justify-between mb-3">
-        <span
-          className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md ${
-            isHot
-              ? "text-emerald-400 bg-emerald-500/10"
-              : "text-red-400 bg-red-500/10"
-          }`}
-        >
-          {isHot ? "Hot" : "Cold"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md ${
+              isHot
+                ? "text-emerald-400 bg-emerald-500/10"
+                : "text-red-400 bg-red-500/10"
+            }`}
+          >
+            {isHot ? "Hot" : "Cold"}
+          </span>
+          {trend.playingToday && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+              Today{trend.opponent ? ` vs ${trend.opponent}` : ""}
+            </span>
+          )}
+        </div>
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded">
           {trend.category}
         </span>

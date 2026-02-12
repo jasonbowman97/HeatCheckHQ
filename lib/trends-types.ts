@@ -14,4 +14,8 @@ export interface Trend {
   /** A key stat value to display prominently */
   statValue: string
   statLabel: string
+  /** Whether this player has a game scheduled today */
+  playingToday?: boolean
+  /** Opponent abbreviation if playing today */
+  opponent?: string
 }

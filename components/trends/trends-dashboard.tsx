@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import type { Trend } from "@/lib/trends-types"
 import { TrendCard } from "./trend-card"
-import { TrendingUp, TrendingDown, ArrowUpDown } from "lucide-react"
+import { TrendingUp, TrendingDown, ArrowUpDown, Search, CalendarCheck } from "lucide-react"
 
 type SortOption = "streak" | "name"
 
@@ -20,6 +20,8 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
   const [activeCategory, setActiveCategory] = useState<string>("All")
   const [activeTeam, setActiveTeam] = useState<string>("All")
   const [sortBy, setSortBy] = useState<SortOption>("streak")
+  const [search, setSearch] = useState("")
+  const [playingTodayOnly, setPlayingTodayOnly] = useState(false)
 
   // Derive unique teams from the data
   const teams = useMemo(() => {
@@ -27,15 +29,22 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
     return Array.from(set).sort()
   }, [trends])
 
+  const playingTodayCount = useMemo(
+    () => trends.filter((t) => t.playingToday).length,
+    [trends]
+  )
+
   const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
     let result = trends.filter((t) => {
       if (activeFilter !== "all" && t.type !== activeFilter) return false
       if (activeCategory !== "All" && t.category !== activeCategory) return false
       if (activeTeam !== "All" && t.team !== activeTeam) return false
+      if (playingTodayOnly && !t.playingToday) return false
+      if (q && !t.playerName.toLowerCase().includes(q) && !t.team.toLowerCase().includes(q)) return false
       return true
     })
 
-    // Sort
     if (sortBy === "streak") {
       result = [...result].sort((a, b) => b.streakLength - a.streakLength)
     } else {
@@ -43,17 +52,19 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
     }
 
     return result
-  }, [trends, activeFilter, activeCategory, activeTeam, sortBy])
+  }, [trends, activeFilter, activeCategory, activeTeam, sortBy, search, playingTodayOnly])
 
   const hotCount = trends.filter((t) => {
     if (activeCategory !== "All" && t.category !== activeCategory) return false
     if (activeTeam !== "All" && t.team !== activeTeam) return false
+    if (playingTodayOnly && !t.playingToday) return false
     return t.type === "hot"
   }).length
 
   const coldCount = trends.filter((t) => {
     if (activeCategory !== "All" && t.category !== activeCategory) return false
     if (activeTeam !== "All" && t.team !== activeTeam) return false
+    if (playingTodayOnly && !t.playingToday) return false
     return t.type === "cold"
   }).length
 
@@ -68,8 +79,44 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
               Live
             </span>
           )}
+          {trends.length > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+              {trends.length} streaks found
+            </span>
+          )}
         </div>
         <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+      </div>
+
+      {/* Search + Playing Today */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search player or team..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="rounded-lg border border-border bg-card pl-9 pr-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary w-52"
+          />
+        </div>
+
+        {/* Playing Today toggle */}
+        {playingTodayCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setPlayingTodayOnly((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+              playingTodayOnly
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                : "text-muted-foreground hover:text-foreground border-border bg-card"
+            }`}
+          >
+            <CalendarCheck className="h-3.5 w-3.5" />
+            Playing Today ({playingTodayCount})
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -113,14 +160,14 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
           </button>
         </div>
 
-        {/* Category pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Category pills — scrollable */}
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1">
           {["All", ...categories].map((cat) => (
             <button
               type="button"
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                 activeCategory === cat
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground bg-card border border-border hover:border-primary/30"
@@ -170,7 +217,11 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <p className="text-sm text-muted-foreground">No trends match the current filters.</p>
+          <p className="text-sm text-muted-foreground">
+            {trends.length === 0
+              ? "No active streaks detected. Check back during the MLB season."
+              : "No trends match the current filters."}
+          </p>
         </div>
       )}
     </div>
