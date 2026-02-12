@@ -22,6 +22,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
 
   // Free account required
   { pattern: "/nba/defense-vs-position", tier: "free", label: "Defense vs Position" },
+  { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },
   { pattern: "/mlb/trends", tier: "free", label: "MLB Trends" },
   { pattern: "/nba/trends", tier: "free", label: "NBA Trends" },
   { pattern: "/nfl/trends", tier: "free", label: "NFL Trends" },

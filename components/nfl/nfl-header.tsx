@@ -33,9 +33,18 @@ export function NFLHeader() {
           >
             NBA
           </Link>
-          <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
+          <Link
+            href="/nfl/matchup"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+          >
             Matchup
-          </span>
+          </Link>
+          <Link
+            href="/nfl/defense-vs-position"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+          >
+            Def vs Pos
+          </Link>
           <Link
             href="/nfl/trends"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"

@@ -13,7 +13,7 @@ const plans = [
     ctaVariant: "outline" as const,
     highlights: [
       { text: "NRFI, Weather, First Basket & H2H (no account)", included: true },
-      { text: "Defense vs Position & all Trends pages", included: true },
+      { text: "Defense vs Position (NBA + NFL) & all Trends pages", included: true },
       { text: "Full dashboard access", included: false },
       { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
       { text: "NFL Matchup", included: false },
