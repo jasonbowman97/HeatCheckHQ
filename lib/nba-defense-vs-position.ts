@@ -2,12 +2,14 @@
    NBA Defense vs Position
    Uses BettingPros pre-computed DVP data for accurate
    5-position rankings (PG/SG/SF/PF/C).
-   ESPN scoreboard used only for today's game schedule.
+   ESPN scoreboard for today's game schedule.
+   NBA.com lineups for starter names + positions.
    ────────────────────────────────────────────────── */
 
 import { fetchNBAScoreboard } from "@/lib/espn/client"
 import { scrapeDvpData, BP_DVP_POSITIONS } from "@/lib/bettingpros-scraper"
 import type { BPDvpPosition, BPDvpTeamData, BPDvpPositionStats } from "@/lib/bettingpros-scraper"
+import { fetchTodayLineups, getStarterAtPosition } from "@/lib/nba-lineups"
 
 /* ── Types ── */
 
@@ -23,12 +25,13 @@ export interface TodayMatchup {
 }
 
 export interface MatchupInsight {
-  teamAbbr: string       // the defending team (BettingPros abbreviation)
+  teamAbbr: string       // the defending team (ESPN abbreviation)
   statCategory: string   // e.g. "Points"
   position: Position
   rank: number           // 1 = allows the most
   rankLabel: string      // "THE MOST", "2nd most", etc.
   avgAllowed: number
+  playerName: string     // starter at this position on the opposing team
 }
 
 export interface PositionRankingRow {
@@ -58,6 +61,16 @@ const ESPN_TO_BP: Record<string, string> = {
 
 function espnAbbrToBP(espnAbbr: string): string {
   return ESPN_TO_BP[espnAbbr] ?? espnAbbr
+}
+
+/* ESPN → NBA.com team abbreviation mapping */
+const ESPN_TO_NBA: Record<string, string> = {
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
+  WSH: "WAS", UTAH: "UTA",
+}
+
+function espnAbbrToNBA(espnAbbr: string): string {
+  return ESPN_TO_NBA[espnAbbr] ?? espnAbbr
 }
 
 /* ── Helpers ── */
@@ -125,9 +138,10 @@ export async function getPositionRankings(
 
 export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
   try {
-    const [teams, scoreboardRaw] = await Promise.all([
+    const [teams, scoreboardRaw, lineupGames] = await Promise.all([
       getDvpData(),
       fetchNBAScoreboard(),
+      fetchTodayLineups(),
     ])
 
     const events = (scoreboardRaw.events ?? []) as Array<Record<string, unknown>>
@@ -171,11 +185,16 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
 
       const insights: MatchupInsight[] = []
 
+      // NBA.com abbreviations for lineup lookups
+      const homeNBA = espnAbbrToNBA(homeEspnAbbr)
+      const awayNBA = espnAbbrToNBA(awayEspnAbbr)
+
       for (const pos of POSITIONS) {
         for (const cat of STAT_CATEGORIES) {
-          // Away team's defense vs this position
+          // Away team's defense vs this position → show home team's starter
           const awayRankInfo = getTeamRank(awayBP, pos, cat.key)
           if (awayRankInfo.rank <= 5) {
+            const starter = getStarterAtPosition(lineupGames, homeNBA, pos)
             insights.push({
               teamAbbr: awayEspnAbbr,
               statCategory: cat.label,
@@ -183,12 +202,14 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
               rank: awayRankInfo.rank,
               rankLabel: rankLabel(awayRankInfo.rank),
               avgAllowed: awayRankInfo.avgAllowed,
+              playerName: starter?.playerName ?? "",
             })
           }
 
-          // Home team's defense vs this position
+          // Home team's defense vs this position → show away team's starter
           const homeRankInfo = getTeamRank(homeBP, pos, cat.key)
           if (homeRankInfo.rank <= 5) {
+            const starter = getStarterAtPosition(lineupGames, awayNBA, pos)
             insights.push({
               teamAbbr: homeEspnAbbr,
               statCategory: cat.label,
@@ -196,6 +217,7 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
               rank: homeRankInfo.rank,
               rankLabel: rankLabel(homeRankInfo.rank),
               avgAllowed: homeRankInfo.avgAllowed,
+              playerName: starter?.playerName ?? "",
             })
           }
         }

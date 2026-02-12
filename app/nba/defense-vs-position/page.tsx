@@ -409,6 +409,11 @@ function MatchupsView({
                           {insight.rankLabel}
                         </span>
                         {" "}{insight.statCategory} to {positionLabel(insight.position)}
+                        {insight.playerName && (
+                          <span className="text-foreground font-medium">
+                            {" — "}{insight.playerName}
+                          </span>
+                        )}
                       </span>
 
                       {/* Avg stat */}
