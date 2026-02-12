@@ -16,6 +16,7 @@ const sports = [
       { name: "Hitter vs Pitcher", href: "/mlb/hitting-stats", description: "Batter vs pitcher matchups, exit velo, barrel rates, platoon splits" },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
       { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
+      { name: "Weather", href: "/mlb/weather", description: "Ballpark temps, wind direction & speed, altitude" },
       { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },
     ],
   },
