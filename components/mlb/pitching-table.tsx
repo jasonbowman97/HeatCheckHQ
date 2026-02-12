@@ -9,9 +9,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown, ChevronRight } from "lucide-react"
 import { useState, useMemo } from "react"
 
 type SortField =
-  | "era" | "kPerGame" | "kPct" | "cswPct"
-  | "inningsPitched" | "oppKPctL30"
-  | "hr9" | "barrelPct" | "hardHitPct"
+  | "era" | "whip" | "wins" | "kPer9" | "kPct"
+  | "inningsPitched" | "barrelPct" | "hardHitPct"
 
 type SortDir = "asc" | "desc"
 
@@ -39,7 +38,8 @@ function SortButton({
 }
 
 function getBounds(data: PitcherStats[], field: keyof PitcherStats) {
-  const vals = data.map((p) => p[field] as number)
+  const vals = data.map((p) => p[field] as number).filter((v) => v > 0)
+  if (vals.length === 0) return { min: 0, max: 1 }
   return { min: Math.min(...vals), max: Math.max(...vals) }
 }
 
@@ -47,9 +47,12 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
   const [sortField, setSortField] = useState<SortField | null>("era")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
 
+  // "Lower is better" fields default to ascending sort
+  const lowerIsBetter = new Set<SortField>(["era", "whip", "barrelPct", "hardHitPct"])
+
   function handleSort(field: SortField) {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
-    else { setSortField(field); setSortDir(field === "era" || field === "hr9" || field === "barrelPct" || field === "hardHitPct" ? "asc" : "desc") }
+    else { setSortField(field); setSortDir(lowerIsBetter.has(field) ? "asc" : "desc") }
   }
 
   const sorted = useMemo(() => {
@@ -63,12 +66,9 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
 
   const bounds = useMemo(() => ({
     era: getBounds(data, "era"),
-    kPerGame: getBounds(data, "kPerGame"),
+    whip: getBounds(data, "whip"),
+    kPer9: getBounds(data, "kPer9"),
     kPct: getBounds(data, "kPct"),
-    cswPct: getBounds(data, "cswPct"),
-    inningsPitched: getBounds(data, "inningsPitched"),
-    oppKPctL30: getBounds(data, "oppKPctL30"),
-    hr9: getBounds(data, "hr9"),
     barrelPct: getBounds(data, "barrelPct"),
     hardHitPct: getBounds(data, "hardHitPct"),
   }), [data])
@@ -88,22 +88,19 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
                 <SortButton field="era" label="ERA" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-                <SortButton field="kPerGame" label="K/G" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
+                <SortButton field="whip" label="WHIP" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
+                <SortButton field="wins" label="W-L" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
+                <SortButton field="kPer9" label="K/9" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
                 <SortButton field="kPct" label="K%" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-                <SortButton field="cswPct" label="CSW%" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
                 <SortButton field="inningsPitched" label="IP" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-                <SortButton field="oppKPctL30" label="Opp K% L30" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-                <SortButton field="hr9" label="HR/9" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
                 <SortButton field="barrelPct" label="Barrel%" activeField={sortField} activeDir={sortDir} onSort={handleSort} />
@@ -131,6 +128,11 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
                     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${p.hand === "L" ? "bg-amber-500/15 text-amber-400" : "bg-sky-500/15 text-sky-400"}`}>
                       {p.hand}
                     </span>
+                    {p.isTodayStarter && (
+                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-400">
+                        Today
+                      </span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="py-3">
@@ -142,8 +144,18 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
                   </span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColor(p.kPerGame, bounds.kPerGame.min, bounds.kPerGame.max)}`}>
-                    {p.kPerGame.toFixed(1)}
+                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColorInverted(p.whip, bounds.whip.min, bounds.whip.max)}`}>
+                    {p.whip.toFixed(2)}
+                  </span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="text-sm text-foreground font-mono tabular-nums">
+                    {p.wins}-{p.losses}
+                  </span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColor(p.kPer9, bounds.kPer9.min, bounds.kPer9.max)}`}>
+                    {p.kPer9.toFixed(1)}
                   </span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
@@ -152,31 +164,16 @@ export function PitchingTable({ data, onSelectPitcher }: PitchingTableProps) {
                   </span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColor(p.cswPct, bounds.cswPct.min, bounds.cswPct.max)}`}>
-                    {p.cswPct.toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="py-3 text-center">
                   <span className="text-sm text-muted-foreground font-mono tabular-nums">{p.inningsPitched.toFixed(1)}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColor(p.oppKPctL30, bounds.oppKPctL30.min, bounds.oppKPctL30.max)}`}>
-                    {p.oppKPctL30.toFixed(1)}%
+                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${p.barrelPct > 0 ? getHeatmapColorInverted(p.barrelPct, bounds.barrelPct.min, bounds.barrelPct.max) : "bg-secondary text-muted-foreground"}`}>
+                    {p.barrelPct > 0 ? `${p.barrelPct.toFixed(1)}%` : "—"}
                   </span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColorInverted(p.hr9, bounds.hr9.min, bounds.hr9.max)}`}>
-                    {p.hr9.toFixed(2)}
-                  </span>
-                </TableCell>
-                <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColorInverted(p.barrelPct, bounds.barrelPct.min, bounds.barrelPct.max)}`}>
-                    {p.barrelPct.toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="py-3 text-center">
-                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${getHeatmapColorInverted(p.hardHitPct, bounds.hardHitPct.min, bounds.hardHitPct.max)}`}>
-                    {p.hardHitPct.toFixed(1)}%
+                  <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono tabular-nums ${p.hardHitPct > 0 ? getHeatmapColorInverted(p.hardHitPct, bounds.hardHitPct.min, bounds.hardHitPct.max) : "bg-secondary text-muted-foreground"}`}>
+                    {p.hardHitPct > 0 ? `${p.hardHitPct.toFixed(1)}%` : "—"}
                   </span>
                 </TableCell>
               </TableRow>
