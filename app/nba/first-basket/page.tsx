@@ -153,7 +153,7 @@ export default function NBAFirstBasketPage() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Track which players score the first basket. Home/away splits highlight tonight{"'"}s context.
+            Track which players score the first basket and their team{"'"}s tipoff win rate.
           </p>
         </div>
 

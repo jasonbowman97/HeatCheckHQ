@@ -6,15 +6,13 @@ import type { RowData } from "@/components/nba/first-basket-table"
 
 /**
  * Composite score for "tonight's best first basket pick":
- *  - 50% first basket % (the core stat)
- *  - 25% tip win % (team controls the ball)
- *  - 15% relevant H/A % (tonight's context)
- *  - 10% team rank bonus (rank 1 = 10, rank 2 = 6, rank 3 = 3, else 0)
+ *  - 55% first basket % (the core stat)
+ *  - 30% tip win % (team controls the ball)
+ *  - 15% team rank bonus (rank 1 = 10, rank 2 = 6, rank 3 = 3, else 0)
  */
 function pickScore(row: RowData): number {
-  const haRelevant = row.isHome ? row.firstBasketHomePct : row.firstBasketAwayPct
   const rankBonus = row.teamRank === 1 ? 10 : row.teamRank === 2 ? 6 : row.teamRank === 3 ? 3 : 0
-  return (row.firstBasketPct * 0.50) + (row.tipWinPct * 0.25) + (haRelevant * 0.15) + rankBonus
+  return (row.firstBasketPct * 0.55) + (row.tipWinPct * 0.30) + rankBonus
 }
 
 export function TopPicks({ rows }: { rows: RowData[] }) {
@@ -34,7 +32,6 @@ export function TopPicks({ rows }: { rows: RowData[] }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
         {topPicks.map((pick, i) => {
-          const haRelevant = pick.isHome ? pick.firstBasketHomePct : pick.firstBasketAwayPct
           return (
             <div key={pick.id} className="px-4 py-3 flex items-center gap-3 sm:flex-col sm:items-center sm:text-center sm:py-4">
               {/* Rank badge */}
@@ -73,10 +70,8 @@ export function TopPicks({ rows }: { rows: RowData[] }) {
                   <span className="text-[9px] text-muted-foreground uppercase">1st Bkt</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className={`text-xs font-semibold font-mono tabular-nums ${pick.isHome ? "text-emerald-400" : "text-blue-400"}`}>
-                    {haRelevant.toFixed(1)}%
-                  </span>
-                  <span className="text-[9px] text-muted-foreground uppercase">{pick.isHome ? "Home" : "Away"}</span>
+                  <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.firstBaskets}</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">Made</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.tipWinPct.toFixed(1)}%</span>

@@ -39,8 +39,6 @@ export interface RowData {
   firstShotPct: number
   firstBaskets: number
   firstBasketPct: number
-  firstBasketHomePct: number
-  firstBasketAwayPct: number
   teamRank: number
   teamFirstBaskets: number
 }
@@ -104,17 +102,6 @@ export function buildRows(
         ? Math.round((p.firstBaskets / p.gamesStarted) * 1000) / 10
         : 0
 
-      // Home/away first basket percentages
-      const teamGames = p.teamGames || p.gamesStarted
-      const approxHomeGames = Math.ceil(teamGames / 2)
-      const approxAwayGames = Math.floor(teamGames / 2)
-      const firstBasketHomePct = approxHomeGames > 0
-        ? Math.round((p.firstBasketHome / approxHomeGames) * 1000) / 10
-        : 0
-      const firstBasketAwayPct = approxAwayGames > 0
-        ? Math.round((p.firstBasketAway / approxAwayGames) * 1000) / 10
-        : 0
-
       const mu = matchupMap[p.team]
 
       return {
@@ -130,8 +117,6 @@ export function buildRows(
         firstShotPct,
         firstBaskets: p.firstBaskets,
         firstBasketPct,
-        firstBasketHomePct,
-        firstBasketAwayPct,
         teamRank: p.teamRank,
         teamFirstBaskets: teamTip?.firstBaskets ?? 0,
       }
@@ -189,9 +174,6 @@ export function FirstBasketTable({
                 Season Stats
               </TableHead>
               <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={2}>
-                Home / Away Split
-              </TableHead>
-              <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={2}>
                 Team
               </TableHead>
             </TableRow>
@@ -208,17 +190,11 @@ export function FirstBasketTable({
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px] border-l border-border">
                 <SortHeader field="firstShotPct" label="1st Shot" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
               </TableHead>
-              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[50px]">
-                <SortHeader field="firstBaskets" label="#" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px]">
+                <SortHeader field="firstBaskets" label="Made" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[90px]">
                 <SortHeader field="firstBasketPct" label="1st Bkt %" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
-              </TableHead>
-              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px] border-l border-border">
-                Home
-              </TableHead>
-              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px]">
-                Away
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px] border-l border-border">
                 <SortHeader field="teamRank" label="Rank" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
@@ -230,8 +206,6 @@ export function FirstBasketTable({
           </TableHeader>
           <TableBody>
             {rows.map((row) => {
-              const highlightHome = row.isHome
-              const highlightAway = !row.isHome && row.opponent !== ""
               return (
                 <TableRow
                   key={row.id}
@@ -298,17 +272,6 @@ export function FirstBasketTable({
                       {row.firstBasketPct.toFixed(1)}%
                     </span>
                   </TableCell>
-                  {/* Home/Away split — highlight the relevant column for tonight */}
-                  <TableCell className={`py-3 text-center border-l border-border/50 ${highlightHome ? "bg-emerald-500/5" : ""}`}>
-                    <span className={`text-xs font-semibold font-mono tabular-nums ${highlightHome ? "text-emerald-400" : "text-muted-foreground"}`}>
-                      {row.firstBasketHomePct.toFixed(1)}%
-                    </span>
-                  </TableCell>
-                  <TableCell className={`py-3 text-center ${highlightAway ? "bg-blue-500/5" : ""}`}>
-                    <span className={`text-xs font-semibold font-mono tabular-nums ${highlightAway ? "text-blue-400" : "text-muted-foreground"}`}>
-                      {row.firstBasketAwayPct.toFixed(1)}%
-                    </span>
-                  </TableCell>
                   {/* Team context */}
                   <TableCell className="py-3 text-center border-l border-border/50">
                     <span
@@ -331,7 +294,7 @@ export function FirstBasketTable({
             })}
             {rows.length === 0 && isLive && (
               <TableRow>
-                <TableCell colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
                   No players found for this matchup filter.
                 </TableCell>
               </TableRow>
