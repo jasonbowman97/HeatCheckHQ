@@ -21,7 +21,7 @@ export interface NFLDvpTeamData {
   abbreviation: string
   displayName: string
   logo: string
-  stats: Map<string, { value: number; rank: number }>
+  stats: Map<string, { value: number; perGameValue: number; rank: number }>
 }
 
 export interface NFLDvpRankingRow {
@@ -61,27 +61,28 @@ interface StatDef {
   espnName: string
   unit: string
   inverted?: boolean // true = lower is worse for offense (SACKS, INT)
+  useValue?: boolean // true = use `value` field (for rate/per-game stats where perGameValue divides again)
 }
 
 const QB_STATS: StatDef[] = [
-  { key: "PASS_YDS", label: "Pass Yards", espnName: "netPassingYardsPerGame", unit: "YDS/G" },
-  { key: "PASS_TD", label: "Pass TDs", espnName: "passingTouchdowns", unit: "TD" },
-  { key: "QBR", label: "QB Rating", espnName: "QBRating", unit: "QBR" },
-  { key: "SACKS", label: "Sacks", espnName: "sacks", unit: "SACKS", inverted: true },
-  { key: "INT", label: "Interceptions", espnName: "interceptions", unit: "INT", inverted: true },
+  { key: "PASS_YDS", label: "Pass Yards", espnName: "passing.netPassingYardsPerGame", unit: "YDS/G", useValue: true },
+  { key: "PASS_TD", label: "Pass TDs", espnName: "passing.passingTouchdowns", unit: "TD/G" },
+  { key: "QBR", label: "QB Rating", espnName: "passing.QBRating", unit: "QBR", useValue: true },
+  { key: "SACKS", label: "Sacks", espnName: "defensive.sacks", unit: "SACKS", useValue: true, inverted: true },
+  { key: "INT", label: "Interceptions", espnName: "passing.interceptions", unit: "INT", useValue: true, inverted: true },
 ]
 
 const RB_STATS: StatDef[] = [
-  { key: "RUSH_YDS", label: "Rush Yards", espnName: "rushingYardsPerGame", unit: "YDS/G" },
-  { key: "RUSH_TD", label: "Rush TDs", espnName: "rushingTouchdowns", unit: "TD" },
-  { key: "YPC", label: "Yards/Carry", espnName: "yardsPerRushAttempt", unit: "YPC" },
+  { key: "RUSH_YDS", label: "Rush Yards", espnName: "rushing.rushingYardsPerGame", unit: "YDS/G", useValue: true },
+  { key: "RUSH_TD", label: "Rush TDs", espnName: "rushing.rushingTouchdowns", unit: "TD/G" },
+  { key: "YPC", label: "Yards/Carry", espnName: "rushing.yardsPerRushAttempt", unit: "YPC", useValue: true },
 ]
 
 const WR_STATS: StatDef[] = [
-  { key: "REC_YDS", label: "Rec Yards", espnName: "receivingYardsPerGame", unit: "YDS/G" },
-  { key: "REC_TD", label: "Rec TDs", espnName: "receivingTouchdowns", unit: "TD" },
-  { key: "REC", label: "Receptions", espnName: "receptions", unit: "REC" },
-  { key: "YPR", label: "Yards/Rec", espnName: "yardsPerReception", unit: "YPR" },
+  { key: "REC_YDS", label: "Rec Yards", espnName: "receiving.receivingYardsPerGame", unit: "YDS/G", useValue: true },
+  { key: "REC_TD", label: "Rec TDs", espnName: "receiving.receivingTouchdowns", unit: "TD/G" },
+  { key: "REC", label: "Receptions", espnName: "receiving.receptions", unit: "REC/G" },
+  { key: "YPR", label: "Yards/Rec", espnName: "receiving.yardsPerReception", unit: "YPR", useValue: true },
 ]
 
 export const POSITION_STATS: Record<NFLDvpPosition, StatDef[]> = {
@@ -146,17 +147,26 @@ async function fetchTeamOpponentStats(teamId: string): Promise<NFLDvpTeamData | 
     const results = data.results ?? {}
     const opponentCategories = (results.opponent ?? []) as ESPNStatCategory[]
 
-    // Build a flat map of stat name → { value, rank }
-    const statsMap = new Map<string, { value: number; rank: number }>()
+    // Build a map with category-prefixed keys to avoid name collisions
+    // e.g. "passing.interceptions" vs "defensiveInterceptions.interceptions"
+    const statsMap = new Map<string, { value: number; perGameValue: number; rank: number }>()
 
     for (const cat of opponentCategories) {
       for (const stat of cat.stats ?? []) {
-        // Prefer perGameValue for per-game stats, fall back to value
-        const val = stat.perGameValue ?? stat.value ?? 0
-        statsMap.set(stat.name, {
-          value: Math.round(val * 10) / 10,
+        // Store with category prefix for collision-prone stats
+        statsMap.set(`${cat.name}.${stat.name}`, {
+          value: Math.round((stat.value ?? 0) * 1000) / 1000,
+          perGameValue: Math.round((stat.perGameValue ?? 0) * 1000) / 1000,
           rank: stat.rank ?? 0,
         })
+        // Also store without prefix (last write wins) for stats with unique names
+        if (!statsMap.has(stat.name)) {
+          statsMap.set(stat.name, {
+            value: Math.round((stat.value ?? 0) * 1000) / 1000,
+            perGameValue: Math.round((stat.perGameValue ?? 0) * 1000) / 1000,
+            rank: stat.rank ?? 0,
+          })
+        }
       }
     }
 
@@ -188,6 +198,20 @@ export async function getAllTeamDvpData(): Promise<NFLDvpTeamData[]> {
   return teams
 }
 
+/* ── Helper: pick correct value field ── */
+
+function getStatValue(
+  stats: Map<string, { value: number; perGameValue: number; rank: number }>,
+  sd: StatDef
+): { val: number; rank: number } {
+  const s = stats.get(sd.espnName)
+  if (!s) return { val: 0, rank: 0 }
+  // Rate stats (YPG, QBR, YPC, YPR) already have the right number in `value`.
+  // Counting stats (TDs, sacks, INTs, receptions) need `perGameValue` for per-game avg.
+  const val = sd.useValue ? s.value : s.perGameValue
+  return { val: Math.round(val * 10) / 10, rank: s.rank }
+}
+
 /* ── Rankings ── */
 
 export async function getNFLDvpRankings(
@@ -200,14 +224,14 @@ export async function getNFLDvpRankings(
 
   const rows = teams
     .map((t) => {
-      const s = t.stats.get(statDef.espnName)
+      const { val, rank } = getStatValue(t.stats, statDef)
       return {
         rank: 0,
         teamAbbr: t.abbreviation,
         teamName: t.displayName,
         logo: t.logo,
-        value: s?.value ?? 0,
-        espnRank: s?.rank ?? 0,
+        value: val,
+        espnRank: rank,
       }
     })
     .sort((a, b) => {
@@ -243,14 +267,14 @@ export async function getNFLDvpWeekMatchups(): Promise<NFLDvpMatchup[]> {
         const key = `${pos}_${sd.key}`
         const rows = teams
           .map((t) => {
-            const s = t.stats.get(sd.espnName)
+            const { val, rank } = getStatValue(t.stats, sd)
             return {
               rank: 0,
               teamAbbr: t.abbreviation,
               teamName: t.displayName,
               logo: t.logo,
-              value: s?.value ?? 0,
-              espnRank: s?.rank ?? 0,
+              value: val,
+              espnRank: rank,
             }
           })
           .sort((a, b) => sd.inverted ? a.value - b.value : b.value - a.value)
