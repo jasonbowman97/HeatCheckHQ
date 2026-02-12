@@ -1,8 +1,11 @@
 /* ──────────────────────────────────────────────────
    NBA Defense vs Position
    Computes how many points/rebounds/assists each NBA
-   team allows to each position (PG, SG, SF, PF, C)
+   team allows to each position (Guard, Forward, Center)
    by scanning box scores from completed games.
+
+   ESPN box scores only use G/F/C labels, so we use a
+   3-position model that matches the actual data.
    ────────────────────────────────────────────────── */
 
 import {
@@ -14,7 +17,7 @@ import {
 
 /* ── Types ── */
 
-export type Position = "PG" | "SG" | "SF" | "PF" | "C"
+export type Position = "G" | "F" | "C"
 export type StatCategory = "PTS" | "REB" | "AST" | "STL" | "BLK" | "3PM"
 
 export interface PositionStatLine {
@@ -51,7 +54,7 @@ export interface MatchupInsight {
   rankLabel: string      // "THE MOST", "2nd most", etc.
   playerName: string     // opposing player at that position
   playerPosition: Position
-  timeframe: "Season" | "Last 7"
+  timeframe: "Season" | "Last 14"
   avgAllowed: number
 }
 
@@ -63,7 +66,7 @@ export interface RosterPlayer {
 }
 
 /* ── Constants ── */
-const POSITIONS: Position[] = ["PG", "SG", "SF", "PF", "C"]
+const POSITIONS: Position[] = ["G", "F", "C"]
 
 const STAT_CATEGORIES: { key: StatCategory; label: string; field: string }[] = [
   { key: "PTS", label: "Points", field: "pts" },
@@ -76,10 +79,8 @@ const STAT_CATEGORIES: { key: StatCategory; label: string; field: string }[] = [
 
 function normalizePosition(pos: string): Position | null {
   const p = pos?.toUpperCase()
-  if (p === "PG" || p === "G") return "PG"
-  if (p === "SG") return "SG"
-  if (p === "SF" || p === "F") return "SF"
-  if (p === "PF") return "PF"
+  if (p === "PG" || p === "SG" || p === "G") return "G"
+  if (p === "SF" || p === "PF" || p === "F") return "F"
   if (p === "C") return "C"
   return null
 }
@@ -439,13 +440,22 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
 
       const insights: MatchupInsight[] = []
 
+      // Pick the most prominent player at each position (ESPN lists starters first in roster)
+      // We cache per-position so we show the same key player across all stat categories
+      const homePrimary: Record<Position, RosterPlayer | undefined> = { G: undefined, F: undefined, C: undefined }
+      const awayPrimary: Record<Position, RosterPlayer | undefined> = { G: undefined, F: undefined, C: undefined }
+      for (const pos of POSITIONS) {
+        homePrimary[pos] = homeRoster.find((p) => p.position === pos)
+        awayPrimary[pos] = awayRoster.find((p) => p.position === pos)
+      }
+
       // For each team, check what they allow and find opposing player
       for (const pos of POSITIONS) {
         for (const cat of STAT_CATEGORIES) {
           // Away team's defense vs this position -> find home player at this position
           const awayRankInfo = getTeamRank(awayId, pos, cat.key)
           if (awayRankInfo.rank <= 5) {
-            const homePlayer = homeRoster.find((p) => p.position === pos)
+            const homePlayer = homePrimary[pos]
             if (homePlayer) {
               insights.push({
                 teamAbbr: awayTeam.abbreviation as string,
@@ -455,7 +465,7 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
                 rankLabel: rankLabel(awayRankInfo.rank),
                 playerName: homePlayer.name,
                 playerPosition: homePlayer.position,
-                timeframe: "Season",
+                timeframe: "Last 14",
                 avgAllowed: awayRankInfo.avgAllowed,
               })
             }
@@ -464,7 +474,7 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
           // Home team's defense vs this position -> find away player at this position
           const homeRankInfo = getTeamRank(homeId, pos, cat.key)
           if (homeRankInfo.rank <= 5) {
-            const awayPlayer = awayRoster.find((p) => p.position === pos)
+            const awayPlayer = awayPrimary[pos]
             if (awayPlayer) {
               insights.push({
                 teamAbbr: homeTeam.abbreviation as string,
@@ -474,7 +484,7 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
                 rankLabel: rankLabel(homeRankInfo.rank),
                 playerName: awayPlayer.name,
                 playerPosition: awayPlayer.position,
-                timeframe: "Season",
+                timeframe: "Last 14",
                 avgAllowed: homeRankInfo.avgAllowed,
               })
             }

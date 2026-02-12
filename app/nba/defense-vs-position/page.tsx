@@ -10,11 +10,9 @@ import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRank
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const POSITIONS: { key: Position; label: string }[] = [
-  { key: "PG", label: "PG" },
-  { key: "SG", label: "SG" },
-  { key: "SF", label: "SF" },
-  { key: "PF", label: "PF" },
-  { key: "C", label: "C" },
+  { key: "G", label: "Guards" },
+  { key: "F", label: "Forwards" },
+  { key: "C", label: "Centers" },
 ]
 
 const STAT_CATEGORIES: { key: StatCategory; label: string }[] = [
@@ -81,7 +79,7 @@ export default function DefenseVsPositionPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("matchups")
   const [filterPosition, setFilterPosition] = useState<Position | "ALL">("ALL")
   const [filterStat, setFilterStat] = useState<StatCategory | "ALL">("ALL")
-  const [rankPosition, setRankPosition] = useState<Position>("PG")
+  const [rankPosition, setRankPosition] = useState<Position>("G")
   const [rankStat, setRankStat] = useState<StatCategory>("PTS")
 
   // Matchups data (always fetch so we have today's teams for rankings highlight)
@@ -112,10 +110,19 @@ export default function DefenseVsPositionPage() {
     return teams
   }, [matchups])
 
+  const STAT_LABEL_MAP: Record<StatCategory, string> = {
+    PTS: "Points",
+    REB: "Rebounds",
+    AST: "Assists",
+    STL: "Steals",
+    BLK: "Blocks",
+    "3PM": "3-Pointers Made",
+  }
+
   function filterInsights(insights: MatchupInsight[]) {
     return insights.filter((i) => {
       if (filterPosition !== "ALL" && i.position !== filterPosition) return false
-      if (filterStat !== "ALL" && !i.statCategory.toLowerCase().includes(filterStat.toLowerCase().replace("3pm", "3-pointer"))) return false
+      if (filterStat !== "ALL" && i.statCategory !== STAT_LABEL_MAP[filterStat as StatCategory]) return false
       return true
     })
   }
@@ -253,6 +260,12 @@ function statUnit(category: string): string {
   return "/G"
 }
 
+function positionLabel(pos: Position): string {
+  if (pos === "G") return "Guards"
+  if (pos === "F") return "Forwards"
+  return "Centers"
+}
+
 /* ── Matchups View ── */
 
 function MatchupsView({
@@ -387,7 +400,7 @@ function MatchupsView({
                         <span className={`font-semibold ${insight.rank <= 2 ? "text-primary" : "text-foreground"}`}>
                           {insight.rankLabel}
                         </span>
-                        {" "}{insight.statCategory} to {insight.position}
+                        {" "}{insight.statCategory} to {positionLabel(insight.position)}
                       </span>
 
                       {/* Avg stat */}
@@ -467,7 +480,7 @@ function RankingsView({
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-5 py-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">
-          {statLabel} Allowed to {position} — All 30 Teams
+          {statLabel} Allowed to {positionLabel(position)} — All 30 Teams
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
           Ranked from most allowed (worst defense) to least. Based on last 14 days of box scores.
