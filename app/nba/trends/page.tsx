@@ -9,7 +9,7 @@ import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { Trend } from "@/lib/trends-types"
 
 const NBA_CATEGORIES = [
-  "Scoring", "Threes", "Rebounds", "Assists", "Combos", "Defense", "Turnovers",
+  "Scoring", "Threes", "Rebounds", "Assists", "Combos", "Defense", "Turnovers", "Consistency",
 ]
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -88,7 +88,7 @@ export default function NBATrendsPage() {
             trends={trends}
             categories={NBA_CATEGORIES}
             title="NBA Active Streaks"
-            subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '7 straight games with 25+ points' or '5 straight double-doubles' to spot current form."
+            subtitle="Active hot and cold streaks plus threshold consistency trends. Spot players consistently going over or under key stat lines — points, rebounds, assists, threes, and PRA combos."
             isLive={isLive}
           />
         )}

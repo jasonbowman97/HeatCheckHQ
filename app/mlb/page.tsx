@@ -18,7 +18,7 @@ const MLB_DASHBOARDS = [
   {
     name: "Trends",
     href: "/mlb/trends",
-    description: "Hit streaks, XBH runs, HR surges, and cold slumps across every player",
+    description: "Active streaks plus O/U consistency — who's hitting over or under key stat thresholds",
     tier: "free" as const,
   },
   {

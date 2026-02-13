@@ -20,4 +20,15 @@ export interface Trend {
   playingToday?: boolean
   /** Opponent abbreviation if playing today */
   opponent?: string
+  /** Threshold consistency data — hit rate against common prop-style thresholds */
+  threshold?: {
+    /** The threshold value (e.g. 25.5) */
+    line: number
+    /** The stat being measured (e.g. "PTS", "Pass YDS") */
+    stat: string
+    /** Games over the threshold out of total (e.g. "8/10") */
+    hitRate: string
+    /** Hit rate as a decimal for sorting (e.g. 0.8) */
+    hitPct: number
+  }
 }

@@ -24,7 +24,7 @@ const NBA_DASHBOARDS = [
   {
     name: "Trends",
     href: "/nba/trends",
-    description: "Scoring runs, 3PT streaks, rebound and assist surges, and cold slumps",
+    description: "Active streaks plus O/U consistency — who's hitting over or under key stat thresholds",
     tier: "free" as const,
   },
 ]

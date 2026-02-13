@@ -261,6 +261,177 @@ function detectNBAStreaks(
     }
   }
 
+  // ═══ THRESHOLD CONSISTENCY (prop-style O/U thresholds) ═══
+
+  // Points thresholds — common prop lines
+  const ptsThresholds = [
+    { line: 15.5, minAvg: 14 },
+    { line: 19.5, minAvg: 17 },
+    { line: 24.5, minAvg: 22 },
+    { line: 29.5, minAvg: 27 },
+  ]
+  for (const { line, minAvg } of ptsThresholds) {
+    if (avgPts >= minAvg) {
+      const overGames = last10.map((g) => (g.stats.PTS ?? 0) > line)
+      const overCount = overGames.filter(Boolean).length
+      if (overCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "hot", category: "Consistency",
+          statLabel: `OVER ${line} PTS`,
+          streakDescription: `Over ${line} points in ${overCount} of last ${last10.length} games`,
+          recentGames: overGames, currentStreak: overCount,
+          statValue: `${overCount}/${last10.length}`,
+          seasonAvg: `${avgPts.toFixed(1)} PPG`,
+          threshold: { line, stat: "PTS", hitRate: `${overCount}/${last10.length}`, hitPct: overCount / last10.length },
+        })
+      }
+      const underGames = last10.map((g) => (g.stats.PTS ?? 0) < line)
+      const underCount = underGames.filter(Boolean).length
+      if (underCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "cold", category: "Consistency",
+          statLabel: `UNDER ${line} PTS`,
+          streakDescription: `Under ${line} points in ${underCount} of last ${last10.length} games`,
+          recentGames: underGames, currentStreak: underCount,
+          statValue: `${underCount}/${last10.length}`,
+          seasonAvg: `${avgPts.toFixed(1)} PPG`,
+          threshold: { line, stat: "PTS", hitRate: `${underCount}/${last10.length}`, hitPct: underCount / last10.length },
+        })
+      }
+    }
+  }
+
+  // Rebounds thresholds
+  const rebThresholds = [
+    { line: 5.5, minAvg: 4.5 },
+    { line: 7.5, minAvg: 6.5 },
+    { line: 10.5, minAvg: 9 },
+  ]
+  for (const { line, minAvg } of rebThresholds) {
+    if (avgReb >= minAvg) {
+      const overGames = last10.map((g) => (g.stats.REB ?? 0) > line)
+      const overCount = overGames.filter(Boolean).length
+      if (overCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "hot", category: "Consistency",
+          statLabel: `OVER ${line} REB`,
+          streakDescription: `Over ${line} rebounds in ${overCount} of last ${last10.length} games`,
+          recentGames: overGames, currentStreak: overCount,
+          statValue: `${overCount}/${last10.length}`,
+          seasonAvg: `${avgReb.toFixed(1)} RPG`,
+          threshold: { line, stat: "REB", hitRate: `${overCount}/${last10.length}`, hitPct: overCount / last10.length },
+        })
+      }
+      const underGames = last10.map((g) => (g.stats.REB ?? 0) < line)
+      const underCount = underGames.filter(Boolean).length
+      if (underCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "cold", category: "Consistency",
+          statLabel: `UNDER ${line} REB`,
+          streakDescription: `Under ${line} rebounds in ${underCount} of last ${last10.length} games`,
+          recentGames: underGames, currentStreak: underCount,
+          statValue: `${underCount}/${last10.length}`,
+          seasonAvg: `${avgReb.toFixed(1)} RPG`,
+          threshold: { line, stat: "REB", hitRate: `${underCount}/${last10.length}`, hitPct: underCount / last10.length },
+        })
+      }
+    }
+  }
+
+  // Assists thresholds
+  const astThresholds = [
+    { line: 4.5, minAvg: 3.5 },
+    { line: 6.5, minAvg: 5.5 },
+    { line: 9.5, minAvg: 8 },
+  ]
+  for (const { line, minAvg } of astThresholds) {
+    if (avgAst >= minAvg) {
+      const overGames = last10.map((g) => (g.stats.AST ?? 0) > line)
+      const overCount = overGames.filter(Boolean).length
+      if (overCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "hot", category: "Consistency",
+          statLabel: `OVER ${line} AST`,
+          streakDescription: `Over ${line} assists in ${overCount} of last ${last10.length} games`,
+          recentGames: overGames, currentStreak: overCount,
+          statValue: `${overCount}/${last10.length}`,
+          seasonAvg: `${avgAst.toFixed(1)} APG`,
+          threshold: { line, stat: "AST", hitRate: `${overCount}/${last10.length}`, hitPct: overCount / last10.length },
+        })
+      }
+      const underGames = last10.map((g) => (g.stats.AST ?? 0) < line)
+      const underCount = underGames.filter(Boolean).length
+      if (underCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "cold", category: "Consistency",
+          statLabel: `UNDER ${line} AST`,
+          streakDescription: `Under ${line} assists in ${underCount} of last ${last10.length} games`,
+          recentGames: underGames, currentStreak: underCount,
+          statValue: `${underCount}/${last10.length}`,
+          seasonAvg: `${avgAst.toFixed(1)} APG`,
+          threshold: { line, stat: "AST", hitRate: `${underCount}/${last10.length}`, hitPct: underCount / last10.length },
+        })
+      }
+    }
+  }
+
+  // Threes thresholds
+  const threeThresholds = [
+    { line: 1.5, minAvg: 1.2 },
+    { line: 2.5, minAvg: 2 },
+    { line: 3.5, minAvg: 3 },
+  ]
+  for (const { line, minAvg } of threeThresholds) {
+    if (avg3pm >= minAvg) {
+      const overGames = last10.map((g) => (g.stats["3PM"] ?? 0) > line)
+      const overCount = overGames.filter(Boolean).length
+      if (overCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "hot", category: "Consistency",
+          statLabel: `OVER ${line} 3PM`,
+          streakDescription: `Over ${line} threes in ${overCount} of last ${last10.length} games`,
+          recentGames: overGames, currentStreak: overCount,
+          statValue: `${overCount}/${last10.length}`,
+          seasonAvg: `${avg3pm.toFixed(1)} 3PM/G`,
+          threshold: { line, stat: "3PM", hitRate: `${overCount}/${last10.length}`, hitPct: overCount / last10.length },
+        })
+      }
+    }
+  }
+
+  // PRA (Points + Rebounds + Assists) combo thresholds
+  const praConsistencyThresholds = [
+    { line: 25.5, minAvg: 22 },
+    { line: 30.5, minAvg: 27 },
+    { line: 35.5, minAvg: 32 },
+    { line: 40.5, minAvg: 37 },
+  ]
+  for (const { line, minAvg } of praConsistencyThresholds) {
+    if (avgPra >= minAvg) {
+      const overGames = last10.map((g) => pra(g) > line)
+      const overCount = overGames.filter(Boolean).length
+      if (overCount >= 7) {
+        streaks.push({
+          playerId, playerName, team, position,
+          streakType: "hot", category: "Consistency",
+          statLabel: `OVER ${line} PRA`,
+          streakDescription: `Over ${line} PTS+REB+AST in ${overCount} of last ${last10.length} games`,
+          recentGames: overGames, currentStreak: overCount,
+          statValue: `${overCount}/${last10.length}`,
+          seasonAvg: `${avgPra.toFixed(1)} PRA`,
+          threshold: { line, stat: "PRA", hitRate: `${overCount}/${last10.length}`, hitPct: overCount / last10.length },
+        })
+      }
+    }
+  }
+
   // ═══ COLD STREAKS (relative to season average) ═══
 
   // Cold Scoring: 3+ straight under 60% of season avg
@@ -472,13 +643,26 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
         seasonAvg: streak.seasonAvg,
         playingToday: !!opponent,
         opponent: opponent ?? undefined,
+        threshold: streak.threshold,
       }
     })
 
-    const hotTrends = trends.filter((t) => t.type === "hot").sort((a, b) => b.streakLength - a.streakLength)
-    const coldTrends = trends.filter((t) => t.type === "cold").sort((a, b) => b.streakLength - a.streakLength)
+    // Split by category type: streaks vs consistency
+    const streakTrends = trends.filter((t) => t.category !== "Consistency")
+    const consistencyTrends = trends.filter((t) => t.category === "Consistency")
 
-    return [...hotTrends.slice(0, 25), ...coldTrends.slice(0, 15)]
+    const hotStreaks = streakTrends.filter((t) => t.type === "hot").sort((a, b) => b.streakLength - a.streakLength)
+    const coldStreaks = streakTrends.filter((t) => t.type === "cold").sort((a, b) => b.streakLength - a.streakLength)
+    // Consistency sorted by hit rate then streak length
+    const hotConsistency = consistencyTrends.filter((t) => t.type === "hot").sort((a, b) => (b.threshold?.hitPct ?? 0) - (a.threshold?.hitPct ?? 0) || b.streakLength - a.streakLength)
+    const coldConsistency = consistencyTrends.filter((t) => t.type === "cold").sort((a, b) => (b.threshold?.hitPct ?? 0) - (a.threshold?.hitPct ?? 0) || b.streakLength - a.streakLength)
+
+    return [
+      ...hotStreaks.slice(0, 25),
+      ...coldStreaks.slice(0, 15),
+      ...hotConsistency.slice(0, 25),
+      ...coldConsistency.slice(0, 15),
+    ]
   } catch (err) {
     console.error("[NBA Streaks] Failed to generate trends:", err)
     return []
@@ -487,6 +671,10 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
 
 function generateDetail(streak: StreakResult): string {
   const avg = streak.seasonAvg ? ` Season avg: ${streak.seasonAvg}.` : ""
+  if (streak.category === "Consistency") {
+    const dir = streak.streakType === "hot" ? "over" : "under"
+    return `Consistently going ${dir} this line. ${streak.streakDescription}.${avg}`
+  }
   if (streak.streakType === "hot") {
     if (streak.category === "Scoring") return `On fire. ${streak.streakDescription}.${avg}`
     if (streak.category === "Threes") return `Lights out from deep. ${streak.streakDescription}.${avg}`

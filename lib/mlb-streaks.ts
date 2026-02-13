@@ -79,6 +79,8 @@ export async function getMLBStreakTrends(): Promise<Trend[]> {
       recentGames: streak.recentGames,
       statValue: String(streak.statValue),
       statLabel: streak.statLabel,
+      seasonAvg: streak.seasonAvg,
+      threshold: streak.threshold,
     }))
 
     // Sort: Hot streaks first (by streak length desc), then cold streaks
@@ -94,6 +96,11 @@ export async function getMLBStreakTrends(): Promise<Trend[]> {
 }
 
 function generateDetail(streak: StreakResult): string {
+  if (streak.category === "Consistency") {
+    const dir = streak.streakType === "hot" ? "over" : "under"
+    const avg = streak.seasonAvg ? ` Season avg: ${streak.seasonAvg}.` : ""
+    return `Consistently going ${dir} this line. ${streak.streakDescription}.${avg}`
+  }
   if (streak.streakType === "hot") {
     switch (streak.category) {
       case "Hitting": return `Consistently getting on base with ${streak.streakDescription}. Strong recent form at the plate.`

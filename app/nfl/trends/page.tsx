@@ -9,7 +9,7 @@ import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { Trend } from "@/lib/trends-types"
 
 const NFL_CATEGORIES = [
-  "Passing", "Rushing", "Receiving", "Touchdowns",
+  "Passing", "Rushing", "Receiving", "Touchdowns", "Consistency",
 ]
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -81,7 +81,7 @@ export default function NFLTrendsPage() {
             trends={trends}
             categories={NFL_CATEGORIES}
             title="NFL Active Streaks"
-            subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '3 straight games with 300+ pass yards' or '5 straight games with a rushing TD' to spot current form."
+            subtitle="Active hot and cold streaks plus threshold consistency trends. Spot players consistently going over or under key stat lines — pass yards, rush yards, rec yards, receptions, and TDs."
             isLive={isLive}
           />
         )}

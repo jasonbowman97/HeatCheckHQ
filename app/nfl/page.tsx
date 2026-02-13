@@ -12,7 +12,7 @@ const NFL_DASHBOARDS = [
   {
     name: "Trends",
     href: "/nfl/trends",
-    description: "Passing yard streaks, rushing TDs, target surges, and cold slumps",
+    description: "Active streaks plus O/U consistency — who's hitting over or under key stat thresholds",
     tier: "free" as const,
   },
   {

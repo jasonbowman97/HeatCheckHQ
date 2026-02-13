@@ -10,7 +10,7 @@ import type { Trend } from "@/lib/trends-types"
 
 const MLB_CATEGORIES = [
   "Hitting", "Multi-Hit", "Power", "RBI", "Runs",
-  "On Base", "Stolen Bases", "Pitching", "Strikeouts",
+  "On Base", "Stolen Bases", "Pitching", "Strikeouts", "Consistency",
 ]
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -95,7 +95,7 @@ export default function MLBTrendsPage() {
             trends={trends}
             categories={MLB_CATEGORIES}
             title="MLB Active Streaks"
-            subtitle="Every MLB player scanned for active hot and cold streaks. Covers hits, multi-hit, power, RBI, runs, on-base, stolen bases, pitching, and strikeouts."
+            subtitle="Active hot and cold streaks plus threshold consistency trends. Spot players consistently going over or under key stat lines — hits, total bases, H+R+RBI, pitcher Ks, earned runs, and innings pitched."
             isLive={isLive}
           />
         )}
