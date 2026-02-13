@@ -9,7 +9,8 @@ import {
 import { createCheckoutSession } from "@/app/actions/stripe"
 import { PRODUCTS } from "@/lib/products"
 import Link from "next/link"
-import { BarChart3, ArrowLeft, Check, Loader2 } from "lucide-react"
+import { ArrowLeft, Check, Loader2 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
           </Link>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-4 w-4 text-primary" />
+              <Logo className="h-4 w-4" />
             </div>
             <span className="font-bold text-foreground">HeatCheck HQ Pro</span>
           </div>

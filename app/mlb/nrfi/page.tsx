@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { BarChart3, ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
 import type { NrfiGame } from "@/lib/nrfi-data"
@@ -62,7 +63,7 @@ export default function NrfiPage() {
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
               <span className="text-sm font-bold tracking-tight">HeatCheck HQ</span>
             </Link>
             <span className="text-muted-foreground/40">|</span>

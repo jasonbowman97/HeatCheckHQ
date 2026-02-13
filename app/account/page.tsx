@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BarChart3, ArrowLeft, Crown, User, CreditCard } from "lucide-react"
+import { ArrowLeft, Crown, User, CreditCard } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -72,7 +73,7 @@ export default function AccountPage() {
 
         <div className="mb-8 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <BarChart3 className="h-6 w-6 text-primary" />
+            <Logo className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">Your Account</h1>

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart3 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { nflTrends, nflCategories } from "@/lib/nfl-trends-data"
 import { getNFLStreakTrends } from "@/lib/nfl-streaks"
@@ -26,7 +26,7 @@ export default async function NFLTrendsPage() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <BarChart3 className="h-5 w-5 text-primary" />
+                <Logo className="h-5 w-5" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
