@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import { nflTrends, nflCategories } from "@/lib/nfl-trends-data"
 import { getNFLStreakTrends } from "@/lib/nfl-streaks"
 
@@ -52,13 +53,17 @@ export default async function NFLTrendsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
+      <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
         <TrendsDashboard
           trends={trends}
           categories={nflCategories}
           title="NFL Active Streaks"
           subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '3 straight games with 300+ pass yards' or '5 straight games with a rushing TD' to spot current form."
           isLive={isLive}
+        />
+        <ProUpsellBanner
+          headline="Unlock NFL Matchup, MLB Stats & more with Pro"
+          description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"
         />
       </main>
     </div>

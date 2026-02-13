@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import useSWR from "swr"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { Trend } from "@/lib/trends-types"
 
 const MLB_CATEGORIES = [
@@ -70,7 +71,7 @@ export default function MLBTrendsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
+      <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -85,6 +86,10 @@ export default function MLBTrendsPage() {
             isLive={isLive}
           />
         )}
+        <ProUpsellBanner
+          headline="Unlock Hot Hitters, Pitching Stats & more with Pro"
+          description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"
+        />
       </main>
     </div>
   )

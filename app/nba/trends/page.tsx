@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import { nbaTrends, nbaCategories } from "@/lib/nba-trends-data"
 import { getNBAStreakTrends } from "@/lib/nba-streaks"
 
@@ -59,13 +60,17 @@ export default async function NBATrendsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
+      <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
         <TrendsDashboard
           trends={trends}
           categories={nbaCategories}
           title="NBA Active Streaks"
           subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '7 straight games with 25+ points' or '5 straight double-doubles' to spot current form."
           isLive={isLive}
+        />
+        <ProUpsellBanner
+          headline="Unlock Head-to-Head, Matchups & more with Pro"
+          description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"
         />
       </main>
     </div>
