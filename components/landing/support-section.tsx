@@ -27,7 +27,7 @@ const supportOptions = [
 
 export function SupportSection() {
   return (
-    <section id="support" className="py-20 md:py-28 border-t border-border">
+    <section id="support" className="py-16 md:py-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn>
           <div className="mx-auto max-w-2xl text-center mb-12">

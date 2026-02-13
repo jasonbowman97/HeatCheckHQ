@@ -51,7 +51,7 @@ const sports = [
 
 export function SportsSection() {
   return (
-    <section id="dashboards" className="py-20 md:py-32">
+    <section id="dashboards" className="py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn>
           <div className="text-center mb-16">

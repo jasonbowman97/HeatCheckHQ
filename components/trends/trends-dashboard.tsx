@@ -216,12 +216,24 @@ export function TrendsDashboard({ trends, categories, title, subtitle, isLive }:
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            {trends.length === 0
-              ? "No active streaks detected. Check back when NBA games are being played."
-              : "No trends match the current filters."}
-          </p>
+        <div className="rounded-xl border border-dashed border-border bg-card/50 p-16 text-center flex flex-col items-center gap-3">
+          {trends.length === 0 ? (
+            <>
+              <TrendingUp className="h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">No active streaks detected</p>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                Streak data updates daily when games are played. Check back during the regular season for hot and cold trends.
+              </p>
+            </>
+          ) : (
+            <>
+              <Search className="h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">No trends match your filters</p>
+              <p className="text-xs text-muted-foreground">
+                Try adjusting your category, team, or search filters to see more results.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

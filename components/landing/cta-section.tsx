@@ -5,7 +5,7 @@ import { FadeIn } from "@/components/ui/fade-in"
 
 export function CtaSection() {
   return (
-    <section className="py-20 md:py-32 border-t border-border">
+    <section className="py-16 md:py-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
@@ -28,7 +28,7 @@ export function CtaSection() {
                 asChild
               >
                 <Link href="/auth/sign-up">
-                  Create your free account
+                  Create free account
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

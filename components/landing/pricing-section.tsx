@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Check, X } from "lucide-react"
+import { Check, X, Shield, CreditCard, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
 
@@ -61,7 +61,7 @@ const plans = [
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="py-20 md:py-32 border-t border-border">
+    <section id="pricing" className="py-16 md:py-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn>
           <div className="text-center mb-16">
@@ -145,6 +145,24 @@ export function PricingSection() {
             </FadeIn>
           ))}
         </div>
+
+        {/* Trust badges */}
+        <FadeIn delay={0.4}>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" />
+              <span>No credit card for Free plan</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" />
+              <span>Secure payments via Stripe</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Cancel anytime — no lock-in</span>
+            </div>
+          </div>
+        </FadeIn>
       </div>
     </section>
   )

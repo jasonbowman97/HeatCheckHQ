@@ -42,7 +42,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="py-20 md:py-32 border-t border-border">
+    <section id="features" className="py-16 md:py-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn>
           <div className="text-center mb-16">

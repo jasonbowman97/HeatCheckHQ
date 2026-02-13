@@ -30,7 +30,7 @@ const dashboardPreviews = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden pt-32 pb-20 md:pt-44 md:pb-32">
+    <section className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[600px] w-[900px] rounded-full bg-primary/5 blur-3xl" />
       </div>
@@ -64,7 +64,7 @@ export function HeroSection() {
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 text-base" asChild>
                 <Link href="/auth/sign-up">
-                  Start free — no credit card
+                  Create free account
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -75,9 +75,9 @@ export function HeroSection() {
           </FadeIn>
 
           {/* Three sport preview cards */}
-          <div className="mt-20 w-full grid gap-4 md:grid-cols-3">
+          <div className="mt-14 w-full grid gap-4 md:grid-cols-3">
             {dashboardPreviews.map((preview, index) => (
-              <FadeIn key={preview.label} delay={0.5 + index * 0.1}>
+              <FadeIn key={preview.label} delay={0.3 + index * 0.05}>
                 <Link
                   href={preview.href}
                   className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
