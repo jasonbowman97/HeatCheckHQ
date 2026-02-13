@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getNBALeaders } from "@/lib/nba-api"
 import { getNBAStreakTrends } from "@/lib/nba-streaks"
 import { buildTrends } from "@/lib/trends-builder"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
 export const revalidate = 3600
 
@@ -61,8 +62,11 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ trends: merged, source: "live" })
+    const res = NextResponse.json({ trends: merged, source: "live" })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
+    return res
   } catch {
-    return NextResponse.json({ trends: [], source: "error" }, { status: 200 })
+    console.error("[NBA Trends API] Error fetching trends")
+    return NextResponse.json({ trends: [], source: "error" }, { status: 500 })
   }
 }

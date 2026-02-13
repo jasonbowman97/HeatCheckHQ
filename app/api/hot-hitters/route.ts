@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getHotHitters } from "@/lib/hot-hitters"
 import { getMLBScoreboard } from "@/lib/espn/mlb"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
 // Cache the response for 12 hours since scanning all players is expensive
 export const revalidate = 43200
@@ -64,7 +65,9 @@ export async function GET() {
   try {
     // Return cached data if still fresh
     if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-      return NextResponse.json({ streaks: cachedData.data, todayGames: cachedData.todayTeams, cached: true })
+      const res = NextResponse.json({ streaks: cachedData.data, todayGames: cachedData.todayTeams, cached: true })
+      res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+      return res
     }
 
     const [streaks, todayGames] = await Promise.all([
@@ -74,7 +77,9 @@ export async function GET() {
 
     cachedData = { data: streaks, todayTeams: todayGames, timestamp: Date.now() }
 
-    return NextResponse.json({ streaks, todayGames, cached: false })
+    const res = NextResponse.json({ streaks, todayGames, cached: false })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+    return res
   } catch (err) {
     console.error("[API] Hot hitters error:", err)
     return NextResponse.json({ streaks: [], todayGames: [], error: "Failed to fetch hot hitters" }, { status: 500 })

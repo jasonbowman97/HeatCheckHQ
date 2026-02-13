@@ -1,6 +1,7 @@
 import { getPitchingLeaders, getSchedule } from "@/lib/mlb-api"
 import { getStatcastPitchers } from "@/lib/baseball-savant"
 import { NextResponse } from "next/server"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
 export const revalidate = 43200
 
@@ -35,13 +36,15 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       leaders: enriched,
       hasStatcast: statcast.length > 0,
       todayStarterIds: Array.from(todayStarterIds),
     })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+    return res
   } catch (e) {
     console.error("[MLB Pitching API]", e)
-    return NextResponse.json({ leaders: [], hasStatcast: false, todayStarterIds: [] })
+    return NextResponse.json({ leaders: [], hasStatcast: false, todayStarterIds: [] }, { status: 500 })
   }
 }

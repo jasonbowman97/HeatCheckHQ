@@ -12,6 +12,7 @@ import {
   type PitcherSeasonStats,
   type BatterSeasonStats,
 } from "@/lib/mlb-api"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
 // Cache for 12 hours
 export const revalidate = 43200
@@ -106,7 +107,9 @@ export async function GET(req: NextRequest) {
     const cacheKey = `${pitcherId}-${teamId}-${season}`
     const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return NextResponse.json(cached.data)
+      const res = NextResponse.json(cached.data)
+      res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+      return res
     }
 
     // Phase 1: Fetch pitcher data + roster in parallel
@@ -160,7 +163,9 @@ export async function GET(req: NextRequest) {
     // Store in cache
     cache.set(cacheKey, { data: response, timestamp: Date.now() })
 
-    return NextResponse.json(response)
+    const res = NextResponse.json(response)
+    res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+    return res
   } catch (err) {
     console.error("[API] Matchup error:", err)
     return NextResponse.json(

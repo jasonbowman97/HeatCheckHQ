@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { getMLBStreakTrends } from "@/lib/mlb-streaks"
 import { getSchedule } from "@/lib/mlb-api"
 import type { Trend } from "@/lib/trends-types"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const revalidate = 3600 // 1 hour (was 12h)
+export const revalidate = 3600
 
 export async function GET() {
   try {
@@ -30,12 +31,15 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       trends: enriched,
       source: enriched.length > 0 ? "live" : "empty",
       date: schedule.date,
     })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
+    return res
   } catch {
-    return NextResponse.json({ trends: [], source: "error", date: "" }, { status: 200 })
+    console.error("[MLB Trends API] Error fetching trends")
+    return NextResponse.json({ trends: [], source: "error", date: "" }, { status: 500 })
   }
 }

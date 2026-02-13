@@ -173,9 +173,9 @@ export default function NFLMatchupPage() {
                       : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
                   }`}
                 >
-                  {g.awayLogo && <Image src={g.awayLogo} alt={g.away} width={16} height={16} className="rounded" unoptimized />}
+                  {g.awayLogo && <Image src={g.awayLogo} alt={g.away} width={16} height={16} className="rounded" />}
                   {g.away} @ {g.home}
-                  {g.homeLogo && <Image src={g.homeLogo} alt={g.home} width={16} height={16} className="rounded" unoptimized />}
+                  {g.homeLogo && <Image src={g.homeLogo} alt={g.home} width={16} height={16} className="rounded" />}
                 </button>
               ))}
             </div>
@@ -218,7 +218,7 @@ export default function NFLMatchupPage() {
             {(() => {
               const game = liveGames.find((g) => g.id === effectiveGameId)
               return game?.awayLogo ? (
-                <Image src={game.awayLogo} alt={displayMatchup.away.abbreviation} width={32} height={32} className="rounded" unoptimized />
+                <Image src={game.awayLogo} alt={displayMatchup.away.abbreviation} width={32} height={32} className="rounded" />
               ) : null
             })()}
             <h2 className="text-xl font-bold text-foreground text-balance">
@@ -229,7 +229,7 @@ export default function NFLMatchupPage() {
             {(() => {
               const game = liveGames.find((g) => g.id === effectiveGameId)
               return game?.homeLogo ? (
-                <Image src={game.homeLogo} alt={displayMatchup.home.abbreviation} width={32} height={32} className="rounded" unoptimized />
+                <Image src={game.homeLogo} alt={displayMatchup.home.abbreviation} width={32} height={32} className="rounded" />
               ) : null
             })()}
             {isLive && (

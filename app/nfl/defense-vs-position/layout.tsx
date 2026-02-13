@@ -1,5 +1,6 @@
-import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
+import { getUserTier } from "@/lib/get-user-tier"
+import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
   title: "NFL Defense vs Position - Matchup Advantages | HeatCheck HQ",
@@ -15,10 +16,16 @@ export const metadata = generateSEO({
   ],
 })
 
-export default function NFLDefenseVsPositionLayout({
+export default async function NFLDefenseVsPositionLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <ProtectedPage pathname="/nfl/defense-vs-position">{children}</ProtectedPage>
+  const userTier = await getUserTier()
+
+  return (
+    <UserTierProvider tier={userTier}>
+      {children}
+    </UserTierProvider>
+  )
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { getTodayMatchupInsights, getPositionRankings } from "@/lib/nba-defense-vs-position"
 import type { Position, StatCategory } from "@/lib/nba-defense-vs-position"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -13,12 +14,16 @@ export async function GET(request: Request) {
       const position = (searchParams.get("position") ?? "PG") as Position
       const stat = (searchParams.get("stat") ?? "PTS") as StatCategory
       const rankings = await getPositionRankings(position, stat)
-      return NextResponse.json({ rankings })
+      const res = NextResponse.json({ rankings })
+      res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+      return res
     }
 
     // Default: today's matchup insights
     const matchups = await getTodayMatchupInsights()
-    return NextResponse.json({ matchups })
+    const res = NextResponse.json({ matchups })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+    return res
   } catch (err) {
     console.error("[API] Defense vs Position error:", err)
     return NextResponse.json({ matchups: [], error: "Failed to fetch data" }, { status: 500 })

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { getNFLLeaders } from "@/lib/nfl-api"
 import { getNFLStreakTrends } from "@/lib/nfl-streaks"
 import { buildTrends } from "@/lib/trends-builder"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const revalidate = 43200
+export const revalidate = 3600
 
 const CATEGORY_MAP: Record<string, { name: string; statLabel: string; hotPrefix: string; coldPrefix: string }> = {
   passingYards: { name: "Passing", statLabel: "Pass YDS", hotPrefix: "Throwing for", coldPrefix: "Only" },
@@ -59,8 +60,11 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ trends: merged, source: "live" })
+    const res = NextResponse.json({ trends: merged, source: "live" })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
+    return res
   } catch {
-    return NextResponse.json({ trends: [], source: "error" }, { status: 200 })
+    console.error("[NFL Trends API] Error fetching trends")
+    return NextResponse.json({ trends: [], source: "error" }, { status: 500 })
   }
 }

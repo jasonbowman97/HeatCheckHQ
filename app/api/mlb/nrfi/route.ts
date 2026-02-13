@@ -1,5 +1,6 @@
 import { getSchedule, getSeasonLinescores, computePitcherNrfi } from "@/lib/mlb-api"
 import { NextRequest, NextResponse } from "next/server"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
 export const revalidate = 43200
 
@@ -79,9 +80,11 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ games, date: schedule.date })
+    const res = NextResponse.json({ games, date: schedule.date })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
+    return res
   } catch (e) {
     console.error("[MLB NRFI API]", e)
-    return NextResponse.json({ games: [], date: date ?? new Date().toISOString().slice(0, 10) })
+    return NextResponse.json({ games: [], date: date ?? new Date().toISOString().slice(0, 10) }, { status: 500 })
   }
 }

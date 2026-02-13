@@ -5,6 +5,8 @@ import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
 import { BarChart3, Loader2, Shield, ChevronDown } from "lucide-react"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -77,7 +79,14 @@ function FilterGroup<T extends string>({
 
 /* ── Page ── */
 
+/** Number of games/ranking rows visible to anonymous users */
+const PREVIEW_GAMES = 2
+const PREVIEW_RANKING_ROWS = 10
+
 export default function DefenseVsPositionPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+
   const [viewMode, setViewMode] = useState<ViewMode>("matchups")
   const [filterPosition, setFilterPosition] = useState<Position | "ALL">("ALL")
   const [filterStat, setFilterStat] = useState<StatCategory | "ALL">("ALL")
@@ -224,21 +233,69 @@ export default function DefenseVsPositionPage() {
 
         {/* Content */}
         {viewMode === "matchups" && (
-          <MatchupsView
-            matchups={matchups}
-            isLoading={matchupsLoading}
-            filterInsights={filterInsights}
-          />
+          isAnonymous && matchups.length > PREVIEW_GAMES ? (
+            <SignupGate
+              headline="Sign up free to see all matchups"
+              description="Create a free account to unlock every game's defensive matchup breakdown."
+              countLabel={`${matchups.length} games available today`}
+              preview={
+                <MatchupsView
+                  matchups={matchups.slice(0, PREVIEW_GAMES)}
+                  isLoading={matchupsLoading}
+                  filterInsights={filterInsights}
+                />
+              }
+              gated={
+                <MatchupsView
+                  matchups={matchups.slice(PREVIEW_GAMES)}
+                  isLoading={false}
+                  filterInsights={filterInsights}
+                />
+              }
+            />
+          ) : (
+            <MatchupsView
+              matchups={matchups}
+              isLoading={matchupsLoading}
+              filterInsights={filterInsights}
+            />
+          )
         )}
 
         {viewMode === "rankings" && (
-          <RankingsView
-            rankings={rankings}
-            isLoading={rankingsLoading}
-            position={rankPosition}
-            stat={rankStat}
-            todayTeams={todayTeams}
-          />
+          isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
+            <SignupGate
+              headline="Sign up free to see full rankings"
+              description="Create a free account to unlock all 30 teams' defensive rankings by position."
+              countLabel={`${rankings.length} teams ranked`}
+              preview={
+                <RankingsView
+                  rankings={rankings.slice(0, PREVIEW_RANKING_ROWS)}
+                  isLoading={rankingsLoading}
+                  position={rankPosition}
+                  stat={rankStat}
+                  todayTeams={todayTeams}
+                />
+              }
+              gated={
+                <RankingsView
+                  rankings={rankings.slice(PREVIEW_RANKING_ROWS)}
+                  isLoading={false}
+                  position={rankPosition}
+                  stat={rankStat}
+                  todayTeams={todayTeams}
+                />
+              }
+            />
+          ) : (
+            <RankingsView
+              rankings={rankings}
+              isLoading={rankingsLoading}
+              position={rankPosition}
+              stat={rankStat}
+              todayTeams={todayTeams}
+            />
+          )
         )}
       </main>
     </div>
@@ -353,7 +410,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
-                      unoptimized
+
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.awayTeam.abbr}</span>
@@ -367,7 +424,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
-                      unoptimized
+
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.homeTeam.abbr}</span>

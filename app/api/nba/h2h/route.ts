@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule, getNBAInjuries } from "@/lib/nba-api"
 import type { NBAGameResult } from "@/lib/nba-api"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 /** Build H2H history between two teams from their schedule data */
 function buildH2H(
@@ -122,9 +123,11 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ games, summaries, h2hData, lastRecords })
+    const res = NextResponse.json({ games, summaries, h2hData, lastRecords })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+    return res
   } catch (e) {
     console.error("[NBA H2H API]", e)
-    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {} })
+    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {} }, { status: 500 })
   }
 }

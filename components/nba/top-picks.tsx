@@ -15,13 +15,14 @@ function pickScore(row: RowData): number {
   return (row.firstBasketPct * 0.55) + (row.tipWinPct * 0.30) + rankBonus
 }
 
-export function TopPicks({ rows }: { rows: RowData[] }) {
+export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: number }) {
   if (rows.length === 0) return null
 
-  // Sort by composite score, take top 5
   const topPicks = [...rows]
     .sort((a, b) => pickScore(b) - pickScore(a))
-    .slice(0, 5)
+    .slice(0, maxPicks)
+
+  const gridCols = maxPicks <= 3 ? "sm:grid-cols-3" : "sm:grid-cols-5"
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.02] overflow-hidden">
@@ -30,7 +31,7 @@ export function TopPicks({ rows }: { rows: RowData[] }) {
         <span className="text-sm font-bold text-foreground">Tonight{"'"}s Top First Basket Picks</span>
         <span className="text-[10px] text-muted-foreground ml-auto">Ranked by composite score</span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
+      <div className={`grid grid-cols-1 ${gridCols} divide-y sm:divide-y-0 sm:divide-x divide-border/50`}>
         {topPicks.map((pick, i) => {
           return (
             <div key={pick.id} className="px-4 py-3 flex items-center gap-3 sm:flex-col sm:items-center sm:text-center sm:py-4">
@@ -51,7 +52,7 @@ export function TopPicks({ rows }: { rows: RowData[] }) {
                     width={40}
                     height={40}
                     className="rounded-full bg-secondary shrink-0"
-                    unoptimized
+
                   />
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-secondary shrink-0" />

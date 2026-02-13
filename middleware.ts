@@ -46,31 +46,53 @@ function cleanupRateLimit() {
 
 export async function middleware(request: NextRequest) {
   // --- Supabase session refresh ---
+  // Only refresh auth sessions on pages that need it (auth, account, checkout,
+  // protected dashboards). Skip for public pages, API routes, and static assets
+  // to avoid 50-200ms latency on every request.
+  const pathname = request.nextUrl.pathname
+  const needsAuth =
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/account') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/nba/defense-vs-position') ||
+    pathname.startsWith('/nba/head-to-head') ||
+    pathname.startsWith('/nba/trends') ||
+    pathname.startsWith('/nba/first-basket') ||
+    pathname.startsWith('/nfl/defense-vs-position') ||
+    pathname.startsWith('/nfl/trends') ||
+    pathname.startsWith('/nfl/matchup') ||
+    pathname.startsWith('/mlb/hitting-stats') ||
+    pathname.startsWith('/mlb/pitching-stats') ||
+    pathname.startsWith('/mlb/hot-hitters') ||
+    pathname.startsWith('/mlb/trends')
+
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
-            request.cookies.set(name, value),
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          )
+  if (needsAuth) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+            cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
+              request.cookies.set(name, value),
+            )
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
+              supabaseResponse.cookies.set(name, value, options),
+            )
+          },
         },
       },
-    },
-  )
+    )
 
-  // Refresh session - must call getUser() to keep sessions alive
-  await supabase.auth.getUser()
+    // Refresh session - must call getUser() to keep sessions alive
+    await supabase.auth.getUser()
+  }
 
   const response = supabaseResponse
 

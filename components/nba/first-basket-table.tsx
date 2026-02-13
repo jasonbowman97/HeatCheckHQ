@@ -24,6 +24,10 @@ interface FirstBasketTableProps {
   isLive: boolean
   /** Map from team abbreviation → { opponent, isHome } */
   matchupMap: Record<string, { opponent: string; isHome: boolean }>
+  /** Limit visible rows (for preview gating) */
+  maxRows?: number
+  /** Skip the first N rows (for showing the blurred "rest" behind the gate) */
+  skipRows?: number
 }
 
 export interface RowData {
@@ -132,6 +136,8 @@ export function FirstBasketTable({
   onSort,
   isLive,
   matchupMap,
+  maxRows,
+  skipRows,
 }: FirstBasketTableProps) {
   const rows = useMemo(() => {
     const built = buildRows(players, teamTipoffs, matchupMap, gameFilter)
@@ -140,8 +146,11 @@ export function FirstBasketTable({
       const bVal = (b as unknown as Record<string, number>)[sortColumn] ?? 0
       return sortDirection === "asc" ? aVal - bVal : bVal - aVal
     })
+    // Apply row slicing for gated preview
+    if (skipRows) return built.slice(skipRows)
+    if (maxRows !== undefined) return built.slice(0, maxRows)
     return built
-  }, [players, teamTipoffs, gameFilter, sortColumn, sortDirection, matchupMap])
+  }, [players, teamTipoffs, gameFilter, sortColumn, sortDirection, matchupMap, maxRows, skipRows])
 
   const bounds = useMemo(() => {
     if (rows.length === 0) return { tipWinPct: { min: 0, max: 100 }, firstShotPct: { min: 0, max: 30 }, firstBasketPct: { min: 0, max: 30 } }
@@ -221,7 +230,7 @@ export function FirstBasketTable({
                           width={32}
                           height={32}
                           className="rounded-full bg-secondary shrink-0"
-                          unoptimized
+
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-secondary shrink-0" />

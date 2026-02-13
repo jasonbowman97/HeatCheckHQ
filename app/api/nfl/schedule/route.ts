@@ -1,7 +1,8 @@
 import { getNFLScoreboard } from "@/lib/nfl-api"
 import { NextResponse } from "next/server"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 60
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +20,9 @@ export async function GET(request: Request) {
       week: g.week,
       venue: g.venue,
     }))
-    return NextResponse.json({ games })
+    const res = NextResponse.json({ games })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.LIVE))
+    return res
   } catch (e) {
     console.error("[NFL Schedule API]", e)
     return NextResponse.json({ games: [] })

@@ -31,7 +31,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },
   { pattern: "/mlb/pitching-stats", tier: "pro", label: "Pitching Stats" },
   { pattern: "/mlb/hot-hitters", tier: "pro", label: "Hot Hitters" },
-  { pattern: "/nba/head-to-head", tier: "public", label: "Head-to-Head" },
+  { pattern: "/nba/head-to-head", tier: "pro", label: "Head-to-Head" },
   { pattern: "/nfl/matchup", tier: "pro", label: "NFL Matchup" },
 ]
 

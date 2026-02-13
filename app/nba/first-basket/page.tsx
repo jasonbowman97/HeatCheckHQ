@@ -8,6 +8,8 @@ import { NBAHeader } from "@/components/nba/nba-header"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
 import { TopPicks } from "@/components/nba/top-picks"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
 import type { NBAScheduleGame } from "@/lib/nba-api"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 import {
@@ -55,7 +57,13 @@ function toLiveGames(espnGames: NBAScheduleGame[]): GameInfo[] {
   }))
 }
 
+/** Number of table rows visible to anonymous users */
+const PREVIEW_ROWS = 5
+
 export default function NBAFirstBasketPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+
   const [date, setDate] = useState(new Date())
   const [gameFilter, setGameFilter] = useState("all")
   const [sortColumn, setSortColumn] = useState("firstBasketPct")
@@ -210,9 +218,9 @@ export default function NBAFirstBasketPage() {
                     : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
                 }`}
               >
-                {game.awayLogo && <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" unoptimized />}
+                {game.awayLogo && <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />}
                 {game.label}
-                {game.homeLogo && <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" unoptimized />}
+                {game.homeLogo && <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />}
               </button>
             ))}
           </div>
@@ -227,21 +235,55 @@ export default function NBAFirstBasketPage() {
 
         {/* Top Picks spotlight */}
         {allRows.length > 0 && gameFilter === "all" && (
-          <TopPicks rows={allRows} />
+          <TopPicks rows={allRows} maxPicks={isAnonymous ? 3 : 5} />
         )}
 
         {/* Table */}
         {games.length > 0 && (
-          <FirstBasketTable
-            players={filteredPlayers}
-            teamTipoffs={teamTipoffs}
-            gameFilter={gameFilter}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-            isLive={hasLiveStats}
-            matchupMap={matchupMap}
-          />
+          isAnonymous ? (
+            <SignupGate
+              headline="Sign up free to see all players"
+              description="Create a free account to unlock the full first basket rankings, all matchups, and advanced sorting."
+              countLabel={`${allRows.length} players available today`}
+              preview={
+                <FirstBasketTable
+                  players={filteredPlayers}
+                  teamTipoffs={teamTipoffs}
+                  gameFilter={gameFilter}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                  isLive={hasLiveStats}
+                  matchupMap={matchupMap}
+                  maxRows={PREVIEW_ROWS}
+                />
+              }
+              gated={
+                <FirstBasketTable
+                  players={filteredPlayers}
+                  teamTipoffs={teamTipoffs}
+                  gameFilter={gameFilter}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                  isLive={hasLiveStats}
+                  matchupMap={matchupMap}
+                  skipRows={PREVIEW_ROWS}
+                />
+              }
+            />
+          ) : (
+            <FirstBasketTable
+              players={filteredPlayers}
+              teamTipoffs={teamTipoffs}
+              gameFilter={gameFilter}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+              isLive={hasLiveStats}
+              matchupMap={matchupMap}
+            />
+          )
         )}
       </main>
     </div>

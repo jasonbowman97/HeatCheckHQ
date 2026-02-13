@@ -6,6 +6,15 @@
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+/** Timeout for external fetches (10 seconds) */
+const FETCH_TIMEOUT = 10_000
+
+function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 /** Extract a balanced JSON object/array starting at a given position in the string */
 function extractBalanced(html: string, startIdx: number): string {
   const open = html[startIdx]
@@ -89,7 +98,7 @@ interface FBCategory {
 }
 
 export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
-  const res = await fetch("https://www.bettingpros.com/nba/picks/first-basket/", {
+  const res = await fetchWithTimeout("https://www.bettingpros.com/nba/picks/first-basket/", {
     headers: { "User-Agent": UA },
     next: { revalidate: 43200 },
   })
@@ -231,7 +240,7 @@ export interface BPDvpData {
 }
 
 export async function scrapeDvpData(): Promise<BPDvpData> {
-  const res = await fetch("https://www.bettingpros.com/nba/defense-vs-position/", {
+  const res = await fetchWithTimeout("https://www.bettingpros.com/nba/defense-vs-position/", {
     headers: { "User-Agent": UA },
     next: { revalidate: 43200 },
   })
