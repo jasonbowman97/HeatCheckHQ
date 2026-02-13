@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-13-v3-branding-complete
+// Force redeploy: 2026-02-13-v4-live-stripe
 const nextConfig = {
   // TypeScript errors are now enforced at build time
   images: {
