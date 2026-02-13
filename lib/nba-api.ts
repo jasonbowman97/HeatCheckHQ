@@ -168,6 +168,53 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
 }
 
 /* ------------------------------------------------------------------ */
+/*  League-wide Injuries                                               */
+/* ------------------------------------------------------------------ */
+
+export interface NBAInjury {
+  name: string
+  status: string
+  detail: string
+}
+
+/**
+ * Fetch all NBA injuries from the league-wide endpoint.
+ * Returns a map of ESPN team ID → injury list.
+ */
+export async function getNBAInjuries(): Promise<Record<string, NBAInjury[]>> {
+  try {
+    const raw = await espnFetchLive<{
+      injuries: {
+        id: string
+        displayName: string
+        injuries: {
+          status: string
+          athlete: { displayName: string }
+          details?: { type?: string; detail?: string; side?: string }
+        }[]
+      }[]
+    }>("/injuries")
+
+    const map: Record<string, NBAInjury[]> = {}
+    for (const team of raw.injuries ?? []) {
+      map[team.id] = (team.injuries ?? []).map((inj) => {
+        const parts = [inj.details?.type, inj.details?.detail].filter(Boolean)
+        const side = inj.details?.side ? `${inj.details.side} ` : ""
+        return {
+          name: inj.athlete?.displayName ?? "",
+          status: inj.status ?? "Unknown",
+          detail: parts.length > 0 ? `${side}${parts.join(" - ")}` : inj.status ?? "",
+        }
+      })
+    }
+    return map
+  } catch (e) {
+    console.error("[NBA Injuries]", e)
+    return {}
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Team Schedule (for H2H history & last N games)                     */
 /* ------------------------------------------------------------------ */
 

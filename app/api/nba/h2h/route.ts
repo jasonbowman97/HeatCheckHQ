@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule } from "@/lib/nba-api"
+import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule, getNBAInjuries } from "@/lib/nba-api"
 import type { NBAGameResult } from "@/lib/nba-api"
 
 export const dynamic = "force-dynamic"
@@ -75,8 +75,8 @@ export async function GET(request: Request) {
       teamIds.add(g.homeTeam.id)
     }
 
-    // Fetch team summaries + schedules in parallel
-    const [summaryEntries, scheduleEntries] = await Promise.all([
+    // Fetch team summaries + schedules + injuries in parallel
+    const [summaryEntries, scheduleEntries, allInjuries] = await Promise.all([
       Promise.all(
         Array.from(teamIds).map(async (id) => {
           const summary = await getNBATeamSummary(id)
@@ -89,9 +89,17 @@ export async function GET(request: Request) {
           return [id, schedule] as const
         })
       ),
+      getNBAInjuries(),
     ])
 
     const summaries = Object.fromEntries(summaryEntries.filter(([, v]) => v !== null))
+
+    // Merge league-wide injuries into team summaries
+    for (const [id, summary] of Object.entries(summaries)) {
+      if (summary && allInjuries[id]?.length) {
+        summary.injuries = allInjuries[id]
+      }
+    }
     const schedules: Record<string, NBAGameResult[]> = Object.fromEntries(scheduleEntries)
 
     // Build H2H data and last-N records for each matchup

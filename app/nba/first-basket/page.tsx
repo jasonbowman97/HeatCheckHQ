@@ -20,6 +20,15 @@ import {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
+/** ESPN → BettingPros team abbreviation mapping */
+const ESPN_TO_BP: Record<string, string> = {
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
+  WSH: "WAS", PHX: "PHO", UTAH: "UTH",
+}
+function toBP(espn: string): string {
+  return ESPN_TO_BP[espn] ?? espn
+}
+
 interface GameInfo {
   id: string
   away: string
@@ -72,22 +81,22 @@ export default function NBAFirstBasketPage() {
   const games = useMemo(() => (scheduleData?.games?.length ? toLiveGames(scheduleData.games) : []), [scheduleData])
   const hasLiveStats = !!fbData?.players?.length
 
-  // Get today's team abbreviations for filtering players
+  // Get today's team abbreviations for filtering players (convert to BettingPros format)
   const todayTeams = useMemo(() => {
     const teams = new Set<string>()
     for (const g of games) {
-      teams.add(g.away)
-      teams.add(g.home)
+      teams.add(toBP(g.away))
+      teams.add(toBP(g.home))
     }
     return teams
   }, [games])
 
-  // Build matchup map: team → { opponent, isHome }
+  // Build matchup map: team → { opponent, isHome } (using BettingPros abbreviations)
   const matchupMap = useMemo(() => {
     const map: Record<string, { opponent: string; isHome: boolean }> = {}
     for (const g of games) {
-      map[g.home] = { opponent: g.away, isHome: true }
-      map[g.away] = { opponent: g.home, isHome: false }
+      map[toBP(g.home)] = { opponent: toBP(g.away), isHome: true }
+      map[toBP(g.away)] = { opponent: toBP(g.home), isHome: false }
     }
     return map
   }, [games])
