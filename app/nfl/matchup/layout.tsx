@@ -2,7 +2,7 @@ import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "NFL Team Matchup Analysis - Side-by-Side Stats | HeatCheck HQ",
+  title: "NFL Team Matchup Analysis - Side-by-Side Stats | HeatCheck.io",
   description: "In-depth NFL team matchup analysis with side-by-side stat comparisons. View passing, rushing, and receiving stats with league rankings and recent game log trends.",
   path: "/nfl/matchup",
   keywords: [

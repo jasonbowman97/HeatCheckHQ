@@ -12,7 +12,7 @@ export function Footer() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <Logo className="h-4 w-4" />
               </div>
-              <span className="text-sm font-semibold text-foreground">HeatCheck HQ</span>
+              <span className="text-sm font-semibold text-foreground">HeatCheck.io</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Data-driven insight tools for MLB, NBA, and NFL.
@@ -57,7 +57,7 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-border flex flex-col items-center gap-4 md:flex-row md:justify-between">
           <p className="text-xs text-muted-foreground">
-            © 2026 HeatCheck HQ. All rights reserved.
+            © 2026 HeatCheck.io. All rights reserved.
           </p>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <Link href="/#dashboards" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Dashboards</Link>

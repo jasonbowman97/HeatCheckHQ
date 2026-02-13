@@ -2,7 +2,7 @@ import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "MLB Pitching Stats - Pitcher Arsenal Analytics | HeatCheck HQ",
+  title: "MLB Pitching Stats - Pitcher Arsenal Analytics | HeatCheck.io",
   description: "Advanced MLB pitching statistics and arsenal analysis. Track ERA, strikeout rates, CSW%, pitch types, velocity, and pitcher matchup data for all MLB pitchers.",
   path: "/mlb/pitching-stats",
   keywords: [

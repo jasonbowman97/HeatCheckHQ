@@ -40,7 +40,7 @@ export default function NBAHubPage() {
                 <Logo className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck.io</h1>
                 <p className="text-xs text-muted-foreground">NBA Dashboards</p>
               </div>
             </Link>

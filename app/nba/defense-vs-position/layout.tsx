@@ -3,7 +3,7 @@ import { getUserTier } from "@/lib/get-user-tier"
 import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
-  title: "NBA Defense vs Position Rankings Today - DVP Matchup Tool | HeatCheck HQ",
+  title: "NBA Defense vs Position Rankings Today - DVP Matchup Tool | HeatCheck.io",
   description: "Today's NBA defense vs position rankings showing which teams allow the most points, rebounds, assists, and 3PM to each position. Free DVP matchup tool updated daily.",
   path: "/nba/defense-vs-position",
   keywords: [

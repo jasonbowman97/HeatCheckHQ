@@ -39,7 +39,7 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
         <button
           onClick={() => {
             const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${p.firstBasketPct.toFixed(1)}% first basket rate`).join("\n")
-            const shareText = `Tonight's Top First Basket Picks\n${text}\n\nFull analysis at heatcheckhq.com/nba/first-basket`
+            const shareText = `Tonight's Top First Basket Picks\n${text}\n\nFull analysis at heatcheckio.com/nba/first-basket`
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})
             } else {

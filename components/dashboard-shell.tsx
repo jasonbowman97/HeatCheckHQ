@@ -112,7 +112,7 @@ function TierBadge({ tier }: { tier: Tier }) {
 
 interface DashboardShellProps {
   children: React.ReactNode
-  /** Override subtitle shown under "HeatCheck HQ", e.g. "MLB Hot Hitters" */
+  /** Override subtitle shown under "HeatCheck.io", e.g. "MLB Hot Hitters" */
   subtitle?: string
 }
 
@@ -148,7 +148,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                 <Logo className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck.io</h1>
                 <p className="text-xs text-muted-foreground">{headerSubtitle}</p>
               </div>
             </Link>
@@ -194,7 +194,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                   <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
                     <Logo className="h-4 w-4" />
                   </div>
-                  HeatCheck HQ
+                  HeatCheck.io
                 </SheetTitle>
               </SheetHeader>
 

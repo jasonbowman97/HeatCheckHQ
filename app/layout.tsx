@@ -5,7 +5,7 @@ import { generateSEO } from '@/lib/seo'
 import './globals.css'
 
 export const metadata: Metadata = generateSEO({
-  title: 'Sports Betting Analytics for MLB, NBA & NFL | HeatCheck HQ',
+  title: 'Sports Betting Analytics for MLB, NBA & NFL | HeatCheck.io',
   description: 'Free sports analytics dashboards with NRFI predictions, NBA first basket picks, defense vs position rankings, and player prop insights. Updated daily for MLB, NBA & NFL.',
   path: '/',
   keywords: [

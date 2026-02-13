@@ -137,7 +137,7 @@ export default function CheckoutPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <Logo className="h-4 w-4" />
             </div>
-            <span className="font-bold text-foreground">HeatCheck HQ Pro</span>
+            <span className="font-bold text-foreground">HeatCheck.io Pro</span>
           </div>
         </div>
 

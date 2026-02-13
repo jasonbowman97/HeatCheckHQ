@@ -26,7 +26,7 @@ export function NFLHeader() {
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                HeatCheck HQ
+                HeatCheck.io
               </h1>
               <p className="text-xs text-muted-foreground">NFL Dashboard</p>
             </div>

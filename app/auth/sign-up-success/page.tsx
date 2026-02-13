@@ -12,7 +12,7 @@ export default function SignUpSuccessPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <Logo className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
+            <span className="text-lg font-bold text-foreground">HeatCheck.io</span>
           </Link>
         </div>
 
@@ -24,7 +24,7 @@ export default function SignUpSuccessPage() {
 
         <h1 className="text-xl font-bold text-foreground">Check your email</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          We sent a confirmation link to your email address. Click the link to activate your account and start using HeatCheck HQ.
+          We sent a confirmation link to your email address. Click the link to activate your account and start using HeatCheck.io.
         </p>
 
         <Button

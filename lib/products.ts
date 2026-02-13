@@ -12,7 +12,7 @@ export interface Product {
 export const PRODUCTS: Product[] = [
   {
     id: "pro-monthly",
-    name: "HeatCheck HQ Pro",
+    name: "HeatCheck.io Pro",
     description:
       "Full access to every dashboard, trend, and insight across MLB, NBA, and NFL.",
     priceInCents: 1200, // $12.00
@@ -22,7 +22,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "pro-annual",
-    name: "HeatCheck HQ Pro",
+    name: "HeatCheck.io Pro",
     description:
       "Full access to every dashboard, trend, and insight across MLB, NBA, and NFL.",
     priceInCents: 10000, // $100.00

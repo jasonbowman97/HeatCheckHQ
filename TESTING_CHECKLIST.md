@@ -1,4 +1,4 @@
-# HeatCheck HQ - Testing Checklist
+# HeatCheck.io - Testing Checklist
 
 ## Deployment Success ✅
 - Site is live and accessible

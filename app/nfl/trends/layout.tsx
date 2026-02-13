@@ -2,7 +2,7 @@ import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "NFL Trends - Performance Streaks & Patterns | HeatCheck HQ",
+  title: "NFL Trends - Performance Streaks & Patterns | HeatCheck.io",
   description: "NFL trend analysis including rushing, passing, and receiving streaks. Track team and player momentum with advanced pattern detection.",
   path: "/nfl/trends",
   keywords: [

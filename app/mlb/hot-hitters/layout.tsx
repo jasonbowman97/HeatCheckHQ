@@ -2,7 +2,7 @@ import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "MLB Hot Hitters - Active Hitting Streaks | HeatCheck HQ",
+  title: "MLB Hot Hitters - Active Hitting Streaks | HeatCheck.io",
   description: "Track active MLB hitting streaks, extra-base hit runs, and home run surges across all players. Real-time streak data updated daily.",
   path: "/mlb/hot-hitters",
   keywords: [

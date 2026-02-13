@@ -3,7 +3,7 @@ import { getUserTier } from "@/lib/get-user-tier"
 import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
-  title: "NBA First Basket Picks Today - Tip-Off Probabilities & Rankings | HeatCheck HQ",
+  title: "NBA First Basket Picks Today - Tip-Off Probabilities & Rankings | HeatCheck.io",
   description: "Today's NBA first basket picks with tip-off win rates, first shot percentages, and player rankings. Free first basket scorer predictions updated daily for every game.",
   path: "/nba/first-basket",
   keywords: [

@@ -1,4 +1,4 @@
-# HeatCheckHQ Deployment Status
+# HeatCheckIO Deployment Status
 
 ## Current Issue
 Checkout page showing 500 error when trying to create Stripe session.
@@ -14,7 +14,7 @@ Updated `app/actions/stripe.ts` to properly build return URL with VERCEL_URL fal
 ```typescript
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                "https://heatcheckhq.com"
+                "https://heatcheckio.com"
 ```
 
 ## What Works

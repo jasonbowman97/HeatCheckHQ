@@ -111,7 +111,7 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
   },
 }
 
-const STORAGE_KEY = "hchq-onboarding-dismissed"
+const STORAGE_KEY = "hcio-onboarding-dismissed"
 
 function getDismissed(): Set<string> {
   if (typeof window === "undefined") return new Set()

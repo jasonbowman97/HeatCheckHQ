@@ -1,7 +1,7 @@
 import { generateSEO, StructuredData, generateWebPageSchema, generateFAQSchema, generateDatasetSchema } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "NRFI Predictions Today - No Run First Inning Picks & Stats | HeatCheck HQ",
+  title: "NRFI Predictions Today - No Run First Inning Picks & Stats | HeatCheck.io",
   description: "Today's NRFI predictions with pitcher matchups, first inning run probabilities, and streak data. Free NRFI picks updated daily for every MLB game.",
   path: "/mlb/nrfi",
   keywords: [

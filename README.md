@@ -1,10 +1,10 @@
-# HeatCheck HQ
+# HeatCheck.io
 
 Advanced sports analytics dashboards for MLB, NBA, and NFL with real-time player statistics.
 
 ## Overview
 
-HeatCheck HQ is a comprehensive sports analytics platform featuring 12 specialized dashboards across three major sports leagues.
+HeatCheck.io is a comprehensive sports analytics platform featuring 12 specialized dashboards across three major sports leagues.
 
 ## Features
 
@@ -94,9 +94,9 @@ styles/             # Global styles
 
 This project is configured for deployment on Vercel.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jasonbowman97/HeatCheckHQ)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jasonbowman97/HeatCheckIO)
 
 ## License
 
-© 2026 HeatCheck HQ. All rights reserved.
+© 2026 HeatCheck.io. All rights reserved.
 # Force deployment

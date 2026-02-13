@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <Logo className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
+            <span className="text-lg font-bold text-foreground">HeatCheck.io</span>
           </Link>
           <p className="mt-2 text-sm text-muted-foreground">Reset your password</p>
         </div>

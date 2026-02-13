@@ -1,4 +1,4 @@
-# Production Readiness Report - HeatCheck HQ
+# Production Readiness Report - HeatCheck.io
 
 **Generated:** 2026-02-08
 **Status:** ✅ PRODUCTION READY
@@ -179,7 +179,7 @@ upgrade-insecure-requests
 
 ```bash
 # Base URL (required for SEO)
-NEXT_PUBLIC_BASE_URL=https://heatcheckhq.com
+NEXT_PUBLIC_BASE_URL=https://heatcheckio.com
 
 # Optional: Standalone build
 BUILD_STANDALONE=true
@@ -340,16 +340,16 @@ BUILD_STANDALONE=true
 ## 📞 SUPPORT & CONTACTS
 
 **Security Issues:**
-Report to: security@heatcheckhq.com
+Report to: security@heatcheckio.com
 
 **Privacy Inquiries:**
-Contact: privacy@heatcheckhq.com
+Contact: privacy@heatcheckio.com
 
 **Legal Questions:**
-Contact: legal@heatcheckhq.com
+Contact: legal@heatcheckio.com
 
 **Technical Support:**
-Contact: support@heatcheckhq.com
+Contact: support@heatcheckio.com
 
 ---
 

@@ -84,7 +84,7 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
   // Build return URL - prefer VERCEL_URL (auto-set by Vercel to the correct deployment domain)
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.com"
+    : process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckio.com"
 
   const returnUrl = `${baseUrl}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
   console.log("[Stripe] Return URL:", returnUrl)

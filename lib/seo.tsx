@@ -11,7 +11,7 @@ interface SEOProps {
   keywords?: string[]
 }
 
-const DEFAULT_URL = "https://heatcheckhq.com"
+const DEFAULT_URL = "https://heatcheckio.com"
 
 function getBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_BASE_URL
@@ -25,7 +25,7 @@ function getBaseUrl(): string {
 }
 
 const baseUrl = getBaseUrl()
-const siteName = "HeatCheck HQ"
+const siteName = "HeatCheck.io"
 const defaultImage = `${baseUrl}/og-image.png`
 
 /**
@@ -94,8 +94,8 @@ export function generateSEO({
       title,
       description,
       images: [image],
-      creator: "@heatcheckhq",
-      site: "@heatcheckhq",
+      creator: "@heatcheckio",
+      site: "@heatcheckio",
     },
     robots: {
       index: true,
@@ -129,13 +129,13 @@ export function generateOrganizationSchema() {
     logo: `${baseUrl}/logo.png`,
     description: "Advanced sports analytics dashboards for MLB, NBA, and NFL with real-time player statistics, trends, and matchup analysis.",
     sameAs: [
-      "https://twitter.com/heatcheckhq",
-      "https://github.com/heatcheckhq",
+      "https://twitter.com/heatcheckio",
+      "https://github.com/heatcheckio",
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Support",
-      email: "support@heatcheckhq.com",
+      email: "support@heatcheckio.com",
     },
   }
 }
@@ -260,7 +260,7 @@ export function generateDatasetSchema({
     name,
     description,
     url: `${baseUrl}${path}`,
-    license: "https://heatcheckhq.com/terms",
+    license: "https://heatcheckio.com/terms",
     creator: {
       "@type": "Organization",
       name: siteName,

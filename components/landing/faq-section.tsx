@@ -6,7 +6,7 @@ import { FadeIn } from "@/components/ui/fade-in"
 
 const faqs = [
   {
-    question: "Is HeatCheck HQ really free?",
+    question: "Is HeatCheck.io really free?",
     answer:
       "Yes — 9 dashboards across MLB, NBA, and NFL are completely free. No credit card, no trial period. Create an account in 10 seconds and start researching immediately.",
   },
@@ -33,7 +33,7 @@ const faqs = [
   {
     question: "Is this a picks or tout service?",
     answer:
-      "No. HeatCheck HQ is a research platform. We surface raw data, trends, matchups, and visualizations — you make your own decisions. No locks, no guarantees, no records to chase.",
+      "No. HeatCheck.io is a research platform. We surface raw data, trends, matchups, and visualizations — you make your own decisions. No locks, no guarantees, no records to chase.",
   },
 ]
 
