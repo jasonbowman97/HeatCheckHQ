@@ -55,7 +55,7 @@ const STAT_CATEGORIES: { key: StatCategory; label: string; bpField: keyof BPDvpP
 
 /* ESPN → BettingPros team abbreviation mapping */
 const ESPN_TO_BP: Record<string, string> = {
-  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOR",
   WSH: "WAS", PHX: "PHO", UTAH: "UTH",
 }
 

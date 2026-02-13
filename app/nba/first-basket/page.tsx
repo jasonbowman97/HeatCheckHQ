@@ -22,7 +22,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 /** ESPN → BettingPros team abbreviation mapping */
 const ESPN_TO_BP: Record<string, string> = {
-  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOR",
   WSH: "WAS", PHX: "PHO", UTAH: "UTH",
 }
 function toBP(espn: string): string {
@@ -183,7 +183,7 @@ export default function NBAFirstBasketPage() {
               <SelectContent>
                 <SelectItem value="all">All Matchups</SelectItem>
                 {games.map((game) => (
-                  <SelectItem key={game.id} value={`${game.away}-${game.home}`}>
+                  <SelectItem key={game.id} value={`${toBP(game.away)}-${toBP(game.home)}`}>
                     {game.label}
                   </SelectItem>
                 ))}
@@ -201,11 +201,11 @@ export default function NBAFirstBasketPage() {
                 key={game.id}
                 onClick={() =>
                   setGameFilter((prev) =>
-                    prev === `${game.away}-${game.home}` ? "all" : `${game.away}-${game.home}`
+                    prev === `${toBP(game.away)}-${toBP(game.home)}` ? "all" : `${toBP(game.away)}-${toBP(game.home)}`
                   )
                 }
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  gameFilter === `${game.away}-${game.home}`
+                  gameFilter === `${toBP(game.away)}-${toBP(game.home)}`
                     ? "bg-primary/15 text-primary border border-primary/30"
                     : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
                 }`}
