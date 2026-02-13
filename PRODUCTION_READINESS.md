@@ -340,16 +340,16 @@ BUILD_STANDALONE=true
 ## 📞 SUPPORT & CONTACTS
 
 **Security Issues:**
-Report to: security@heatcheckhq.io
+Report to: admin@heatcheckhq.io
 
 **Privacy Inquiries:**
-Contact: privacy@heatcheckhq.io
+Contact: admin@heatcheckhq.io
 
 **Legal Questions:**
-Contact: legal@heatcheckhq.io
+Contact: admin@heatcheckhq.io
 
 **Technical Support:**
-Contact: support@heatcheckhq.io
+Contact: admin@heatcheckhq.io
 
 ---
 

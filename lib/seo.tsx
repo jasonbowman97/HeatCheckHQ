@@ -94,8 +94,8 @@ export function generateSEO({
       title,
       description,
       images: [image],
-      creator: "@heatcheckhq",
-      site: "@heatcheckhq",
+      creator: "@heatcheckio",
+      site: "@heatcheckio",
     },
     robots: {
       index: true,
@@ -129,13 +129,13 @@ export function generateOrganizationSchema() {
     logo: `${baseUrl}/logo.png`,
     description: "Advanced sports analytics dashboards for MLB, NBA, and NFL with real-time player statistics, trends, and matchup analysis.",
     sameAs: [
-      "https://twitter.com/heatcheckhq",
+      "https://twitter.com/heatcheckio",
       "https://github.com/heatcheckhq",
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Support",
-      email: "support@heatcheckhq.io",
+      email: "admin@heatcheckhq.io",
     },
   }
 }

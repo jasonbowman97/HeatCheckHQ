@@ -134,7 +134,7 @@ export default function PrivacyPage() {
             </p>
             <div className="bg-card border border-border rounded-lg p-4 mt-4">
               <p className="text-muted-foreground">
-                Email: privacy@heatcheckhq.io<br />
+                Email: admin@heatcheckhq.io<br />
                 Website: <Link href="/" className="text-primary hover:underline">heatcheckhq.io</Link>
               </p>
             </div>
