@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, Shield, ChevronDown, Zap, ArrowRight } from "lucide-react"
+import { Loader2, Shield, ChevronDown, Zap, ArrowRight, Lock } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
@@ -192,44 +192,57 @@ export default function DefenseVsPositionPage() {
           </p>
         </div>
 
-        {/* View mode toggle + filters */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            <button
-              onClick={() => setViewMode("matchups")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
-                viewMode === "matchups"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {"Today's Matchups"}
-            </button>
-            <button
-              onClick={() => setViewMode("rankings")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
-                viewMode === "rankings"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Full Rankings
-            </button>
+        {/* View mode toggle + filters — locked for anonymous users */}
+        <div className="relative">
+          {isAnonymous && (
+            <div className="absolute inset-0 z-10 flex items-center justify-end pr-4">
+              <Link
+                href="/auth/sign-up"
+                className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
+              >
+                <Lock className="h-3 w-3" />
+                Sign up to filter
+              </Link>
+            </div>
+          )}
+          <div className={`flex flex-wrap items-center gap-4 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setViewMode("matchups")}
+                className={`px-4 py-2 text-xs font-semibold transition-colors ${
+                  viewMode === "matchups"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {"Today's Matchups"}
+              </button>
+              <button
+                onClick={() => setViewMode("rankings")}
+                className={`px-4 py-2 text-xs font-semibold transition-colors ${
+                  viewMode === "rankings"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Full Rankings
+              </button>
+            </div>
+
+            {viewMode === "matchups" && (
+              <>
+                <FilterGroup label="Position" options={POSITIONS} value={filterPosition} onChange={setFilterPosition} showAll />
+                <FilterGroup label="Stat" options={STAT_CATEGORIES} value={filterStat} onChange={setFilterStat} showAll />
+              </>
+            )}
+
+            {viewMode === "rankings" && (
+              <>
+                <FilterGroup label="Position" options={POSITIONS} value={rankPosition} onChange={(v) => { if (v !== "ALL") setRankPosition(v as Position) }} />
+                <FilterGroup label="Stat" options={STAT_CATEGORIES} value={rankStat} onChange={(v) => { if (v !== "ALL") setRankStat(v as StatCategory) }} />
+              </>
+            )}
           </div>
-
-          {viewMode === "matchups" && (
-            <>
-              <FilterGroup label="Position" options={POSITIONS} value={filterPosition} onChange={setFilterPosition} showAll />
-              <FilterGroup label="Stat" options={STAT_CATEGORIES} value={filterStat} onChange={setFilterStat} showAll />
-            </>
-          )}
-
-          {viewMode === "rankings" && (
-            <>
-              <FilterGroup label="Position" options={POSITIONS} value={rankPosition} onChange={(v) => { if (v !== "ALL") setRankPosition(v as Position) }} />
-              <FilterGroup label="Stat" options={STAT_CATEGORIES} value={rankStat} onChange={(v) => { if (v !== "ALL") setRankStat(v as StatCategory) }} />
-            </>
-          )}
         </div>
 
         {/* Content */}

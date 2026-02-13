@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw } from "lucide-react"
+import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { NBAHeader } from "@/components/nba/nba-header"
@@ -189,67 +189,85 @@ export default function NBAFirstBasketPage() {
         <div className="flex flex-wrap items-center gap-4">
           <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
 
-          <div className="flex items-center gap-2">
-            <Select value={gameFilter} onValueChange={setGameFilter}>
-              <SelectTrigger className="w-[180px] h-9 bg-card border-border text-sm">
-                <SelectValue placeholder="All Matchups" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Matchups</SelectItem>
-                {games.map((game) => (
-                  <SelectItem key={game.id} value={`${toBP(game.away)}-${toBP(game.home)}`}>
-                    {game.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Min games started filter */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min GP</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {([0, 10, 20, 30] as const).map((threshold) => (
-                <button
-                  key={threshold}
-                  type="button"
-                  onClick={() => setMinGames(threshold)}
-                  className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    minGames === threshold
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:text-foreground"
-                  }`}
+          {/* Game + Min GP filters — locked for anonymous users */}
+          <div className="relative flex flex-wrap items-center gap-4">
+            {isAnonymous && (
+              <div className="absolute inset-0 z-10 flex items-center justify-end pr-2">
+                <Link
+                  href="/auth/sign-up"
+                  className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
                 >
-                  {threshold === 0 ? "All" : `${threshold}+`}
-                </button>
-              ))}
+                  <Lock className="h-3 w-3" />
+                  Sign up to filter
+                </Link>
+              </div>
+            )}
+            <div className={isAnonymous ? "pointer-events-none opacity-40 flex flex-wrap items-center gap-4" : "flex flex-wrap items-center gap-4"}>
+              <div className="flex items-center gap-2">
+                <Select value={gameFilter} onValueChange={setGameFilter}>
+                  <SelectTrigger className="w-[180px] h-9 bg-card border-border text-sm">
+                    <SelectValue placeholder="All Matchups" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Matchups</SelectItem>
+                    {games.map((game) => (
+                      <SelectItem key={game.id} value={`${toBP(game.away)}-${toBP(game.home)}`}>
+                        {game.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Min games started filter */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min GP</span>
+                <div className="flex rounded-lg border border-border overflow-hidden">
+                  {([0, 10, 20, 30] as const).map((threshold) => (
+                    <button
+                      key={threshold}
+                      type="button"
+                      onClick={() => setMinGames(threshold)}
+                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        minGames === threshold
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {threshold === 0 ? "All" : `${threshold}+`}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Games strip */}
+        {/* Games strip — locked for anonymous users */}
         {games.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
-            {games.map((game) => (
-              <button
-                key={game.id}
-                onClick={() =>
-                  setGameFilter((prev) =>
-                    prev === `${toBP(game.away)}-${toBP(game.home)}` ? "all" : `${toBP(game.away)}-${toBP(game.home)}`
-                  )
-                }
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  gameFilter === `${toBP(game.away)}-${toBP(game.home)}`
-                    ? "bg-primary/15 text-primary border border-primary/30"
-                    : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
-                }`}
-              >
-                {game.awayLogo && <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />}
-                {game.label}
-                {game.homeLogo && <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />}
-              </button>
-            ))}
+          <div className={isAnonymous ? "pointer-events-none opacity-40" : ""}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
+              {games.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() =>
+                    setGameFilter((prev) =>
+                      prev === `${toBP(game.away)}-${toBP(game.home)}` ? "all" : `${toBP(game.away)}-${toBP(game.home)}`
+                    )
+                  }
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    gameFilter === `${toBP(game.away)}-${toBP(game.home)}`
+                      ? "bg-primary/15 text-primary border border-primary/30"
+                      : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+                  }`}
+                >
+                  {game.awayLogo && <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />}
+                  {game.label}
+                  {game.homeLogo && <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

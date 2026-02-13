@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Loader2 } from "lucide-react"
+import { Loader2, Lock } from "lucide-react"
 import { Logo } from "@/components/logo"
 import type { NBAGame } from "@/lib/nba-h2h-data"
 import type { NBAScheduleGame, NBATeamSummary } from "@/lib/nba-api"
@@ -12,6 +12,8 @@ import { H2HMatchupSelector } from "@/components/nba/h2h-matchup-selector"
 import { H2HHistory } from "@/components/nba/h2h-history"
 import { H2HMomentum } from "@/components/nba/h2h-momentum"
 import { H2HInjuries } from "@/components/nba/h2h-injuries"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -113,6 +115,9 @@ function espnToH2HGames(
 }
 
 export default function NBAH2HPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+
   const { data, isLoading } = useSWR<{
     games: NBAScheduleGame[]
     summaries: Record<string, NBATeamSummary>
@@ -207,14 +212,52 @@ export default function NBAH2HPage() {
         {/* Content */}
         {selectedGame && (
           <>
-            <H2HMatchupSelector
-              games={games}
-              selectedId={activeId}
-              onSelect={setSelectedGameId}
-            />
+            {/* Game selector — locked for anonymous when multiple games */}
+            {isAnonymous && games.length > 1 ? (
+              <div className="relative">
+                <div className="absolute inset-0 z-10 flex items-center justify-end pr-6">
+                  <Link
+                    href="/auth/sign-up"
+                    className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
+                  >
+                    <Lock className="h-3 w-3" />
+                    Sign up to switch games
+                  </Link>
+                </div>
+                <div className="pointer-events-none opacity-60">
+                  <H2HMatchupSelector
+                    games={games}
+                    selectedId={activeId}
+                    onSelect={setSelectedGameId}
+                  />
+                </div>
+              </div>
+            ) : (
+              <H2HMatchupSelector
+                games={games}
+                selectedId={activeId}
+                onSelect={setSelectedGameId}
+              />
+            )}
+
+            {/* H2H History shown as preview */}
             <H2HHistory game={selectedGame} />
-            <H2HMomentum game={selectedGame} />
-            <H2HInjuries game={selectedGame} />
+
+            {/* Momentum + Injuries gated for anonymous */}
+            {isAnonymous ? (
+              <SignupGate
+                headline="See full matchup breakdown — free"
+                description="Unlock team momentum, injury reports, and every game's H2H data. Free forever, no credit card."
+                countLabel={`${games.length} games tonight`}
+                preview={<H2HMomentum game={selectedGame} />}
+                gated={<H2HInjuries game={selectedGame} />}
+              />
+            ) : (
+              <>
+                <H2HMomentum game={selectedGame} />
+                <H2HInjuries game={selectedGame} />
+              </>
+            )}
           </>
         )}
       </main>

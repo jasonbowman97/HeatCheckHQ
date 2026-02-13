@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
@@ -152,23 +152,36 @@ export default function NrfiPage() {
             </button>
           </div>
 
-          {/* Pitcher hand filter */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pitcher</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(["All", "RHP", "LHP"] as const).map((hand) => (
-                <button
-                  key={hand}
-                  onClick={() => setHandFilter(hand)}
-                  className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                    handFilter === hand
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:text-foreground"
-                  }`}
+          {/* Pitcher hand filter — locked for anonymous users */}
+          <div className="relative">
+            {isAnonymous && (
+              <div className="absolute inset-0 z-10 flex items-center justify-end pr-2">
+                <Link
+                  href="/auth/sign-up"
+                  className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
                 >
-                  {hand}
-                </button>
-              ))}
+                  <Lock className="h-3 w-3" />
+                  Sign up to filter
+                </Link>
+              </div>
+            )}
+            <div className={`flex items-center gap-3 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pitcher</span>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                {(["All", "RHP", "LHP"] as const).map((hand) => (
+                  <button
+                    key={hand}
+                    onClick={() => setHandFilter(hand)}
+                    className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                      handFilter === hand
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {hand}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
