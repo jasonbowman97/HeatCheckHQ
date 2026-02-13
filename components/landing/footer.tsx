@@ -28,6 +28,7 @@ export function Footer() {
               <Link href="/mlb/hitting-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hitter vs Pitcher</Link>
               <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
               <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
+              <Link href="/mlb/weather" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Weather</Link>
               <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>
@@ -48,6 +49,7 @@ export function Footer() {
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">NFL</p>
             <div className="flex flex-col gap-2">
               <Link href="/nfl/matchup" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Matchup</Link>
+              <Link href="/nfl/defense-vs-position" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Def vs Position</Link>
               <Link href="/nfl/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>
@@ -61,6 +63,7 @@ export function Footer() {
             <a href="#dashboards" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Dashboards</a>
             <a href="#features" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Features</a>
             <a href="#pricing" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
+            <a href="#support" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Support</a>
             <span className="text-muted-foreground/50">•</span>
             <Link href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Terms</Link>
