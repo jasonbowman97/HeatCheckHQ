@@ -67,6 +67,7 @@ export default function NBAFirstBasketPage() {
 
   const [date, setDate] = useState(new Date())
   const [gameFilter, setGameFilter] = useState("all")
+  const [minGames, setMinGames] = useState(0)
   const [sortColumn, setSortColumn] = useState("firstBasketPct")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
@@ -112,11 +113,13 @@ export default function NBAFirstBasketPage() {
     return map
   }, [games])
 
-  // Filter first basket players to today's teams
+  // Filter first basket players to today's teams + minimum games started
   const filteredPlayers = useMemo(() => {
     if (!fbData?.players?.length) return []
-    return fbData.players.filter((p) => todayTeams.has(p.team))
-  }, [fbData, todayTeams])
+    return fbData.players.filter((p) =>
+      todayTeams.has(p.team) && p.gamesStarted >= minGames
+    )
+  }, [fbData, todayTeams, minGames])
 
   // Build team tipoff lookup
   const teamTipoffs = useMemo(() => {
@@ -200,6 +203,27 @@ export default function NBAFirstBasketPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Min games started filter */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min GP</span>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              {([0, 10, 20, 30] as const).map((threshold) => (
+                <button
+                  key={threshold}
+                  type="button"
+                  onClick={() => setMinGames(threshold)}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    minGames === threshold
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {threshold === 0 ? "All" : `${threshold}+`}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
