@@ -235,13 +235,13 @@ export function FirstBasketTable({
                         <Image
                           src={row.image}
                           alt={row.name}
-                          width={32}
-                          height={32}
-                          className="rounded-full bg-secondary shrink-0"
+                          width={40}
+                          height={40}
+                          className="rounded-full bg-secondary shrink-0 h-9 w-9"
                           unoptimized
                         />
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-secondary shrink-0" />
+                        <div className="h-9 w-9 rounded-full bg-secondary shrink-0" />
                       )}
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-sm font-semibold text-foreground truncate">{row.name}</span>

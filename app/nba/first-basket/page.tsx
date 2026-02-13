@@ -296,9 +296,9 @@ export default function NBAFirstBasketPage() {
           </div>
         )}
 
-        {/* Top Picks spotlight */}
-        {allRows.length > 0 && gameFilter === "all" && (
-          <TopPicks rows={allRows} maxPicks={isAnonymous ? 3 : 5} />
+        {/* Top Picks spotlight — hidden for anonymous users */}
+        {!isAnonymous && allRows.length > 0 && gameFilter === "all" && (
+          <TopPicks rows={allRows} maxPicks={5} />
         )}
 
         {/* Table */}

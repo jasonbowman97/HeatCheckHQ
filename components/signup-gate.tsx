@@ -34,7 +34,7 @@ export function SignupGate({
       <div className="relative mt-0">
         {/* Blurred content behind — visible enough to tease heatmap colors */}
         <div className="pointer-events-none select-none" aria-hidden="true">
-          <div className="blur-md opacity-30 max-h-[500px] overflow-hidden">
+          <div className="blur-md opacity-30 max-h-[280px] overflow-hidden">
             {gated}
           </div>
           {/* Gradient fade at the top of blurred section */}
@@ -42,7 +42,7 @@ export function SignupGate({
         </div>
 
         {/* CTA overlay */}
-        <div className="absolute inset-0 flex items-start justify-center pt-12">
+        <div className="absolute inset-0 flex items-start justify-center pt-6">
           <div className="mx-4 w-full max-w-lg rounded-xl border border-border bg-card/95 backdrop-blur-sm p-6 text-center shadow-2xl">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
               <Eye className="h-5 w-5 text-primary" />

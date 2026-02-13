@@ -4,6 +4,9 @@ import Image from "next/image"
 import { Trophy, Share2 } from "lucide-react"
 import type { RowData } from "@/components/nba/first-basket-table"
 
+/** Minimum games started to be eligible for Top Picks (filters outliers like 1-game, 100% players) */
+const MIN_GAMES_TOP_PICKS = 10
+
 /**
  * Composite score for "tonight's best first basket pick":
  *  - 55% first basket % (the core stat)
@@ -18,7 +21,10 @@ function pickScore(row: RowData): number {
 export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: number }) {
   if (rows.length === 0) return null
 
-  const topPicks = [...rows]
+  const eligible = rows.filter((r) => r.gamesStarted >= MIN_GAMES_TOP_PICKS)
+  if (eligible.length === 0) return null
+
+  const topPicks = [...eligible]
     .sort((a, b) => pickScore(b) - pickScore(a))
     .slice(0, maxPicks)
 
@@ -65,13 +71,13 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
                   <Image
                     src={pick.image}
                     alt={pick.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full bg-secondary shrink-0"
+                    width={48}
+                    height={48}
+                    className="rounded-full bg-secondary shrink-0 h-11 w-11"
                     unoptimized
                   />
                 ) : (
-                  <div className="h-10 w-10 rounded-full bg-secondary shrink-0" />
+                  <div className="h-11 w-11 rounded-full bg-secondary shrink-0" />
                 )}
                 <div className="flex flex-col sm:items-center">
                   <span className="text-sm font-semibold text-foreground">{pick.name}</span>
