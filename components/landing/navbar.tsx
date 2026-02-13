@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from "react"
 import Link from "next/link"
-import { Flame, Menu, X, ChevronDown } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { AuthButtons, MobileAuthButtons } from "@/components/auth-buttons"
 
 type Tier = "public" | "free" | "pro"
@@ -79,7 +80,7 @@ export function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Flame className="h-5 w-5 text-primary" />
+            <Logo className="h-5 w-5" />
           </div>
           <span className="text-lg font-bold tracking-tight text-foreground">
             HeatCheck HQ

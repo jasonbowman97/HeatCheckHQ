@@ -1,6 +1,6 @@
 "use client"
 
-import { Flame } from "lucide-react"
+import { Logo } from "@/components/logo"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -22,7 +22,7 @@ export function NFLHeader() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <Flame className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
