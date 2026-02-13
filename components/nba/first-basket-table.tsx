@@ -238,7 +238,7 @@ export function FirstBasketTable({
                           width={32}
                           height={32}
                           className="rounded-full bg-secondary shrink-0"
-
+                          unoptimized
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-secondary shrink-0" />

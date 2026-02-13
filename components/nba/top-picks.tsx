@@ -68,7 +68,7 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
                     width={40}
                     height={40}
                     className="rounded-full bg-secondary shrink-0"
-
+                    unoptimized
                   />
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-secondary shrink-0" />
