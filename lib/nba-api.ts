@@ -21,7 +21,13 @@ async function espnFetchLive<T>(path: string): Promise<T> {
 }
 
 async function espnFetchV3<T>(path: string): Promise<T> {
-  const res = await fetch(`${LEADERS_BASE}${path}`, { next: { revalidate: 3600 } })
+  // Skip Next.js data cache for /leaders (raw response is 2.6MB, exceeds 2MB limit).
+  // The calling API route already caches the trimmed (~50KB) result at the route level.
+  const opts: RequestInit =
+    path === "/leaders"
+      ? { cache: "no-store" }
+      : { next: { revalidate: 3600 } }
+  const res = await fetch(`${LEADERS_BASE}${path}`, opts)
   if (!res.ok) throw new Error(`ESPN NBA v3 ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
