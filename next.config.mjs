@@ -20,12 +20,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.bettingpros.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.bettingpros.com',
+        hostname: 'images.fantasypros.com',
         pathname: '/**',
       },
     ],

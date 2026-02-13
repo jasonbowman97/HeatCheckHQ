@@ -266,7 +266,6 @@ export default function NBAFirstBasketPage() {
               headline="See all first basket picks — free"
               description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
               countLabel={`${allRows.length} players available today`}
-              teaser={allRows.length > 0 ? `#1 Pick: ??? — ${allRows[0]?.firstBasketPct?.toFixed(1)}% first basket rate` : undefined}
               preview={
                 <FirstBasketTable
                   players={filteredPlayers}
