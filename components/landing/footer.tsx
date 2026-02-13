@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart3 } from "lucide-react"
+import { Flame } from "lucide-react"
 
 export function Footer() {
   return (
@@ -10,7 +10,7 @@ export function Footer() {
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <BarChart3 className="h-4 w-4 text-primary" />
+                <Flame className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm font-semibold text-foreground">HeatCheck HQ</span>
             </div>

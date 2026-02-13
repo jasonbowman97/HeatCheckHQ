@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3 } from "lucide-react"
+import { Flame } from "lucide-react"
 import Link from "next/link"
 
 export function NBAHeader() {
@@ -10,7 +10,7 @@ export function NBAHeader() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Flame className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
