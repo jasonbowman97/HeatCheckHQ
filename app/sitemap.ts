@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heatcheckio.com'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heatcheckhq.io'
   const currentDate = new Date().toISOString()
 
   return [

@@ -76,7 +76,7 @@ export async function getStatcastBatters(minPA = 50): Promise<StatcastBatter[]> 
     const url = `https://baseballsavant.mlb.com/leaderboard/statcast?type=batter&year=${year}&position=&team=&min=${minPA}&csv=true`
     const res = await fetch(url, {
       next: { revalidate: 43200 },
-      headers: { "User-Agent": "HeatCheckIO/1.0" },
+      headers: { "User-Agent": "HeatCheckHQ/1.0" },
     })
     if (!res.ok) {
       console.error(`[Savant] Batter leaderboard ${res.status}`)
@@ -117,7 +117,7 @@ export async function getStatcastPitchers(minPA = 50): Promise<StatcastPitcher[]
     const url = `https://baseballsavant.mlb.com/leaderboard/statcast?type=pitcher&year=${year}&position=&team=&min=${minPA}&csv=true`
     const res = await fetch(url, {
       next: { revalidate: 43200 },
-      headers: { "User-Agent": "HeatCheckIO/1.0" },
+      headers: { "User-Agent": "HeatCheckHQ/1.0" },
     })
     if (!res.ok) {
       console.error(`[Savant] Pitcher leaderboard ${res.status}`)

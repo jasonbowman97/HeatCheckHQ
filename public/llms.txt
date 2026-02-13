@@ -1,32 +1,32 @@
-# HeatCheck.io
+# HeatCheck HQ
 
 > Sports analytics platform for MLB, NBA, and NFL. Real-time player statistics, trends, streaks, and matchup analysis dashboards.
 
-## What HeatCheck.io Does
+## What HeatCheck HQ Does
 
-HeatCheck.io provides interactive sports analytics dashboards that help users analyze player and team performance across three major sports leagues. Data is updated daily from official sources including ESPN and MLB Stats API.
+HeatCheck HQ provides interactive sports analytics dashboards that help users analyze player and team performance across three major sports leagues. Data is updated daily from official sources including ESPN and MLB Stats API.
 
 ## MLB Dashboards
 
-- [Hot Hitters](https://heatcheckio.com/mlb/hot-hitters): Active hitting streaks, extra-base hit runs, and home run surges across all MLB players.
-- [Hitter vs Pitcher](https://heatcheckio.com/mlb/hitting-stats): Batter vs pitcher matchup statistics including batting average, exit velocity, barrel rates, and platoon splits.
-- [Pitching Stats](https://heatcheckio.com/mlb/pitching-stats): Advanced pitching analytics including ERA, strikeout rates, CSW%, pitch arsenal breakdowns by pitch type.
-- [NRFI](https://heatcheckio.com/mlb/nrfi): No Run First Inning probabilities and statistics for every MLB game. Tracks pitcher and team first inning performance and streaks.
-- [Weather](https://heatcheckio.com/mlb/weather): Ballpark weather conditions including temperature, wind direction and speed, humidity, and altitude for every MLB game.
-- [MLB Trends](https://heatcheckio.com/mlb/trends): Active player streaks including hit streaks, XBH runs, HR surges, and cold slumps.
+- [Hot Hitters](https://heatcheckhq.io/mlb/hot-hitters): Active hitting streaks, extra-base hit runs, and home run surges across all MLB players.
+- [Hitter vs Pitcher](https://heatcheckhq.io/mlb/hitting-stats): Batter vs pitcher matchup statistics including batting average, exit velocity, barrel rates, and platoon splits.
+- [Pitching Stats](https://heatcheckhq.io/mlb/pitching-stats): Advanced pitching analytics including ERA, strikeout rates, CSW%, pitch arsenal breakdowns by pitch type.
+- [NRFI](https://heatcheckhq.io/mlb/nrfi): No Run First Inning probabilities and statistics for every MLB game. Tracks pitcher and team first inning performance and streaks.
+- [Weather](https://heatcheckhq.io/mlb/weather): Ballpark weather conditions including temperature, wind direction and speed, humidity, and altitude for every MLB game.
+- [MLB Trends](https://heatcheckhq.io/mlb/trends): Active player streaks including hit streaks, XBH runs, HR surges, and cold slumps.
 
 ## NBA Dashboards
 
-- [First Basket](https://heatcheckio.com/nba/first-basket): NBA first basket probabilities and tip-off analytics. Tracks which players score the first basket, first shot percentages, team tip-off win rates, and first basket conversion rates.
-- [Head-to-Head](https://heatcheckio.com/nba/head-to-head): Team head-to-head matchup analysis with season series records, momentum indicators, injury reports, and recent meeting history.
-- [Defense vs Position](https://heatcheckio.com/nba/defense-vs-position): Which NBA teams give up the most points, rebounds, assists, steals, blocks, and three-pointers to each position (PG, SG, SF, PF, C).
-- [NBA Trends](https://heatcheckio.com/nba/trends): Active scoring, shooting, and all-around performance streaks for NBA players.
+- [First Basket](https://heatcheckhq.io/nba/first-basket): NBA first basket probabilities and tip-off analytics. Tracks which players score the first basket, first shot percentages, team tip-off win rates, and first basket conversion rates.
+- [Head-to-Head](https://heatcheckhq.io/nba/head-to-head): Team head-to-head matchup analysis with season series records, momentum indicators, injury reports, and recent meeting history.
+- [Defense vs Position](https://heatcheckhq.io/nba/defense-vs-position): Which NBA teams give up the most points, rebounds, assists, steals, blocks, and three-pointers to each position (PG, SG, SF, PF, C).
+- [NBA Trends](https://heatcheckhq.io/nba/trends): Active scoring, shooting, and all-around performance streaks for NBA players.
 
 ## NFL Dashboards
 
-- [Matchup](https://heatcheckio.com/nfl/matchup): Full team stat comparisons with league rankings. Side-by-side passing, rushing, and receiving breakdowns with recent game log performance.
-- [Defense vs Position](https://heatcheckio.com/nfl/defense-vs-position): NFL defensive rankings by position. See which defenses allow the most passing, rushing, and receiving stats to QBs, RBs, WRs, and TEs.
-- [NFL Trends](https://heatcheckio.com/nfl/trends): Active passing, rushing, and receiving streaks for NFL players.
+- [Matchup](https://heatcheckhq.io/nfl/matchup): Full team stat comparisons with league rankings. Side-by-side passing, rushing, and receiving breakdowns with recent game log performance.
+- [Defense vs Position](https://heatcheckhq.io/nfl/defense-vs-position): NFL defensive rankings by position. See which defenses allow the most passing, rushing, and receiving stats to QBs, RBs, WRs, and TEs.
+- [NFL Trends](https://heatcheckhq.io/nfl/trends): Active passing, rushing, and receiving streaks for NFL players.
 
 ## Access Tiers
 

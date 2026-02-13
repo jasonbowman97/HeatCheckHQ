@@ -2,8 +2,8 @@ import Link from "next/link"
 import { Logo } from "@/components/logo"
 
 export const metadata = {
-  title: "Privacy Policy - HeatCheck.io",
-  description: "Privacy Policy for HeatCheck.io. Learn how we collect, use, and protect your personal information.",
+  title: "Privacy Policy - HeatCheck HQ",
+  description: "Privacy Policy for HeatCheck HQ. Learn how we collect, use, and protect your personal information.",
   robots: "index, follow",
 }
 
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
               <Logo className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck.io</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
               <p className="text-xs text-muted-foreground">Privacy Policy</p>
             </div>
           </Link>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Welcome to HeatCheck.io ("we," "our," or "us"). We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
+              Welcome to HeatCheck HQ ("we," "our," or "us"). We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
             </p>
           </section>
 
@@ -134,8 +134,8 @@ export default function PrivacyPage() {
             </p>
             <div className="bg-card border border-border rounded-lg p-4 mt-4">
               <p className="text-muted-foreground">
-                Email: privacy@heatcheckio.com<br />
-                Website: <Link href="/" className="text-primary hover:underline">heatcheckio.com</Link>
+                Email: privacy@heatcheckhq.io<br />
+                Website: <Link href="/" className="text-primary hover:underline">heatcheckhq.io</Link>
               </p>
             </div>
           </section>

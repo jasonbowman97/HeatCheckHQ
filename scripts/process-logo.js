@@ -1,7 +1,7 @@
 const sharp = require("sharp")
 const path = require("path")
 
-const SOURCE = path.resolve("C:\\Users\\jason\\OneDrive\\HeatCheckIO Logo.png")
+const SOURCE = path.resolve("C:\\Users\\jason\\OneDrive\\HeatCheckHQ Logo.png")
 const PUBLIC = path.resolve("public")
 
 async function generate() {

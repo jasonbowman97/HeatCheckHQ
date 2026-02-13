@@ -1,4 +1,4 @@
-# Site Optimization Report - HeatCheck.io
+# Site Optimization Report - HeatCheck HQ
 
 ## ✅ FIXES APPLIED
 

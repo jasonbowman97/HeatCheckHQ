@@ -1,0 +1,55 @@
+# NRFI Dashboard Rebuild Plan
+
+## Goal
+Rebuild the NRFI page to show **real pitcher NRFI records and streaks**, grouped as **matchup pairs** per game. Keep it simple — two key stats per pitcher: NRFI Record and Streak.
+
+## Data Strategy (Cheapest Approach)
+
+**Single data source:** MLB Schedule API with `hydrate=linescore,probablePitcher`
+
+- Fetch the current season in biweekly chunks (~13 API calls total)
+- Each game's `linescore.innings[0]` tells us first-inning runs for home/away
+- Each game's `probablePitcher` tells us who started
+- From this we compute per-pitcher: NRFI wins / total starts → record + % + streak
+- Cache aggressively (12h revalidation, in-memory cache)
+
+## Implementation Steps
+
+### Step 1: Add `getSeasonLinescores()` to `lib/mlb-api.ts`
+- New function that fetches the full season schedule with `hydrate=linescore,probablePitcher`
+- Fetches in 2-week chunks from Opening Day to today
+- Returns a flat array of `{ gamePk, awayPitcherId, homePitcherId, awayFirstInningRuns, homeFirstInningRuns, date }`
+- In-memory cache with 12h TTL so we don't re-fetch on every request
+
+### Step 2: Create `/api/mlb/nrfi/route.ts`
+- Calls `getSeasonLinescores()` + `getSchedule()` (for today's probable starters)
+- For each today's probable starter, looks up their pitcher ID in the linescore data
+- Computes: NRFI record (e.g., "20-5"), NRFI % (80%), current streak (+3 or -2)
+- Groups results by game (matchup pairs)
+- Returns: `{ games: NrfiGame[] }` where each game has away/home pitcher NRFI data
+
+### Step 3: Rewrite `lib/nrfi-data.ts`
+- Remove all 18 hardcoded static pitchers
+- New interface: `NrfiGame { gamePk, gameDate, time, venue, away: NrfiSide, home: NrfiSide }`
+- `NrfiSide { team, pitcher: { id, name, hand, nrfiWins, nrfiLosses, nrfiPct, streak } | null }`
+- Keep color utility functions
+
+### Step 4: Rewrite `components/mlb/nrfi-table.tsx`
+- New matchup-pair layout: each game is a visual group
+- Per game row: Time | Away SP (NRFI Record, %, Streak) | vs | Home SP (NRFI Record, %, Streak)
+- Color-code NRFI % and streaks (keep existing color functions)
+- Sortable by game time or NRFI %
+
+### Step 5: Rewrite `app/mlb/nrfi/page.tsx`
+- Fetch from `/api/mlb/nrfi` via SWR
+- Keep date navigation (prev/next day)
+- Keep pitcher hand filter
+- Remove static data import and fallback
+- Show proper loading/empty states
+
+## Files Changed
+1. `lib/mlb-api.ts` — add `getSeasonLinescores()`
+2. `app/api/mlb/nrfi/route.ts` — new API route (create)
+3. `lib/nrfi-data.ts` — new interfaces, remove static data
+4. `components/mlb/nrfi-table.tsx` — matchup-pair layout
+5. `app/mlb/nrfi/page.tsx` — rewire to new API

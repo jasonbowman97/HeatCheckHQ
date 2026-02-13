@@ -2,8 +2,8 @@ import Link from "next/link"
 import { Logo } from "@/components/logo"
 
 export const metadata = {
-  title: "Terms of Service - HeatCheck.io",
-  description: "Terms of Service for HeatCheck.io. Please read these terms carefully before using our platform.",
+  title: "Terms of Service - HeatCheck HQ",
+  description: "Terms of Service for HeatCheck HQ. Please read these terms carefully before using our platform.",
   robots: "index, follow",
 }
 
@@ -19,7 +19,7 @@ export default function TermsPage() {
               <Logo className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck.io</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
               <p className="text-xs text-muted-foreground">Terms of Service</p>
             </div>
           </Link>
@@ -36,14 +36,14 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">1. Acceptance of Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing and using HeatCheck.io ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use the Service.
+              By accessing and using HeatCheck HQ ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use the Service.
             </p>
           </section>
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">2. Description of Service</h2>
             <p className="text-muted-foreground leading-relaxed">
-              HeatCheck.io provides sports analytics dashboards and data visualization tools for MLB, NBA, and NFL statistics. The Service aggregates publicly available sports data and presents it through various analytical dashboards including:
+              HeatCheck HQ provides sports analytics dashboards and data visualization tools for MLB, NBA, and NFL statistics. The Service aggregates publicly available sports data and presents it through various analytical dashboards including:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li>Player performance statistics and trends</li>
@@ -108,7 +108,7 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">6. Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed">
-              The Service and its original content (excluding sports data from third-party sources), features, and functionality are owned by HeatCheck.io and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+              The Service and its original content (excluding sports data from third-party sources), features, and functionality are owned by HeatCheck HQ and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
               Sports statistics, logos, and team names are the property of their respective leagues and organizations (MLB, NBA, NFL, ESPN).
@@ -118,7 +118,7 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">7. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL HEATCHECKIO, ITS OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, OR OTHER INTANGIBLE LOSSES, RESULTING FROM:
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL HEATCHECKHQ, ITS OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, OR OTHER INTANGIBLE LOSSES, RESULTING FROM:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li>Your access to or use of or inability to access or use the Service</li>
@@ -163,8 +163,8 @@ export default function TermsPage() {
             </p>
             <div className="bg-card border border-border rounded-lg p-4 mt-4">
               <p className="text-muted-foreground">
-                Email: legal@heatcheckio.com<br />
-                Website: <Link href="/" className="text-primary hover:underline">heatcheckio.com</Link>
+                Email: legal@heatcheckhq.io<br />
+                Website: <Link href="/" className="text-primary hover:underline">heatcheckhq.io</Link>
               </p>
             </div>
           </section>

@@ -1,9 +1,9 @@
-# Claude Code Context - HeatCheckIO
+# Claude Code Context - HeatCheckHQ
 
 ## Repository Information
-- **Repository**: HeatCheckIO
-- **GitHub URL**: https://github.com/jasonbowman97/HeatCheckIO
-- **Local Path**: C:\Users\jason\OneDrive\Documents\GitHub\HeatCheckIO
+- **Repository**: HeatCheckHQ
+- **GitHub URL**: https://github.com/jasonbowman97/HeatCheckHQ
+- **Local Path**: C:\Users\jason\OneDrive\Documents\GitHub\HeatCheckHQ
 - **Owner**: Jason Bowman (@jasonbowman97)
 - **Original Deployment**: https://v0-motion-sports-hub.vercel.app/
 
@@ -12,7 +12,7 @@
 - Platform: Windows
 
 ## Project Overview
-HeatCheck.io is a sports analytics platform offering advanced sports analytics dashboards for MLB, NBA, and NFL with real-time player statistics.
+HeatCheck HQ is a sports analytics platform offering advanced sports analytics dashboards for MLB, NBA, and NFL with real-time player statistics.
 
 ### Features
 - **12 Total Dashboards** across MLB, NBA, and NFL
@@ -75,7 +75,7 @@ styles/
 
 ## Current Focus
 - Rebuilding the site after original deployment broke
-- Migrating from v0-motion-sports-hub to HeatCheckIO repository
+- Migrating from v0-motion-sports-hub to HeatCheckHQ repository
 - All source code successfully copied to new repository
 
 ## Development Commands
@@ -86,5 +86,5 @@ styles/
 
 ## Notes
 - Using pnpm as package manager (pnpm-lock.yaml present)
-- Working directory set to HeatCheckIO repository
+- Working directory set to HeatCheckHQ repository
 - Original site working at https://v0-motion-sports-hub.vercel.app/

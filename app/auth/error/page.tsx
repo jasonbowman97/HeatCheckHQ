@@ -12,7 +12,7 @@ export default function AuthErrorPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <Logo className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold text-foreground">HeatCheck.io</span>
+            <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
           </Link>
         </div>
 

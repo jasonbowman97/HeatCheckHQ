@@ -288,7 +288,7 @@ async function scrapeESPNTeamStats(view: "offense" | "defense"): Promise<ESPNTea
   const viewParam = view === "defense" ? "/view/defense" : ""
   const url = `https://www.espn.com/nfl/stats/team/_${viewParam}/season/${year}/seasontype/2`
   const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; HeatCheckIO/1.0)" },
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; HeatCheckHQ/1.0)" },
     next: { revalidate: 43200 },
   })
   if (!res.ok) return []

@@ -1,7 +1,7 @@
 import { generateSEO } from "@/lib/seo"
 
 export const metadata = generateSEO({
-  title: "MLB Stadium Weather - Ballpark Conditions | HeatCheck.io",
+  title: "MLB Stadium Weather - Ballpark Conditions | HeatCheck HQ",
   description: "Daily ballpark weather conditions for every MLB game. Temperature, wind direction & speed, humidity, and altitude to help analyze over/under and home run potential.",
   path: "/mlb/weather",
   keywords: [

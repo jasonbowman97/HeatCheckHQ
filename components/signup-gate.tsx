@@ -21,7 +21,7 @@ export function SignupGate({
   preview,
   gated,
   headline = "Create a free account to see everything",
-  description = "Join thousands of sports bettors using HeatCheck.io. Takes 10 seconds — no credit card required.",
+  description = "Join thousands of sports bettors using HeatCheck HQ. Takes 10 seconds — no credit card required.",
   countLabel,
   teaser,
 }: SignupGateProps) {

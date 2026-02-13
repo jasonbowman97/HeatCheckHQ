@@ -1,5 +1,5 @@
 /**
- * Access tiers for HeatCheck.io dashboards:
+ * Access tiers for HeatCheck HQ dashboards:
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
  * "free"    — Free account required (NBA DVP, NFL DVP, H2H, all Trends pages)

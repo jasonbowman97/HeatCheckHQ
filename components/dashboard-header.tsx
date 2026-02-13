@@ -33,7 +33,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                {playerName ? playerName : "HeatCheck.io"}
+                {playerName ? playerName : "HeatCheck HQ"}
               </h1>
               {!playerName && (
                 <p className="text-xs text-muted-foreground">Hitter vs Pitcher</p>
