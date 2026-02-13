@@ -18,6 +18,16 @@ const nextConfig = {
         hostname: 'img.mlbstatic.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.bettingpros.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.bettingpros.com',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
   },

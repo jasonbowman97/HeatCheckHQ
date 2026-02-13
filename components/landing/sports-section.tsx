@@ -24,7 +24,7 @@ const sports = [
     name: "NBA",
     label: "Basketball",
     icon: BasketballIcon,
-    accentClass: "text-accent bg-accent/10",
+    accentClass: "text-primary bg-primary/10",
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
     dashboards: [

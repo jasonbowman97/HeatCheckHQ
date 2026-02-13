@@ -86,7 +86,7 @@ export function PricingSection() {
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
                 className={`relative flex flex-col rounded-xl border p-8 h-full ${
-                  plan.popular
+                  plan.popular || (plan as Record<string, unknown>).savings
                     ? "border-primary bg-card shadow-lg shadow-primary/5"
                     : "border-border bg-card"
                 }`}
