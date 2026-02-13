@@ -264,9 +264,9 @@ export default function NFLDefenseVsPositionPage() {
         {viewMode === "matchups" && (
           isAnonymous && matchups.length > PREVIEW_GAMES ? (
             <SignupGate
-              headline="Sign up free to see all matchups"
-              description="Create a free account to unlock every game's defensive matchup breakdown."
-              countLabel={`${matchups.length} games this week`}
+              headline="See every matchup breakdown — free"
+              description="Unlock all defensive insights for this week's games. Free forever, no credit card."
+              countLabel={`${matchups.length} games this week — updated daily`}
               preview={
                 <MatchupsView
                   matchups={matchups.slice(0, PREVIEW_GAMES)}
@@ -294,9 +294,9 @@ export default function NFLDefenseVsPositionPage() {
         {viewMode === "rankings" && (
           isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
             <SignupGate
-              headline="Sign up free to see full rankings"
-              description="Create a free account to unlock all 32 teams' defensive rankings by position."
-              countLabel={`${rankings.length} teams ranked`}
+              headline="See all 32 teams ranked — free"
+              description="Unlock the complete defensive rankings by position. Free forever, no credit card."
+              countLabel={`${rankings.length} teams ranked — find the weakest defenses`}
               preview={
                 <RankingsView
                   rankings={rankings.slice(0, PREVIEW_RANKING_ROWS)}

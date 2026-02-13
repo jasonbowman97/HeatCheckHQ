@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Lock, ArrowRight, Eye } from "lucide-react"
+import { ArrowRight, Eye, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface SignupGateProps {
@@ -13,14 +13,17 @@ interface SignupGateProps {
   description?: string
   /** Total count label, e.g. "42 players" or "8 more games" */
   countLabel?: string
+  /** Optional teaser line shown above the CTA, e.g. "Top pick: ??? — 78% first basket rate" */
+  teaser?: string
 }
 
 export function SignupGate({
   preview,
   gated,
-  headline = "Sign up free to see all data",
-  description = "Create a free account to unlock the full dashboard. It only takes a few seconds.",
+  headline = "Create a free account to see everything",
+  description = "Join thousands of sports bettors using HeatCheck HQ. Takes 10 seconds — no credit card required.",
   countLabel,
+  teaser,
 }: SignupGateProps) {
   return (
     <>
@@ -29,9 +32,9 @@ export function SignupGate({
 
       {/* Gated section with blur + CTA */}
       <div className="relative mt-0">
-        {/* Blurred content behind */}
+        {/* Blurred content behind — visible enough to tease heatmap colors */}
         <div className="pointer-events-none select-none" aria-hidden="true">
-          <div className="blur-[6px] opacity-30 max-h-[400px] overflow-hidden">
+          <div className="blur-[3px] opacity-50 max-h-[500px] overflow-hidden">
             {gated}
           </div>
           {/* Gradient fade at the top of blurred section */}
@@ -49,8 +52,13 @@ export function SignupGate({
               {headline}
             </h3>
             {countLabel && (
-              <p className="mt-1 text-xs font-medium text-primary">
+              <p className="mt-1.5 text-xs font-bold text-primary bg-primary/10 inline-block px-2.5 py-1 rounded-full">
                 {countLabel}
+              </p>
+            )}
+            {teaser && (
+              <p className="mt-2 text-xs font-mono text-foreground bg-secondary/80 px-3 py-1.5 rounded-md inline-block">
+                {teaser}
               </p>
             )}
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
@@ -63,10 +71,14 @@ export function SignupGate({
                 asChild
               >
                 <Link href="/auth/sign-up">
-                  Sign up free
+                  Unlock full data — free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+              <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <Shield className="h-3 w-3" />
+                <span>No credit card required</span>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/auth/login" className="text-primary hover:underline">

@@ -8,8 +8,8 @@ const plans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Preview the dashboards with limited data.",
-    cta: "Get started free",
+    description: "Access 6 dashboards instantly. No credit card, no trial expiration.",
+    cta: "Create free account",
     ctaVariant: "outline" as const,
     highlights: [
       { text: "NRFI, Weather, First Basket & H2H (no account)", included: true },
@@ -24,8 +24,8 @@ const plans = [
     price: "$12",
     period: "/month",
     description:
-      "Full access to every dashboard, trend, and insight across all sports.",
-    cta: "Get Pro",
+      "All 12 dashboards, every filter, plus daily-updated heatmaps and trend alerts.",
+    cta: "Unlock all dashboards",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
@@ -43,7 +43,7 @@ const plans = [
     period: "/year",
     description:
       "Same full access as monthly. Pay once, save $44 over 12 months.",
-    cta: "Get Pro Annual",
+    cta: "Unlock all dashboards — save $44",
     ctaVariant: "default" as const,
     savings: "Save $44",
     highlights: [
@@ -67,11 +67,14 @@ export function PricingSection() {
               Pricing
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              Start free. Unlock everything with Pro.
+              Start free. Go Pro when you want the full edge.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Preview the data for free, then go Pro for full access to every dashboard, filter,
-              and insight. Save with an annual plan.
+              Get instant access to 6 dashboards free — no credit card required.
+              Upgrade to Pro for all 12 dashboards, advanced filters, and daily-updated data.
+            </p>
+            <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
+              Trusted by sports bettors for real-time data across MLB, NBA, and NFL.
             </p>
           </div>
         </FadeIn>

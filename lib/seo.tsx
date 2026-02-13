@@ -157,11 +157,6 @@ export function generateWebAppSchema() {
       price: "0",
       priceCurrency: "USD",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "1250",
-    },
   }
 }
 
@@ -178,6 +173,102 @@ export function generateBreadcrumbSchema(items: Array<{ name: string; url: strin
       name: item.name,
       item: `${baseUrl}${item.url}`,
     })),
+  }
+}
+
+/**
+ * Generate JSON-LD FAQ schema
+ */
+export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  }
+}
+
+/**
+ * Generate JSON-LD WebPage schema with optional breadcrumbs
+ */
+export function generateWebPageSchema({
+  name,
+  description,
+  path = "",
+  breadcrumbs,
+}: {
+  name: string
+  description: string
+  path?: string
+  breadcrumbs?: Array<{ name: string; url: string }>
+}) {
+  const url = `${baseUrl}${path}`
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name,
+    description,
+    url,
+    isPartOf: {
+      "@type": "WebSite",
+      name: siteName,
+      url: baseUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteName,
+      url: baseUrl,
+    },
+  }
+  if (breadcrumbs?.length) {
+    schema.breadcrumb = {
+      "@type": "BreadcrumbList",
+      itemListElement: breadcrumbs.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        item: `${baseUrl}${item.url}`,
+      })),
+    }
+  }
+  return schema
+}
+
+/**
+ * Generate JSON-LD Dataset schema for analytics pages
+ */
+export function generateDatasetSchema({
+  name,
+  description,
+  path = "",
+  keywords = [],
+}: {
+  name: string
+  description: string
+  path?: string
+  keywords?: string[]
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name,
+    description,
+    url: `${baseUrl}${path}`,
+    license: "https://heatcheckhq.com/terms",
+    creator: {
+      "@type": "Organization",
+      name: siteName,
+      url: baseUrl,
+    },
+    keywords: keywords.join(", "),
+    temporalCoverage: "2024/..",
+    isAccessibleForFree: true,
   }
 }
 

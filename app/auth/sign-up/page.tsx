@@ -4,6 +4,7 @@ import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Logo } from "@/components/logo"
+import { Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,7 +67,7 @@ function SignUpForm() {
             </div>
             <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
           </Link>
-          <p className="mt-2 text-sm text-muted-foreground">Create a free account</p>
+          <p className="mt-2 text-sm text-muted-foreground">Create your free account — takes 30 seconds</p>
         </div>
 
         {redirect && (
@@ -124,9 +125,22 @@ function SignUpForm() {
             disabled={loading}
             className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {loading ? "Creating account..." : "Create free account"}
+            {loading ? "Creating account..." : "Create free account — instant access"}
           </Button>
         </form>
+
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+          <Shield className="h-3 w-3" />
+          <span>No credit card required. Cancel anytime.</span>
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <span>12 dashboards</span>
+          <span className="h-3 w-px bg-border" />
+          <span>3 sports</span>
+          <span className="h-3 w-px bg-border" />
+          <span>Updated daily</span>
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}

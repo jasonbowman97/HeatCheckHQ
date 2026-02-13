@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2 } from "lucide-react"
+import { Loader2, Zap, ArrowRight } from "lucide-react"
+import Link from "next/link"
 import Image from "next/image"
 import { NBAHeader } from "@/components/nba/nba-header"
 import { DateNavigator } from "@/components/nba/date-navigator"
@@ -58,7 +59,7 @@ function toLiveGames(espnGames: NBAScheduleGame[]): GameInfo[] {
 }
 
 /** Number of table rows visible to anonymous users */
-const PREVIEW_ROWS = 5
+const PREVIEW_ROWS = 8
 
 export default function NBAFirstBasketPage() {
   const userTier = useUserTier()
@@ -161,7 +162,7 @@ export default function NBAFirstBasketPage() {
         {/* Page heading */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-foreground">First Basket Analysis</h2>
+            <h1 className="text-xl font-semibold text-foreground">NBA First Basket Picks Today</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {hasLiveStats && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -242,9 +243,10 @@ export default function NBAFirstBasketPage() {
         {games.length > 0 && (
           isAnonymous ? (
             <SignupGate
-              headline="Sign up free to see all players"
-              description="Create a free account to unlock the full first basket rankings, all matchups, and advanced sorting."
+              headline="See all first basket picks — free"
+              description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
               countLabel={`${allRows.length} players available today`}
+              teaser={allRows.length > 0 ? `#1 Pick: ??? — ${allRows[0]?.firstBasketPct?.toFixed(1)}% first basket rate` : undefined}
               preview={
                 <FirstBasketTable
                   players={filteredPlayers}
@@ -284,6 +286,27 @@ export default function NBAFirstBasketPage() {
               matchupMap={matchupMap}
             />
           )
+        )}
+        {/* Pro upsell for free users */}
+        {userTier === "free" && (
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Unlock Head-to-Head, Matchups & more with Pro</p>
+                <p className="text-xs text-muted-foreground">Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo</p>
+              </div>
+            </div>
+            <Link
+              href="/checkout"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            >
+              Go Pro
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )}
       </main>
     </div>

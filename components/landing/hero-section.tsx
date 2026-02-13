@@ -41,22 +41,22 @@ export function HeroSection() {
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-medium text-muted-foreground">
-                Data-driven insights across MLB, NBA, and NFL
+                Live for the 2025-26 season — data updated daily
               </span>
             </div>
           </FadeIn>
 
           <FadeIn delay={0.2}>
             <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-foreground text-balance md:text-6xl lg:text-7xl">
-              Find the trends{" "}
-              <span className="text-primary">that matter</span>
+              Spot winning edges{" "}
+              <span className="text-primary">before the line moves</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.3}>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              Data-driven insight tools to help you spot sports trends across MLB, NBA,
-              and NFL -- updated daily and built for smarter decisions.
+              Heatmaps, streaks, matchup breakdowns, and prop research tools across
+              MLB, NBA, and NFL. Updated daily so you never miss an edge.
             </p>
           </FadeIn>
 
@@ -64,7 +64,7 @@ export function HeroSection() {
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 text-base" asChild>
                 <Link href="/auth/sign-up">
-                  Explore dashboards
+                  Start free — no credit card
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

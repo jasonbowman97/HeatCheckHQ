@@ -60,10 +60,10 @@ export function Footer() {
             © 2026 HeatCheck HQ. All rights reserved.
           </p>
           <div className="flex items-center gap-4 flex-wrap justify-center">
-            <a href="#dashboards" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Dashboards</a>
-            <a href="#features" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Features</a>
-            <a href="#pricing" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
-            <a href="#support" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Support</a>
+            <Link href="/#dashboards" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Dashboards</Link>
+            <Link href="/#features" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Features</Link>
+            <Link href="/#pricing" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Pricing</Link>
+            <Link href="/#support" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Support</Link>
             <span className="text-muted-foreground/50">•</span>
             <Link href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Terms</Link>

@@ -150,7 +150,7 @@ export default function DefenseVsPositionPage() {
                 <Logo className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
+                <span className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</span>
                 <p className="text-xs text-muted-foreground">NBA Defense vs Position</p>
               </div>
             </Link>
@@ -184,7 +184,7 @@ export default function DefenseVsPositionPage() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Defense vs Position</h2>
+            <h1 className="text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-sm text-muted-foreground">
@@ -236,9 +236,9 @@ export default function DefenseVsPositionPage() {
         {viewMode === "matchups" && (
           isAnonymous && matchups.length > PREVIEW_GAMES ? (
             <SignupGate
-              headline="Sign up free to see all matchups"
-              description="Create a free account to unlock every game's defensive matchup breakdown."
-              countLabel={`${matchups.length} games available today`}
+              headline="See every matchup breakdown — free"
+              description="Unlock all defensive insights for tonight's games. Free forever, no credit card."
+              countLabel={`${matchups.length} games today — updated live`}
               preview={
                 <MatchupsView
                   matchups={matchups.slice(0, PREVIEW_GAMES)}
@@ -266,9 +266,9 @@ export default function DefenseVsPositionPage() {
         {viewMode === "rankings" && (
           isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
             <SignupGate
-              headline="Sign up free to see full rankings"
-              description="Create a free account to unlock all 30 teams' defensive rankings by position."
-              countLabel={`${rankings.length} teams ranked`}
+              headline="See all 30 teams ranked — free"
+              description="Unlock the complete defensive rankings by position. Free forever, no credit card."
+              countLabel={`${rankings.length} teams ranked — find the weakest defenses`}
               preview={
                 <RankingsView
                   rankings={rankings.slice(0, PREVIEW_RANKING_ROWS)}

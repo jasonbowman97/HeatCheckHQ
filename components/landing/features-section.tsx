@@ -50,11 +50,11 @@ export function FeaturesSection() {
               Features
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              Tools that match how you actually research
+              Built for the way serious bettors research
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Every control and visualization exists to help you find actionable
-              edges faster -- across all three sports.
+              Every filter, heatmap, and trend alert is designed to surface
+              actionable edges faster — across MLB, NBA, and NFL.
             </p>
           </div>
         </FadeIn>
