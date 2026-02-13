@@ -6,11 +6,6 @@ import { getNFLStreakTrends } from "@/lib/nfl-streaks"
 
 export const revalidate = 43200
 
-export const metadata = {
-  title: "HeatCheck HQ - NFL Active Streaks",
-  description: "Active passing, rushing, and receiving streaks for NFL players based on recent game-by-game performance.",
-}
-
 async function getLiveTrends() {
   try {
     const trends = await getNFLStreakTrends()

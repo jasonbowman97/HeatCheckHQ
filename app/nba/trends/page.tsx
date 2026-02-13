@@ -6,11 +6,6 @@ import { getNBAStreakTrends } from "@/lib/nba-streaks"
 
 export const revalidate = 43200
 
-export const metadata = {
-  title: "HeatCheck HQ - NBA Active Streaks",
-  description: "Active scoring, shooting, and all-around performance streaks for NBA players based on recent game-by-game data.",
-}
-
 async function getLiveTrends() {
   try {
     const trends = await getNBAStreakTrends()
