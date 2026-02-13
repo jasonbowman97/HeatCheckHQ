@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
-import { NFLHeader } from "@/components/nfl/nfl-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { TeamStatsComparison } from "@/components/nfl/team-stats-comparison"
 import { PassingSection, RushingSection, ReceivingSection } from "@/components/nfl/positional-tables"
 import { getAllMatchups, type NFLMatchup } from "@/lib/nfl-matchup-data"
@@ -146,8 +146,7 @@ export default function NFLMatchupPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      <NFLHeader />
+    <DashboardShell>
 
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Game Selector */}
@@ -287,6 +286,6 @@ export default function NFLMatchupPage() {
           </>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { NBAHeader } from "@/components/nba/nba-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
 import { TopPicks } from "@/components/nba/top-picks"
@@ -161,8 +161,7 @@ export default function NBAFirstBasketPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <NBAHeader />
+    <DashboardShell>
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Page heading */}
         <div className="flex flex-col gap-1">
@@ -370,6 +369,6 @@ export default function NBAFirstBasketPage() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

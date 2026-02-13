@@ -5,7 +5,7 @@ import useSWR from "swr"
 import type { ScheduleGame } from "@/lib/mlb-api"
 import type { Pitcher, MatchupResponse, AggregatedBatterStats } from "@/lib/matchup-data"
 import { buildMatchupRows, toPanelArsenal } from "@/lib/matchup-data"
-import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { MatchupPanel } from "@/components/matchup-panel"
 import { PlayersTable } from "@/components/players-table"
 import { Loader2 } from "lucide-react"
@@ -168,8 +168,7 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader />
+    <DashboardShell>
       <main className="mx-auto max-w-[1600px] px-6 py-6">
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Left sidebar - Matchup Panel */}
@@ -285,6 +284,6 @@ export default function Page() {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardShell>
   )
 }

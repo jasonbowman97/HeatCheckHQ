@@ -286,30 +286,41 @@ export interface NBALeaderCategory {
   leaders: NBALeaderEntry[]
 }
 
+/** Categories we actually use — only keep these to avoid 2.6MB cache overflow */
+const USED_LEADER_CATEGORIES = new Set([
+  "pointsPerGame",
+  "3PointsMadePerGame",
+  "reboundsPerGame",
+  "assistsPerGame",
+])
+
 export async function getNBALeaders(): Promise<NBALeaderCategory[]> {
   const raw = await espnFetchV3<{ leaders: { categories: Array<{ name: string; displayName?: string; leaders: Array<Record<string, unknown>> }> } }>("/leaders")
   const categories = raw.leaders?.categories ?? []
 
-  // Normalize v3 response to match expected shape
-  return categories.map((cat) => ({
-    name: cat.name,
-    displayName: cat.displayName ?? cat.name,
-    leaders: (cat.leaders ?? []).map((l) => {
-      const athlete = (l.athlete ?? {}) as Record<string, unknown>
-      const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
-      const position = (athlete.position ?? {}) as Record<string, unknown>
-      return {
-        athlete: {
-          id: String(athlete.id ?? ""),
-          displayName: (athlete.displayName as string) ?? "",
-          position: { abbreviation: (position.abbreviation as string) ?? "" },
-          team: { abbreviation: (team.abbreviation as string) ?? "" },
-        },
-        value: (l.value as number) ?? 0,
-        displayValue: (l.displayValue as string) ?? "0",
-      }
-    }),
-  }))
+  // Only keep categories we use + trim to 20 leaders + strip everything except 6 fields
+  // This reduces ~2.6MB → ~50KB, staying well under Next.js 2MB data cache limit
+  return categories
+    .filter((cat) => USED_LEADER_CATEGORIES.has(cat.name))
+    .map((cat) => ({
+      name: cat.name,
+      displayName: cat.displayName ?? cat.name,
+      leaders: (cat.leaders ?? []).slice(0, 20).map((l) => {
+        const athlete = (l.athlete ?? {}) as Record<string, unknown>
+        const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
+        const position = (athlete.position ?? {}) as Record<string, unknown>
+        return {
+          athlete: {
+            id: String(athlete.id ?? ""),
+            displayName: (athlete.displayName as string) ?? "",
+            position: { abbreviation: (position.abbreviation as string) ?? "" },
+            team: { abbreviation: (team.abbreviation as string) ?? "" },
+          },
+          value: (l.value as number) ?? 0,
+          displayValue: (l.displayValue as string) ?? "0",
+        }
+      }),
+    }))
 }
 
 /* ------------------------------------------------------------------ */

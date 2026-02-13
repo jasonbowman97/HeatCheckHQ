@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import Link from "next/link"
 import useSWR from "swr"
 import { ChevronLeft, ChevronRight, Calendar, Loader2, Wind } from "lucide-react"
-import { Logo } from "@/components/logo"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { WeatherCards } from "@/components/mlb/weather-cards"
 import { SignupGate } from "@/components/signup-gate"
@@ -134,46 +133,7 @@ export function WeatherPageClient() {
   const windWatchCount = weatherData.filter((g) => g.windWatch).length
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
-              <Logo className="h-5 w-5" />
-              <span className="text-sm font-bold tracking-tight">HeatCheck HQ</span>
-            </Link>
-            <span className="text-muted-foreground/40">|</span>
-            <span className="text-xs font-medium text-primary">MLB</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Hitter vs Pitcher
-            </Link>
-            <Link href="/mlb/nrfi" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NRFI
-            </Link>
-            <Link href="/mlb/pitching-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Pitching Stats
-            </Link>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-              Weather
-            </span>
-            <Link href="/mlb/trends" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Trends
-            </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link href="/nba" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NBA
-            </Link>
-            <Link href="/nfl" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NFL
-            </Link>
-          </div>
-        </div>
-      </header>
-
+    <DashboardShell>
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Title + badges */}
         <div className="flex flex-col gap-1">
@@ -277,9 +237,9 @@ export function WeatherPageClient() {
               headline="See all stadium weather — free"
               description="Unlock weather conditions for every ballpark. Wind, temperature, and humidity for smarter bets. Free forever, no credit card."
               countLabel={`${weatherData.length} games today`}
-            >
-              <WeatherCards data={weatherData.slice(PREVIEW_CARDS)} />
-            </SignupGate>
+              preview={null}
+              gated={<WeatherCards data={weatherData.slice(PREVIEW_CARDS)} />}
+            />
           </div>
         ) : (
           <WeatherCards data={weatherData} />
@@ -290,6 +250,6 @@ export function WeatherPageClient() {
           <ProUpsellBanner />
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

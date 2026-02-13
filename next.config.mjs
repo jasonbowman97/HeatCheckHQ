@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 // Force redeploy: 2026-02-13-v3-branding-complete
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // TypeScript errors are now enforced at build time
   images: {
     // Enable image optimization for production
     unoptimized: process.env.NODE_ENV === 'development',

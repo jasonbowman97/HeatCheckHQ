@@ -5,7 +5,7 @@ import useSWR from "swr"
 import Image from "next/image"
 import { Loader2, Shield, ChevronDown, Zap, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { NFLHeader } from "@/components/nfl/nfl-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import type {
@@ -200,8 +200,7 @@ export default function NFLDefenseVsPositionPage() {
   }, [filterPosition])
 
   return (
-    <div className="min-h-screen bg-background">
-      <NFLHeader />
+    <DashboardShell>
 
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Page heading */}
@@ -350,7 +349,7 @@ export default function NFLDefenseVsPositionPage() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }
 
