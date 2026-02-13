@@ -191,7 +191,8 @@ function detectPassingStreaks(
     })
   }
 
-  // ── Consistency: Pass yards thresholds ──
+  // ── Consistency: Pass yards thresholds (2/3 games — NFL has few games) ──
+  const last3Pass = last8.slice(-3)
   const passYdThresholds = [
     { line: 224.5, minAvg: 200 },
     { line: 249.5, minAvg: 225 },
@@ -200,36 +201,36 @@ function detectPassingStreaks(
   ]
   for (const { line, minAvg } of passYdThresholds) {
     if (avgPassYds >= minAvg) {
-      const overGames = last8.map((g) => (g.stats.passingYards ?? 0) > line)
+      const overGames = last3Pass.map((g) => (g.stats.passingYards ?? 0) > line)
       const overCount = overGames.filter(Boolean).length
-      if (overCount >= 6) {
+      if (overCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "QB",
           streakType: "hot", category: "Consistency",
           statLabel: `OVER ${line} Pass YDS`,
-          streakDescription: `Over ${line} pass yards in ${overCount} of last ${last8.length} games`,
+          streakDescription: `Over ${line} pass yards in ${overCount} of last ${last3Pass.length} games`,
           recentGames: overGames, currentStreak: overCount,
-          statValue: `${overCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Pass YDS", hitRate: `${overCount}/${last8.length}`, hitPct: overCount / last8.length },
+          statValue: `${overCount}/${last3Pass.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Pass YDS", hitRate: `${overCount}/${last3Pass.length}`, hitPct: overCount / last3Pass.length },
         })
       }
-      const underGames = last8.map((g) => (g.stats.passingYards ?? 0) < line)
+      const underGames = last3Pass.map((g) => (g.stats.passingYards ?? 0) < line)
       const underCount = underGames.filter(Boolean).length
-      if (underCount >= 6) {
+      if (underCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "QB",
           streakType: "cold", category: "Consistency",
           statLabel: `UNDER ${line} Pass YDS`,
-          streakDescription: `Under ${line} pass yards in ${underCount} of last ${last8.length} games`,
+          streakDescription: `Under ${line} pass yards in ${underCount} of last ${last3Pass.length} games`,
           recentGames: underGames, currentStreak: underCount,
-          statValue: `${underCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Pass YDS", hitRate: `${underCount}/${last8.length}`, hitPct: underCount / last8.length },
+          statValue: `${underCount}/${last3Pass.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Pass YDS", hitRate: `${underCount}/${last3Pass.length}`, hitPct: underCount / last3Pass.length },
         })
       }
     }
   }
 
-  // ── Consistency: Pass TD thresholds ──
+  // ── Consistency: Pass TD thresholds (2/3 games) ──
   const avgPassTD = seasonAvg(gameLogs, "passingTouchdowns")
   const passTDThresholds = [
     { line: 1.5, minAvg: 1.2 },
@@ -237,17 +238,17 @@ function detectPassingStreaks(
   ]
   for (const { line, minAvg } of passTDThresholds) {
     if (avgPassTD >= minAvg) {
-      const overGames = last8.map((g) => (g.stats.passingTouchdowns ?? 0) > line)
+      const overGames = last3Pass.map((g) => (g.stats.passingTouchdowns ?? 0) > line)
       const overCount = overGames.filter(Boolean).length
-      if (overCount >= 6) {
+      if (overCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "QB",
           streakType: "hot", category: "Consistency",
           statLabel: `OVER ${line} Pass TD`,
-          streakDescription: `Over ${line} pass TDs in ${overCount} of last ${last8.length} games`,
+          streakDescription: `Over ${line} pass TDs in ${overCount} of last ${last3Pass.length} games`,
           recentGames: overGames, currentStreak: overCount,
-          statValue: `${overCount}/${last8.length}`, seasonAvg: `${avgPassTD.toFixed(1)} TD/G`,
-          threshold: { line, stat: "Pass TD", hitRate: `${overCount}/${last8.length}`, hitPct: overCount / last8.length },
+          statValue: `${overCount}/${last3Pass.length}`, seasonAvg: `${avgPassTD.toFixed(1)} TD/G`,
+          threshold: { line, stat: "Pass TD", hitRate: `${overCount}/${last3Pass.length}`, hitPct: overCount / last3Pass.length },
         })
       }
     }
@@ -335,7 +336,8 @@ function detectRushingStreaks(
     })
   }
 
-  // ── Consistency: Rush yards thresholds ──
+  // ── Consistency: Rush yards thresholds (2/3 games — NFL has few games) ──
+  const last3Rush = last8.slice(-3)
   const rushYdThresholds = [
     { line: 49.5, minAvg: 40 },
     { line: 69.5, minAvg: 55 },
@@ -344,30 +346,30 @@ function detectRushingStreaks(
   ]
   for (const { line, minAvg } of rushYdThresholds) {
     if (avgRushYds >= minAvg) {
-      const overGames = last8.map((g) => (g.stats.rushingYards ?? 0) > line)
+      const overGames = last3Rush.map((g) => (g.stats.rushingYards ?? 0) > line)
       const overCount = overGames.filter(Boolean).length
-      if (overCount >= 6) {
+      if (overCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "RB",
           streakType: "hot", category: "Consistency",
           statLabel: `OVER ${line} Rush YDS`,
-          streakDescription: `Over ${line} rush yards in ${overCount} of last ${last8.length} games`,
+          streakDescription: `Over ${line} rush yards in ${overCount} of last ${last3Rush.length} games`,
           recentGames: overGames, currentStreak: overCount,
-          statValue: `${overCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Rush YDS", hitRate: `${overCount}/${last8.length}`, hitPct: overCount / last8.length },
+          statValue: `${overCount}/${last3Rush.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Rush YDS", hitRate: `${overCount}/${last3Rush.length}`, hitPct: overCount / last3Rush.length },
         })
       }
-      const underGames = last8.map((g) => (g.stats.rushingYards ?? 0) < line)
+      const underGames = last3Rush.map((g) => (g.stats.rushingYards ?? 0) < line)
       const underCount = underGames.filter(Boolean).length
-      if (underCount >= 6) {
+      if (underCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "RB",
           streakType: "cold", category: "Consistency",
           statLabel: `UNDER ${line} Rush YDS`,
-          streakDescription: `Under ${line} rush yards in ${underCount} of last ${last8.length} games`,
+          streakDescription: `Under ${line} rush yards in ${underCount} of last ${last3Rush.length} games`,
           recentGames: underGames, currentStreak: underCount,
-          statValue: `${underCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Rush YDS", hitRate: `${underCount}/${last8.length}`, hitPct: underCount / last8.length },
+          statValue: `${underCount}/${last3Rush.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Rush YDS", hitRate: `${underCount}/${last3Rush.length}`, hitPct: underCount / last3Rush.length },
         })
       }
     }
@@ -470,7 +472,8 @@ function detectReceivingStreaks(
     })
   }
 
-  // ── Consistency: Rec yards thresholds ──
+  // ── Consistency: Rec yards thresholds (2/3 games — NFL has few games) ──
+  const last3Rec = last8.slice(-3)
   const recYdThresholds = [
     { line: 49.5, minAvg: 40 },
     { line: 59.5, minAvg: 50 },
@@ -479,36 +482,36 @@ function detectReceivingStreaks(
   ]
   for (const { line, minAvg } of recYdThresholds) {
     if (avgRecYds >= minAvg) {
-      const overGames = last8.map((g) => (g.stats.receivingYards ?? 0) > line)
+      const overGames = last3Rec.map((g) => (g.stats.receivingYards ?? 0) > line)
       const overCount = overGames.filter(Boolean).length
-      if (overCount >= 6) {
+      if (overCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "WR",
           streakType: "hot", category: "Consistency",
           statLabel: `OVER ${line} Rec YDS`,
-          streakDescription: `Over ${line} rec yards in ${overCount} of last ${last8.length} games`,
+          streakDescription: `Over ${line} rec yards in ${overCount} of last ${last3Rec.length} games`,
           recentGames: overGames, currentStreak: overCount,
-          statValue: `${overCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Rec YDS", hitRate: `${overCount}/${last8.length}`, hitPct: overCount / last8.length },
+          statValue: `${overCount}/${last3Rec.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Rec YDS", hitRate: `${overCount}/${last3Rec.length}`, hitPct: overCount / last3Rec.length },
         })
       }
-      const underGames = last8.map((g) => (g.stats.receivingYards ?? 0) < line)
+      const underGames = last3Rec.map((g) => (g.stats.receivingYards ?? 0) < line)
       const underCount = underGames.filter(Boolean).length
-      if (underCount >= 6) {
+      if (underCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "WR",
           streakType: "cold", category: "Consistency",
           statLabel: `UNDER ${line} Rec YDS`,
-          streakDescription: `Under ${line} rec yards in ${underCount} of last ${last8.length} games`,
+          streakDescription: `Under ${line} rec yards in ${underCount} of last ${last3Rec.length} games`,
           recentGames: underGames, currentStreak: underCount,
-          statValue: `${underCount}/${last8.length}`, seasonAvg: avgLabel,
-          threshold: { line, stat: "Rec YDS", hitRate: `${underCount}/${last8.length}`, hitPct: underCount / last8.length },
+          statValue: `${underCount}/${last3Rec.length}`, seasonAvg: avgLabel,
+          threshold: { line, stat: "Rec YDS", hitRate: `${underCount}/${last3Rec.length}`, hitPct: underCount / last3Rec.length },
         })
       }
     }
   }
 
-  // ── Consistency: Receptions thresholds ──
+  // ── Consistency: Receptions thresholds (2/3 games) ──
   const avgRec = seasonAvg(gameLogs, "receptions")
   const recThresholds = [
     { line: 3.5, minAvg: 3 },
@@ -517,17 +520,17 @@ function detectReceivingStreaks(
   ]
   for (const { line, minAvg } of recThresholds) {
     if (avgRec >= minAvg) {
-      const overGames = last8.map((g) => (g.stats.receptions ?? 0) > line)
+      const overGames = last3Rec.map((g) => (g.stats.receptions ?? 0) > line)
       const overCount = overGames.filter(Boolean).length
-      if (overCount >= 6) {
+      if (overCount >= 2) {
         streaks.push({
           playerId, playerName, team, position: "WR",
           streakType: "hot", category: "Consistency",
           statLabel: `OVER ${line} REC`,
-          streakDescription: `Over ${line} receptions in ${overCount} of last ${last8.length} games`,
+          streakDescription: `Over ${line} receptions in ${overCount} of last ${last3Rec.length} games`,
           recentGames: overGames, currentStreak: overCount,
-          statValue: `${overCount}/${last8.length}`, seasonAvg: `${avgRec.toFixed(1)} REC/G`,
-          threshold: { line, stat: "REC", hitRate: `${overCount}/${last8.length}`, hitPct: overCount / last8.length },
+          statValue: `${overCount}/${last3Rec.length}`, seasonAvg: `${avgRec.toFixed(1)} REC/G`,
+          threshold: { line, stat: "REC", hitRate: `${overCount}/${last3Rec.length}`, hitPct: overCount / last3Rec.length },
         })
       }
     }
