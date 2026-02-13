@@ -1,5 +1,6 @@
 "use client"
 
+import { Calendar } from "lucide-react"
 import type { NrfiGame, NrfiPitcher } from "@/lib/nrfi-data"
 import { getStreakColor, getNrfiPctColor } from "@/lib/nrfi-data"
 
@@ -64,8 +65,10 @@ function PitcherCard({ pitcher, team, align }: { pitcher: NrfiPitcher | null; te
 export function NrfiTable({ games }: NrfiTableProps) {
   if (games.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center">
-        <p className="text-sm text-muted-foreground">No games scheduled for this date.</p>
+      <div className="rounded-xl border border-dashed border-border bg-card/50 p-16 text-center flex flex-col items-center gap-3">
+        <Calendar className="h-8 w-8 text-muted-foreground/40" />
+        <p className="text-sm font-medium text-foreground">No games scheduled</p>
+        <p className="text-xs text-muted-foreground">Try navigating to a different date to see NRFI matchups.</p>
       </div>
     )
   }

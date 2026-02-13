@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Zap, ArrowRight } from "lucide-react"
+import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { NBAHeader } from "@/components/nba/nba-header"
@@ -71,19 +71,21 @@ export default function NBAFirstBasketPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
-  const { data: scheduleData, isLoading: scheduleLoading } = useSWR<{ games: NBAScheduleGame[] }>(
+  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError, mutate: mutateSchedule } = useSWR<{ games: NBAScheduleGame[] }>(
     `/api/nba/schedule?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
-  const { data: fbData, isLoading: fbLoading } = useSWR<{
+  const { data: fbData, isLoading: fbLoading, error: fbError, mutate: mutateFb } = useSWR<{
     players: BPFirstBasketPlayer[]
     teams: BPTeamTipoff[]
   }>("/api/nba/first-basket", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
+
+  const hasError = scheduleError || fbError
 
   const isLoading = scheduleLoading || fbLoading
 
@@ -227,10 +229,28 @@ export default function NBAFirstBasketPage() {
           </div>
         )}
 
+        {/* Error state */}
+        {hasError && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
+            <button
+              onClick={() => { mutateSchedule(); mutateFb() }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* No games state */}
-        {!isLoading && games.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <p className="text-sm text-muted-foreground">No games scheduled for this date.</p>
+        {!isLoading && !hasError && games.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm font-medium text-foreground">No games scheduled</p>
+            <p className="text-xs text-muted-foreground">Try selecting a different date.</p>
           </div>
         )}
 

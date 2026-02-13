@@ -1,6 +1,6 @@
 "use client"
 
-import { Sun, Cloud, CloudSun, CloudDrizzle, Home, Wind, Thermometer, Mountain, Droplets } from "lucide-react"
+import { Sun, Cloud, CloudSun, CloudDrizzle, Home, Wind, Thermometer, Mountain, Droplets, Calendar } from "lucide-react"
 import type { GameWeather } from "@/lib/mlb-weather-data"
 
 /* ---------- condition icon ---------- */
@@ -53,8 +53,10 @@ function WindDisplay({ dir, speed, dirRaw }: { dir: GameWeather["windDir"]; spee
 export function WeatherCards({ data }: { data: GameWeather[] }) {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-muted-foreground">No games scheduled for this date.</p>
+      <div className="rounded-xl border border-dashed border-border bg-card/50 p-16 text-center flex flex-col items-center gap-3">
+        <Calendar className="h-8 w-8 text-muted-foreground/40" />
+        <p className="text-sm font-medium text-foreground">No games scheduled</p>
+        <p className="text-xs text-muted-foreground">Try navigating to a different date to see weather conditions.</p>
       </div>
     )
   }

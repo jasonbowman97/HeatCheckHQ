@@ -10,8 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, Loader2 } from "lucide-react"
 import { getHeatmapClass } from "@/lib/nba-first-basket-data"
+import { HeatmapLegend } from "@/components/ui/heatmap-legend"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 
 interface FirstBasketTableProps {
@@ -167,8 +168,15 @@ export function FirstBasketTable({
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {!isLive && rows.length === 0 && (
-        <div className="py-12 text-center text-sm text-muted-foreground">
-          Loading first basket data...
+        <div className="py-12 text-center flex flex-col items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading first basket data...</p>
+        </div>
+      )}
+      {/* Heatmap legend */}
+      {rows.length > 0 && (
+        <div className="px-4 pt-3 pb-1 flex justify-end">
+          <HeatmapLegend />
         </div>
       )}
       <div className="overflow-x-auto">
@@ -303,8 +311,9 @@ export function FirstBasketTable({
             })}
             {rows.length === 0 && isLive && (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
-                  No players found for this matchup filter.
+                <TableCell colSpan={8} className="py-12 text-center">
+                  <p className="text-sm font-medium text-foreground">No players found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Try selecting a different matchup or &quot;All Matchups&quot; filter.</p>
                 </TableCell>
               </TableRow>
             )}

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table"
 import type { AggregatedBatterStats } from "@/lib/matchup-data"
 import { useMemo, useState } from "react"
+import { Loader2, Users } from "lucide-react"
+import { HeatmapLegend } from "@/components/ui/heatmap-legend"
 
 interface PlayersTableProps {
   matchupStats: AggregatedBatterStats[]
@@ -94,7 +96,8 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center">
+      <div className="rounded-xl border border-border bg-card p-12 text-center flex flex-col items-center gap-2">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Loading matchup data...</p>
       </div>
     )
@@ -102,9 +105,11 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          Select a game and pitcher to see the matchup breakdown.
+      <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center flex flex-col items-center gap-3">
+        <Users className="h-8 w-8 text-muted-foreground/40" />
+        <p className="text-sm font-medium text-foreground">No matchup data yet</p>
+        <p className="text-xs text-muted-foreground">
+          Select a game and pitcher above to see the batter-by-batter breakdown.
         </p>
       </div>
     )
@@ -112,6 +117,9 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 pt-3 pb-1 flex justify-end">
+        <HeatmapLegend />
+      </div>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
