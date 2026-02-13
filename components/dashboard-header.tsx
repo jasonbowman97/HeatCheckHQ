@@ -86,7 +86,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
             NBA
           </Link>
           <Link
-            href="/nfl/matchup"
+            href="/nfl"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
             NFL

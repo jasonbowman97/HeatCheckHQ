@@ -31,7 +31,7 @@ export default function CheckoutReturnPage() {
           className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
           asChild
         >
-          <Link href="/mlb/hitting-stats">Explore dashboards</Link>
+          <Link href="/mlb">Explore dashboards</Link>
         </Button>
       </div>
     </div>

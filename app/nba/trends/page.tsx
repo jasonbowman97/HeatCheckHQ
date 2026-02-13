@@ -40,7 +40,7 @@ export default function NBATrendsPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/mlb" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               MLB
             </Link>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
@@ -57,7 +57,7 @@ export default function NBATrendsPage() {
               Trends
             </span>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/nfl" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
           </div>
@@ -92,10 +92,7 @@ export default function NBATrendsPage() {
             isLive={isLive}
           />
         )}
-        <ProUpsellBanner
-          headline="Unlock Hot Hitters, Pitching Stats & NFL Matchup with Pro"
-          description="Full access to every dashboard across MLB, NBA, and NFL — $12/mo"
-        />
+        <ProUpsellBanner />
       </main>
     </div>
   )

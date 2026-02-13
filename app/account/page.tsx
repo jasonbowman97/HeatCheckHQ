@@ -135,7 +135,7 @@ export default function AccountPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Upgrade to Pro to unlock all dashboards including Hot Hitters, Hitter vs Pitcher, Pitching Stats, Head-to-Head, and NFL Matchup.
+                    Upgrade to Pro for unlimited data, all filters, and zero gates across every dashboard.
                   </p>
                   <Button
                     size="sm"

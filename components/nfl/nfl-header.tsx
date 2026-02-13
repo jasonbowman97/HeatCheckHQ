@@ -34,7 +34,7 @@ export function NFLHeader() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/mlb/hitting-stats"
+            href="/mlb"
             className={inactiveClass}
           >
             MLB

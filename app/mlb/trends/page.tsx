@@ -64,7 +64,7 @@ export default function MLBTrendsPage() {
             <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NBA
             </Link>
-            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/nfl" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
           </div>
@@ -99,10 +99,7 @@ export default function MLBTrendsPage() {
             isLive={isLive}
           />
         )}
-        <ProUpsellBanner
-          headline="Unlock Hot Hitters, Pitching Stats & more with Pro"
-          description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"
-        />
+        <ProUpsellBanner />
       </main>
     </div>
   )

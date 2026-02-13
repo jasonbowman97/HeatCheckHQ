@@ -12,8 +12,8 @@ interface ProUpsellBannerProps {
 }
 
 export function ProUpsellBanner({
-  headline = "Unlock Hot Hitters, Pitching Stats & NFL Matchup with Pro",
-  description = "Full access to every dashboard across MLB, NBA, and NFL — $12/mo",
+  headline = "Go Pro for unlimited data, all filters & zero gates",
+  description = "Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo",
 }: ProUpsellBannerProps) {
   const userTier = useUserTier()
 

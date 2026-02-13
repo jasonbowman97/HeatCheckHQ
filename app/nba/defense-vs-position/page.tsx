@@ -156,7 +156,7 @@ export default function DefenseVsPositionPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/mlb/hot-hitters" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/mlb" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               MLB
             </Link>
             <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
@@ -172,7 +172,7 @@ export default function DefenseVsPositionPage() {
               Trends
             </Link>
             <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/nfl" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NFL
             </Link>
           </div>
@@ -319,8 +319,8 @@ export default function DefenseVsPositionPage() {
                 <Zap className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">Unlock Hot Hitters, Pitching Stats & NFL Matchup with Pro</p>
-                <p className="text-xs text-muted-foreground">Full access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
+                <p className="text-sm font-semibold text-foreground">Go Pro for unlimited data, all filters & zero gates</p>
+                <p className="text-xs text-muted-foreground">Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
               </div>
             </div>
             <Link

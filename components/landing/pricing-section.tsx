@@ -25,16 +25,16 @@ const plans = [
     price: "$12",
     period: "/month",
     description:
-      "Every dashboard unlocked. Full MLB stats, NFL Matchup, and priority access to new features.",
+      "Unlimited data, all filters unlocked, zero gates — the full edge across every dashboard.",
     cta: "Unlock all dashboards",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Hot Hitters — daily-updated heatmaps", included: true },
-      { text: "Hitter vs Pitcher matchup breakdowns", included: true },
-      { text: "Pitching Stats & arsenal analysis", included: true },
-      { text: "NFL Matchup side-by-side comparison", included: true },
+      { text: "Unlimited data — no signup gates or row limits", included: true },
+      { text: "All filters & sorting unlocked on every dashboard", included: true },
+      { text: "Full advanced stats across MLB, NBA & NFL", included: true },
+      { text: "Daily-updated heatmaps, trends & matchup tools", included: true },
       { text: "New dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
     ],
@@ -72,8 +72,8 @@ export function PricingSection() {
               Start free. Go Pro when you want the full edge.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Get instant access to 9 dashboards free — no credit card required.
-              Upgrade to Pro for all 13 dashboards, advanced stats, and daily-updated data.
+              Get instant access to every dashboard free — no credit card required.
+              Upgrade to Pro for unlimited data, all filters unlocked, and zero gates.
             </p>
             <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
               NBA dashboards are free during our launch promotion. Real-time data across MLB, NBA, and NFL.

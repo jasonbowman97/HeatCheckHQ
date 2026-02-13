@@ -356,8 +356,8 @@ export default function NBAFirstBasketPage() {
                 <Zap className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">Unlock Hot Hitters, Pitching Stats & NFL Matchup with Pro</p>
-                <p className="text-xs text-muted-foreground">Full access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
+                <p className="text-sm font-semibold text-foreground">Go Pro for unlimited data, all filters & zero gates</p>
+                <p className="text-xs text-muted-foreground">Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
               </div>
             </div>
             <Link

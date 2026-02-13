@@ -40,7 +40,7 @@ export default function NFLTrendsPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Link href="/mlb/hitting-stats" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/mlb" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               MLB
             </Link>
             <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
@@ -85,10 +85,7 @@ export default function NFLTrendsPage() {
             isLive={isLive}
           />
         )}
-        <ProUpsellBanner
-          headline="Unlock NFL Matchup, MLB Stats & more with Pro"
-          description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"
-        />
+        <ProUpsellBanner />
       </main>
     </div>
   )
