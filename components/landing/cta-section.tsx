@@ -14,7 +14,7 @@ export function CtaSection() {
               <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-accent/10 blur-3xl" />
             </div>
 
-            <div className="relative flex flex-col items-center gap-6 px-8 py-16 text-center md:py-24">
+            <div className="relative flex flex-col items-center gap-6 px-4 md:px-8 py-16 text-center md:py-24">
               <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
                 The edge is in the data. Are you using it?
               </h2>

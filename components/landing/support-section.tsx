@@ -40,7 +40,7 @@ export function SupportSection() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
           {supportOptions.map((option, i) => (
             <FadeIn key={option.title} delay={i * 0.1}>
               <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 text-center transition-colors hover:border-primary/30">

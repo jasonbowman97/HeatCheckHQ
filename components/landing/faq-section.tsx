@@ -61,7 +61,7 @@ export function FaqSection() {
                 key={i}
                 type="button"
                 onClick={() => setOpen(open === i ? null : i)}
-                className="w-full text-left px-6 py-5 flex items-start justify-between gap-4 transition-colors hover:bg-secondary/30"
+                className="w-full text-left px-4 md:px-6 py-5 flex items-start justify-between gap-4 transition-colors hover:bg-secondary/30"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">{faq.question}</p>

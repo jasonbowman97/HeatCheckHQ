@@ -68,7 +68,7 @@ export function SportsSection() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {sports.map((sport, index) => (
             <FadeIn key={sport.name} delay={0.1 + index * 0.1}>
               <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden h-full">

@@ -188,7 +188,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 bg-background">
+            <SheetContent side="right" className="w-[85vw] sm:w-72 bg-background">
               <SheetHeader className="text-left">
                 <SheetTitle className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
