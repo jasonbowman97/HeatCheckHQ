@@ -15,15 +15,15 @@ const sportLinks = [
       { name: "Hot Hitters", href: "/mlb/hot-hitters", tier: "pro" as Tier },
       { name: "Hitter vs Pitcher", href: "/mlb/hitting-stats", tier: "pro" as Tier },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", tier: "pro" as Tier },
-      { name: "NRFI", href: "/mlb/nrfi", tier: "public" as Tier },
-      { name: "Weather", href: "/mlb/weather", tier: "public" as Tier },
+      { name: "NRFI", href: "/mlb/nrfi", tier: "free" as Tier },
+      { name: "Weather", href: "/mlb/weather", tier: "free" as Tier },
       { name: "Trends", href: "/mlb/trends", tier: "free" as Tier },
     ],
   },
   {
     sport: "NBA",
     pages: [
-      { name: "First Basket", href: "/nba/first-basket", tier: "public" as Tier },
+      { name: "First Basket", href: "/nba/first-basket", tier: "free" as Tier },
       { name: "Head-to-Head", href: "/nba/head-to-head", tier: "free" as Tier },
       { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
       { name: "Trends", href: "/nba/trends", tier: "free" as Tier },

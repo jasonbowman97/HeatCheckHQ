@@ -8,15 +8,16 @@ const plans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Access 9 dashboards instantly. No credit card, no trial expiration.",
+    description: "9 dashboards across MLB, NBA & NFL — no credit card, no trial.",
     cta: "Create free account",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "NRFI, Weather & First Basket (no account needed)", included: true },
-      { text: "Head-to-Head & Defense vs Position (NBA + NFL)", included: true },
-      { text: "All 3 Trends dashboards (MLB, NBA, NFL)", included: true },
-      { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
-      { text: "NFL Matchup", included: false },
+      { text: "First Basket picks with live tipoff data", included: true },
+      { text: "NRFI matchups & stadium weather impact", included: true },
+      { text: "Head-to-Head player comparisons", included: true },
+      { text: "Defense vs Position rankings (NBA + NFL)", included: true },
+      { text: "Active streak trends across all 3 sports", included: true },
+      { text: "NBA dashboards free during launch promo", included: true },
     ],
   },
   {
@@ -24,16 +25,17 @@ const plans = [
     price: "$12",
     period: "/month",
     description:
-      "Every dashboard, every filter, plus daily-updated heatmaps and trend alerts.",
+      "Every dashboard unlocked. Full MLB stats, NFL Matchup, and priority access to new features.",
     cta: "Unlock all dashboards",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Hot Hitters & trending player rankings", included: true },
-      { text: "Hitter vs Pitcher matchup stats", included: true },
-      { text: "Pitching Stats & arsenal breakdowns", included: true },
-      { text: "NFL Matchup side-by-side analysis", included: true },
+      { text: "Hot Hitters — daily-updated heatmaps", included: true },
+      { text: "Hitter vs Pitcher matchup breakdowns", included: true },
+      { text: "Pitching Stats & arsenal analysis", included: true },
+      { text: "NFL Matchup side-by-side comparison", included: true },
+      { text: "New dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
     ],
   },
@@ -42,17 +44,17 @@ const plans = [
     price: "$100",
     period: "/year",
     description:
-      "Same full access as monthly — 2 months free when you pay annually.",
+      "Full Pro access year-round — save 2 months vs. monthly billing.",
     cta: "Get 2 months free",
     ctaVariant: "default" as const,
     savings: "2 Months Free",
     highlights: [
       { text: "Everything in Pro Monthly", included: true },
       { text: "Just $8.33/mo — billed annually", included: true },
-      { text: "All dashboards across MLB, NBA, NFL", included: true },
+      { text: "All 13 dashboards across MLB, NBA, NFL", included: true },
       { text: "Save $44 vs. monthly", included: true },
+      { text: "Priority access to new sports & features", included: true },
       { text: "Cancel anytime", included: true },
-      { text: "Best value for serious bettors", included: true },
     ],
   },
 ]
@@ -70,11 +72,11 @@ export function PricingSection() {
               Start free. Go Pro when you want the full edge.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Get instant access to 6 dashboards free — no credit card required.
-              Upgrade to Pro for all 12 dashboards, advanced filters, and daily-updated data.
+              Get instant access to 9 dashboards free — no credit card required.
+              Upgrade to Pro for all 13 dashboards, advanced stats, and daily-updated data.
             </p>
             <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
-              Trusted by sports bettors for real-time data across MLB, NBA, and NFL.
+              NBA dashboards are free during our launch promotion. Real-time data across MLB, NBA, and NFL.
             </p>
           </div>
         </FadeIn>

@@ -7,6 +7,9 @@ import { ChevronLeft, ChevronRight, Calendar, Loader2, Wind } from "lucide-react
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { WeatherCards } from "@/components/mlb/weather-cards"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { GameWeather } from "@/lib/mlb-weather-data"
 
 /* ---------- helpers: parse ESPN / OpenWeather wind strings ---------- */
@@ -97,6 +100,9 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
    Main Weather Page
    ============================================================ */
 export function WeatherPageClient() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+  const PREVIEW_CARDS = 3
   const [dateOffset, setDateOffset] = useState(0)
 
   // Date navigation
@@ -261,8 +267,27 @@ export function WeatherPageClient() {
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Loading weather data...</span>
           </div>
+        ) : isAnonymous && weatherData.length > PREVIEW_CARDS ? (
+          <div className="flex flex-col gap-6">
+            {/* Preview cards for anonymous users */}
+            <WeatherCards data={weatherData.slice(0, PREVIEW_CARDS)} />
+
+            {/* SignupGate with blurred gated cards */}
+            <SignupGate
+              headline="See all stadium weather — free"
+              description="Unlock weather conditions for every ballpark. Wind, temperature, and humidity for smarter bets. Free forever, no credit card."
+              countLabel={`${weatherData.length} games today`}
+            >
+              <WeatherCards data={weatherData.slice(PREVIEW_CARDS)} />
+            </SignupGate>
+          </div>
         ) : (
           <WeatherCards data={weatherData} />
+        )}
+
+        {/* Pro Upsell Banner for free users */}
+        {userTier === "free" && (
+          <ProUpsellBanner />
         )}
       </main>
     </div>

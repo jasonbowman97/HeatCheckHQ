@@ -7,13 +7,20 @@ import { ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { NrfiGame } from "@/lib/nrfi-data"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 type HandFilter = "All" | "RHP" | "LHP"
 
+const PREVIEW_GAMES = 3
+
 export default function NrfiPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
   const [handFilter, setHandFilter] = useState<HandFilter>("All")
   const [dateOffset, setDateOffset] = useState(0)
 
@@ -187,7 +194,23 @@ export default function NrfiPage() {
         )}
 
         {/* Data */}
-        {!isLoading && <NrfiTable games={filteredGames} />}
+        {!isLoading && (
+          <>
+            {isAnonymous && filteredGames.length > PREVIEW_GAMES ? (
+              <SignupGate
+                headline="See all NRFI matchups — free"
+                description="Unlock every pitcher matchup, NRFI streaks, and game probabilities. Free forever, no credit card."
+                countLabel={`${filteredGames.length} games today — updated with probable starters`}
+                preview={<NrfiTable games={filteredGames.slice(0, PREVIEW_GAMES)} />}
+                gated={<NrfiTable games={filteredGames.slice(PREVIEW_GAMES)} />}
+              />
+            ) : (
+              <NrfiTable games={filteredGames} />
+            )}
+          </>
+        )}
+
+        {userTier === "free" && <ProUpsellBanner />}
       </main>
     </div>
   )
