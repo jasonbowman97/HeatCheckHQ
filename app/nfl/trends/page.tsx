@@ -1,25 +1,29 @@
+"use client"
+
 import Link from "next/link"
+import { Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
+import useSWR from "swr"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
-import { nflTrends, nflCategories } from "@/lib/nfl-trends-data"
-import { getNFLStreakTrends } from "@/lib/nfl-streaks"
+import type { Trend } from "@/lib/trends-types"
 
-export const revalidate = 43200
+const NFL_CATEGORIES = [
+  "Passing", "Rushing", "Receiving", "Touchdowns",
+]
 
-async function getLiveTrends() {
-  try {
-    const trends = await getNFLStreakTrends()
-    return trends.length > 0 ? trends : null
-  } catch {
-    return null
-  }
-}
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-export default async function NFLTrendsPage() {
-  const liveTrends = await getLiveTrends()
-  const trends = liveTrends ?? nflTrends
-  const isLive = !!liveTrends
+export default function NFLTrendsPage() {
+  const { data, isLoading } = useSWR<{ trends: Trend[]; source: string }>(
+    "/api/nfl/trends",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 300_000 }
+  )
+
+  const trends = data?.trends ?? []
+  const isLive = data?.source === "live"
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -54,13 +58,20 @@ export default async function NFLTrendsPage() {
       </header>
 
       <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
-        <TrendsDashboard
-          trends={trends}
-          categories={nflCategories}
-          title="NFL Active Streaks"
-          subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '3 straight games with 300+ pass yards' or '5 straight games with a rushing TD' to spot current form."
-          isLive={isLive}
-        />
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Scanning all NFL players for active streaks...</p>
+          </div>
+        ) : (
+          <TrendsDashboard
+            trends={trends}
+            categories={NFL_CATEGORIES}
+            title="NFL Active Streaks"
+            subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '3 straight games with 300+ pass yards' or '5 straight games with a rushing TD' to spot current form."
+            isLive={isLive}
+          />
+        )}
         <ProUpsellBanner
           headline="Unlock NFL Matchup, MLB Stats & more with Pro"
           description="Full access to all 12 dashboards across MLB, NBA, and NFL — $12/mo"

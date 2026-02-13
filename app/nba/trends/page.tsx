@@ -1,25 +1,29 @@
+"use client"
+
 import Link from "next/link"
+import { Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
+import useSWR from "swr"
 import { TrendsDashboard } from "@/components/trends/trends-dashboard"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
-import { nbaTrends, nbaCategories } from "@/lib/nba-trends-data"
-import { getNBAStreakTrends } from "@/lib/nba-streaks"
+import type { Trend } from "@/lib/trends-types"
 
-export const revalidate = 43200
+const NBA_CATEGORIES = [
+  "Scoring", "Threes", "Rebounds", "Assists", "Combos", "Defense", "Turnovers",
+]
 
-async function getLiveTrends() {
-  try {
-    const trends = await getNBAStreakTrends()
-    return trends.length > 0 ? trends : null
-  } catch {
-    return null
-  }
-}
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-export default async function NBATrendsPage() {
-  const liveTrends = await getLiveTrends()
-  const trends = liveTrends ?? nbaTrends
-  const isLive = !!liveTrends
+export default function NBATrendsPage() {
+  const { data, isLoading } = useSWR<{ trends: Trend[]; source: string }>(
+    "/api/nba/trends",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 300_000 }
+  )
+
+  const trends = data?.trends ?? []
+  const isLive = data?.source === "live"
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -61,13 +65,20 @@ export default async function NBATrendsPage() {
       </header>
 
       <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
-        <TrendsDashboard
-          trends={trends}
-          categories={nbaCategories}
-          title="NBA Active Streaks"
-          subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '7 straight games with 25+ points' or '5 straight double-doubles' to spot current form."
-          isLive={isLive}
-        />
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Scanning all NBA players for active streaks...</p>
+          </div>
+        ) : (
+          <TrendsDashboard
+            trends={trends}
+            categories={NBA_CATEGORIES}
+            title="NBA Active Streaks"
+            subtitle="Players on active hot and cold streaks based on recent game-by-game performance. Identifies patterns like '7 straight games with 25+ points' or '5 straight double-doubles' to spot current form."
+            isLive={isLive}
+          />
+        )}
         <ProUpsellBanner
           headline="Unlock Hot Hitters, Pitching Stats & NFL Matchup with Pro"
           description="Full access to every dashboard across MLB, NBA, and NFL — $12/mo"
