@@ -58,7 +58,7 @@ export default function MLBHubPage() {
             </Link>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
+            <Link href="/nba" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
               NBA
             </Link>
             <Link href="/nfl" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">

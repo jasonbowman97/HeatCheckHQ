@@ -40,7 +40,7 @@ export function NFLHeader() {
             MLB
           </Link>
           <Link
-            href="/nba/first-basket"
+            href="/nba"
             className={inactiveClass}
           >
             NBA
