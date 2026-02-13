@@ -43,6 +43,7 @@ const sports = [
       "Full team stat comparisons with league rankings, side-by-side passing, rushing, and receiving breakdowns with recent game log chips.",
     dashboards: [
       { name: "Matchup", href: "/nfl/matchup", description: "Team stats, positional splits, game log trends" },
+      { name: "Def vs Position", href: "/nfl/defense-vs-position", description: "Which defenses give up the most to QBs, RBs, and WRs" },
       { name: "Trends", href: "/nfl/trends", description: "Passing yard streaks, rushing TDs, target surges" },
     ],
   },
