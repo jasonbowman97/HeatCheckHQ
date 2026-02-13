@@ -24,7 +24,7 @@ const sportLinks = [
     sport: "NBA",
     pages: [
       { name: "First Basket", href: "/nba/first-basket", tier: "public" as Tier },
-      { name: "Head-to-Head", href: "/nba/head-to-head", tier: "pro" as Tier },
+      { name: "Head-to-Head", href: "/nba/head-to-head", tier: "free" as Tier },
       { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
       { name: "Trends", href: "/nba/trends", tier: "free" as Tier },
     ],

@@ -2,8 +2,8 @@
  * Access tiers for HeatCheck HQ dashboards:
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
- * "free"    — Free account required (NBA Def vs Position, all Trends pages)
- * "pro"     — Paid $12/mo subscription (Hitter vs Pitcher, Pitching Stats, Hot Hitters, H2H, NFL Matchup)
+ * "free"    — Free account required (NBA DVP, NFL DVP, H2H, all Trends pages)
+ * "pro"     — Paid $12/mo subscription (Hitter vs Pitcher, Pitching Stats, Hot Hitters, NFL Matchup)
  */
 
 export type AccessTier = "public" | "free" | "pro"
@@ -23,6 +23,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   // Free account required
   { pattern: "/nba/defense-vs-position", tier: "free", label: "Defense vs Position" },
   { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },
+  { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
   { pattern: "/mlb/trends", tier: "free", label: "MLB Trends" },
   { pattern: "/nba/trends", tier: "free", label: "NBA Trends" },
   { pattern: "/nfl/trends", tier: "free", label: "NFL Trends" },
@@ -31,7 +32,6 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },
   { pattern: "/mlb/pitching-stats", tier: "pro", label: "Pitching Stats" },
   { pattern: "/mlb/hot-hitters", tier: "pro", label: "Hot Hitters" },
-  { pattern: "/nba/head-to-head", tier: "pro", label: "Head-to-Head" },
   { pattern: "/nfl/matchup", tier: "pro", label: "NFL Matchup" },
 ]
 
