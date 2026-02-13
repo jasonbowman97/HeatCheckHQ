@@ -4,7 +4,7 @@ import { getNBAStreakTrends } from "@/lib/nba-streaks"
 import { buildTrends } from "@/lib/trends-builder"
 import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const revalidate = 3600
+export const dynamic = "force-dynamic"
 
 // Map ESPN v3 category names to our trend categories
 const CATEGORY_MAP: Record<string, { name: string; statLabel: string; hotPrefix: string; coldPrefix: string }> = {
