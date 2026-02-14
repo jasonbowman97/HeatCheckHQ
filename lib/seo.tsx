@@ -109,8 +109,11 @@ export function generateSEO({
       },
     },
     icons: {
-      icon: "/favicon.ico",
-      shortcut: "/favicon.ico",
+      icon: [
+        { url: "/icon.svg", type: "image/svg+xml" },
+        { url: "/favicon.ico", type: "image/x-icon" },
+      ],
+      shortcut: "/icon.svg",
       apple: "/apple-touch-icon.png",
     },
     manifest: "/site.webmanifest",
