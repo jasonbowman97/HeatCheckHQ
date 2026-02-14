@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-13-v4-live-stripe
+// Force redeploy: 2026-02-13-v5-live-vars
 const nextConfig = {
   // TypeScript errors are now enforced at build time
   images: {
