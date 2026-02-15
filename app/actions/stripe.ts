@@ -58,9 +58,16 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
   }
 
   let customerId = profile?.stripe_customer_id
-  console.log("[Stripe] Customer ID from profile:", customerId)
 
-  // Create Stripe customer if doesn't exist
+  // Verify existing customer is valid in current Stripe mode
+  if (customerId) {
+    try {
+      await stripe.customers.retrieve(customerId)
+    } catch {
+      customerId = null
+    }
+  }
+
   if (!customerId) {
     console.log("[Stripe] Creating new Stripe customer...")
     const customer = await stripe.customers.create({

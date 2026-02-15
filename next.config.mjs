@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-15-v14-api-route-checkout
+// Force redeploy: 2026-02-15-v15-fix-stale-customer
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
