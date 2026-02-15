@@ -36,10 +36,10 @@ function todayDateStr(): string {
   return `${yyyy}${mm}${dd}`
 }
 
-export async function fetchTodayLineups(): Promise<NBALineupGame[]> {
-  const dateStr = todayDateStr()
+export async function fetchTodayLineups(date?: string): Promise<NBALineupGame[]> {
+  const dateStr = date ?? todayDateStr()
 
-  // Return cache if same day
+  // Return cache if same date
   if (cachedLineups && cachedLineups.date === dateStr) {
     return cachedLineups.data
   }

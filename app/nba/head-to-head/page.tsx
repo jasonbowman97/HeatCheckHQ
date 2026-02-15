@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import useSWR from "swr"
 import { Loader2, Lock } from "lucide-react"
@@ -14,6 +14,7 @@ import { H2HMomentum } from "@/components/nba/h2h-momentum"
 import { H2HInjuries } from "@/components/nba/h2h-injuries"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
+import { DateNavigator } from "@/components/nba/date-navigator"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -118,13 +119,28 @@ export default function NBAH2HPage() {
   const userTier = useUserTier()
   const isAnonymous = userTier === "anonymous"
 
+  const [date, setDate] = useState(new Date())
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
+
+  const handlePrevDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() - 1); return d })
+    setSelectedGameId(null)
+  }, [])
+
+  const handleNextDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() + 1); return d })
+    setSelectedGameId(null)
+  }, [])
+
+  const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
+
   const { data, isLoading } = useSWR<{
     games: NBAScheduleGame[]
     summaries: Record<string, NBATeamSummary>
     h2hData: Record<string, H2HApiData | null>
     lastRecords: Record<string, LastRecord>
     dvpRankings: Record<string, unknown>
-  }>("/api/nba/h2h", fetcher, {
+  }>(`/api/nba/h2h?date=${dateParam}`, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
@@ -138,7 +154,6 @@ export default function NBAH2HPage() {
 
   const isLive = games.length > 0
 
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const activeId = selectedGameId ?? games[0]?.id
   const selectedGame = games.find((g) => g.id === activeId) ?? games[0]
 
@@ -146,7 +161,7 @@ export default function NBAH2HPage() {
     <DashboardShell>
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Heading */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-foreground">Head-to-Head</h2>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -161,15 +176,20 @@ export default function NBAH2HPage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Season series, team form, and injury reports for tonight{"'"}s matchups.
-          </p>
+          <div className="flex items-center gap-3">
+            <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
+            <p className="text-sm text-muted-foreground">
+              Season series, team form, and injury reports.
+            </p>
+          </div>
         </div>
 
         {/* No games state */}
         {!isLoading && games.length === 0 && (
           <div className="flex items-center justify-center py-16">
-            <p className="text-sm text-muted-foreground">No games scheduled for today.</p>
+            <p className="text-sm text-muted-foreground">
+              No games scheduled for {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}.
+            </p>
           </div>
         )}
 

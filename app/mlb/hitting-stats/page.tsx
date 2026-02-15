@@ -8,7 +8,7 @@ import { buildMatchupRows, toPanelArsenal } from "@/lib/matchup-data"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { MatchupPanel } from "@/components/matchup-panel"
 import { PlayersTable } from "@/components/players-table"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -16,6 +16,20 @@ type BatterHandFilter = "All" | "LHH" | "RHH"
 
 export default function Page() {
   const currentYear = new Date().getFullYear()
+
+  // Date navigation (±7 days)
+  const [dateOffset, setDateOffset] = useState(0)
+  const currentDate = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + dateOffset)
+    return d
+  }, [dateOffset])
+  const dateParam = currentDate.toISOString().slice(0, 10)
+  const dateLabel = currentDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
 
   // Game & pitcher selection state
   const [selectedGamePk, setSelectedGamePk] = useState<number | null>(null)
@@ -30,9 +44,9 @@ export default function Page() {
   const [minUsagePct, setMinUsagePct] = useState(5)
   const [batterHand, setBatterHand] = useState<BatterHandFilter>("All")
 
-  // Fetch today's schedule
+  // Fetch schedule for selected date
   const { data: scheduleData, isLoading: isLoadingSchedule } = useSWR<{ games: ScheduleGame[] }>(
-    "/api/mlb/schedule",
+    `/api/mlb/schedule?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
@@ -103,6 +117,15 @@ export default function Page() {
     return rows
   }, [matchupData, selectedPitcherHand, batterHand])
 
+  // Reset selections when date changes
+  useEffect(() => {
+    setSelectedGamePk(null)
+    setSelectedPitcherId(null)
+    setSelectedPitcherName("")
+    setSelectedPitcherTeam("")
+    setSelectedPitchTypes([])
+  }, [dateOffset])
+
   // Auto-select first game with both starters when schedule loads
   useEffect(() => {
     if (games.length > 0 && !selectedGamePk) {
@@ -170,6 +193,40 @@ export default function Page() {
   return (
     <DashboardShell>
       <main className="mx-auto max-w-[1600px] px-6 py-6">
+        {/* Date navigator */}
+        <div className="flex items-center gap-3 mb-6">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <div className="inline-flex items-center rounded-lg border border-border bg-card">
+            <button
+              onClick={() => setDateOffset((p) => Math.max(p - 1, -7))}
+              disabled={dateOffset <= -7}
+              className="flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground transition-colors rounded-l-lg hover:bg-secondary disabled:opacity-30"
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="px-4 text-sm font-medium text-foreground min-w-[120px] text-center">
+              {dateLabel}
+            </span>
+            <button
+              onClick={() => setDateOffset((p) => Math.min(p + 1, 7))}
+              disabled={dateOffset >= 7}
+              className="flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground transition-colors rounded-r-lg hover:bg-secondary disabled:opacity-30"
+              aria-label="Next day"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          {dateOffset !== 0 && (
+            <button
+              onClick={() => setDateOffset(0)}
+              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              Today
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Left sidebar - Matchup Panel */}
           <aside className="w-full lg:w-80 shrink-0">

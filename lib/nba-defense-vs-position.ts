@@ -136,12 +136,12 @@ export async function getPositionRankings(
 
 /* ── Today's matchup insights ── */
 
-export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
+export async function getTodayMatchupInsights(date?: string): Promise<TodayMatchup[]> {
   try {
     const [teams, scoreboardRaw, lineupGames] = await Promise.all([
       getDvpData(),
-      fetchNBAScoreboard(),
-      fetchTodayLineups(),
+      fetchNBAScoreboard(date),
+      fetchTodayLineups(date),
     ])
 
     const events = (scoreboardRaw.events ?? []) as Array<Record<string, unknown>>

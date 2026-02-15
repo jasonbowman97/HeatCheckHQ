@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
@@ -8,6 +8,7 @@ import { Loader2, Shield, ChevronDown, Zap, ArrowRight, Lock } from "lucide-reac
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
+import { DateNavigator } from "@/components/nba/date-navigator"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -94,9 +95,21 @@ export default function DefenseVsPositionPage() {
   const [rankPosition, setRankPosition] = useState<Position>("PG")
   const [rankStat, setRankStat] = useState<StatCategory>("PTS")
 
-  // Matchups data (always fetch so we have today's teams for rankings highlight)
+  const [date, setDate] = useState(new Date())
+
+  const handlePrevDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() - 1); return d })
+  }, [])
+
+  const handleNextDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() + 1); return d })
+  }, [])
+
+  const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
+
+  // Matchups data (fetch for selected date)
   const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: TodayMatchup[] }>(
-    "/api/nba/defense-vs-position?mode=matchups",
+    `/api/nba/defense-vs-position?mode=matchups&date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
@@ -143,15 +156,20 @@ export default function DefenseVsPositionPage() {
     <DashboardShell>
       <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
         {/* Page heading */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Which teams allow the most stats to each position — PG, SG, SF, PF, C.
-          </p>
+          <div className="flex items-center gap-3">
+            {viewMode === "matchups" && (
+              <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
+            )}
+            <p className="text-sm text-muted-foreground">
+              Which teams allow the most stats to each position — PG, SG, SF, PF, C.
+            </p>
+          </div>
         </div>
 
         {/* View mode toggle + filters — locked for anonymous users */}

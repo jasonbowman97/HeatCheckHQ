@@ -19,8 +19,9 @@ export async function GET(request: Request) {
       return res
     }
 
-    // Default: today's matchup insights
-    const matchups = await getTodayMatchupInsights()
+    // Default: matchup insights (optionally for a specific date)
+    const date = searchParams.get("date") ?? undefined
+    const matchups = await getTodayMatchupInsights(date)
     const res = NextResponse.json({ matchups })
     res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
     return res
