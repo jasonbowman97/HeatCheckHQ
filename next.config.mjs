@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-15-v9-live-env-vars
+// Force redeploy: 2026-02-15-v10
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
