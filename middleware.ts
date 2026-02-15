@@ -44,7 +44,7 @@ function cleanupRateLimit() {
   }
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // --- Supabase session refresh ---
   // Only refresh auth sessions on pages that need it (auth, account, checkout,
   // protected dashboards). Skip for public pages, API routes, and static assets
