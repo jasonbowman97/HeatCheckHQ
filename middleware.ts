@@ -54,6 +54,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/account') ||
     pathname.startsWith('/checkout') ||
+    pathname.startsWith('/admin') ||
     pathname.startsWith('/nba/defense-vs-position') ||
     pathname.startsWith('/nba/head-to-head') ||
     pathname.startsWith('/nba/trends') ||
@@ -129,11 +130,11 @@ export async function middleware(request: NextRequest) {
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co",
+    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com",
     "frame-src 'self' https://vercel.live https://js.stripe.com https://*.supabase.co",
     "media-src 'self'",
     "object-src 'none'",
@@ -197,6 +198,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 }

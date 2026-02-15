@@ -4,11 +4,17 @@ import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Logo } from "@/components/logo"
-import { Shield } from "lucide-react"
+import { Shield, Gift } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
+import { analytics } from "@/lib/analytics"
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"))
+  return match ? decodeURIComponent(match[2]) : null
+}
 
 function SignUpForm() {
   const [email, setEmail] = useState("")
@@ -19,6 +25,7 @@ function SignUpForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect")
+  const refCode = searchParams.get("ref")
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault()
@@ -37,7 +44,7 @@ function SignUpForm() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -54,6 +61,25 @@ function SignUpForm() {
       return
     }
 
+    // Apply affiliate referral if present (cookie from /join/[code] or ?ref= param)
+    const affiliateCode = refCode || getCookie("hchq_ref")
+    if (affiliateCode && data.user) {
+      try {
+        await fetch("/api/affiliates/apply-referral", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.user.id,
+            affiliateCode,
+          }),
+        })
+      } catch {
+        // Non-blocking — don't prevent signup if referral fails
+        console.error("[Affiliate] Failed to apply referral")
+      }
+    }
+
+    analytics.signupCompleted(affiliateCode ? "affiliate" : "email")
     router.push("/auth/sign-up-success")
   }
 
@@ -70,7 +96,14 @@ function SignUpForm() {
           <p className="mt-2 text-sm text-muted-foreground">Create your free account — takes 30 seconds</p>
         </div>
 
-        {redirect && (
+        {refCode && (
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-md bg-green-500/10 px-3 py-2 text-center text-sm text-green-400">
+            <Gift className="h-4 w-4" />
+            <span>You've been invited — 2 weeks of Pro access free!</span>
+          </div>
+        )}
+
+        {redirect && !refCode && (
           <p className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-center text-sm text-primary">
             Create an account to continue to checkout
           </p>
@@ -125,7 +158,7 @@ function SignUpForm() {
             disabled={loading}
             className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {loading ? "Creating account..." : "Create free account — instant access"}
+            {loading ? "Creating account..." : refCode ? "Claim free Pro trial" : "Create free account — instant access"}
           </Button>
         </form>
 

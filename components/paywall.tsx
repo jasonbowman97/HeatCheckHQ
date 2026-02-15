@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Lock, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AccessTier } from "@/lib/access-control"
+import { TrackEvent } from "@/components/track-event"
 
 interface PaywallProps {
   requiredTier: AccessTier
@@ -29,6 +30,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
 
   return (
     <div className="relative">
+      <TrackEvent event="paywall_hit" params={{ required_tier: requiredTier, user_tier: userTier }} />
       {/* Blurred content preview */}
       <div className="pointer-events-none select-none" aria-hidden="true">
         <div className="blur-sm opacity-40">

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Eye, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TrackEvent } from "@/components/track-event"
 
 interface SignupGateProps {
   /** What to show above the gate (visible preview) */
@@ -27,6 +28,7 @@ export function SignupGate({
 }: SignupGateProps) {
   return (
     <>
+      <TrackEvent event="signup_gate_hit" />
       {/* Visible preview content */}
       {preview}
 

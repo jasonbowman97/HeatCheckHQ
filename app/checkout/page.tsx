@@ -12,6 +12,7 @@ import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { analytics } from "@/lib/analytics"
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null
@@ -228,7 +229,7 @@ export default function CheckoutPage() {
             </ul>
 
             <button
-              onClick={() => setCheckoutStarted(true)}
+              onClick={() => { analytics.checkoutStarted(selectedPlan); setCheckoutStarted(true) }}
               className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               Continue to payment

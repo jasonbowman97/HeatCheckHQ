@@ -33,14 +33,20 @@ export async function POST(request: Request) {
       const subscriptionId = session.subscription as string
 
       if (userId && subscriptionId) {
+        // Upgrade to paid Pro — clear trial_expires_at so getUserTier
+        // treats this as a real paid subscription, not a trial
         await supabase
           .from("profiles")
           .update({
             subscription_tier: "pro",
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: session.customer as string,
+            trial_expires_at: null, // Clear trial — now a paid subscriber
           })
           .eq("id", userId)
+
+        // Track affiliate conversion if this user was referred
+        await trackAffiliateConversion(userId)
       }
       break
     }
@@ -77,4 +83,31 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+/**
+ * When a referred user converts to paid, mark the affiliate_referrals record
+ * so the affiliate can be paid their commission.
+ */
+async function trackAffiliateConversion(userId: string) {
+  try {
+    const { data: referral } = await supabase
+      .from("affiliate_referrals")
+      .select("id, converted_at")
+      .eq("user_id", userId)
+      .single()
+
+    // Only mark conversion if the user was referred AND hasn't already been counted
+    if (referral && !referral.converted_at) {
+      await supabase
+        .from("affiliate_referrals")
+        .update({ converted_at: new Date().toISOString() })
+        .eq("id", referral.id)
+
+      console.log(`[Affiliate] Conversion tracked for user ${userId}, referral ${referral.id}`)
+    }
+  } catch {
+    // Non-critical — don't fail the webhook
+    console.error(`[Affiliate] Failed to track conversion for user ${userId}`)
+  }
 }

@@ -1,6 +1,8 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { generateSEO } from '@/lib/seo'
+import { Analytics } from '@vercel/analytics/next'
+import { GoogleAnalytics } from '@/components/google-analytics'
 
 import './globals.css'
 
@@ -34,6 +36,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sans antialiased">
         {children}
+        <Analytics />
+        <GoogleAnalytics />
       </body>
     </html>
   )
