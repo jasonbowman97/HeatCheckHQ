@@ -14,5 +14,9 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/error`)
+  // If code is missing or exchange failed, send to login with a friendly message
+  // instead of showing a scary error page
+  return NextResponse.redirect(
+    `${origin}/auth/login?message=${encodeURIComponent("Your link has expired or was already used. Please sign in below.")}`
+  )
 }
