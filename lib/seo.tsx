@@ -110,11 +110,11 @@ export function generateSEO({
     },
     icons: {
       icon: [
-        { url: "/icon.svg", type: "image/svg+xml" },
-        { url: "/favicon.ico", type: "image/x-icon" },
+        { url: "/icon.svg?v=2", type: "image/svg+xml" },
+        { url: "/favicon.ico?v=2", type: "image/x-icon", sizes: "16x16 32x32" },
       ],
-      shortcut: "/icon.svg",
-      apple: "/apple-touch-icon.png",
+      shortcut: "/icon.svg?v=2",
+      apple: "/apple-touch-icon.png?v=2",
     },
     manifest: "/site.webmanifest",
   }
