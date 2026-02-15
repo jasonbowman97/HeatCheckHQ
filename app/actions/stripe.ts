@@ -112,10 +112,8 @@ export async function createCheckoutSession(planId: string = "pro-monthly") {
   return { clientSecret: session.client_secret }
   } catch (error) {
     console.error("[Stripe] Error in createCheckoutSession:", error)
-    // Re-throw with more details
-    if (error instanceof Error) {
-      throw new Error(`Checkout failed: ${error.message}`)
-    }
-    throw error
+    // Return error object instead of throwing -- thrown errors get redacted in production
+    const message = error instanceof Error ? error.message : "Unknown error"
+    return { clientSecret: null, error: message }
   }
 }

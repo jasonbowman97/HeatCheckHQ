@@ -27,26 +27,24 @@ export default function CheckoutPage() {
 
   // Define fetchClientSecret first (before any conditional returns)
   const fetchClientSecret = useCallback(async () => {
-    try {
-      console.log("Fetching client secret for plan:", selectedPlan)
-      const result = await createCheckoutSession(selectedPlan)
-      console.log("createCheckoutSession result:", result)
+    console.log("[v0] Fetching client secret for plan:", selectedPlan)
+    const result = await createCheckoutSession(selectedPlan)
+    console.log("[v0] createCheckoutSession result:", JSON.stringify(result))
 
-      if (!result || !result.clientSecret) {
-        console.error("No client secret returned, result:", result)
-        throw new Error("No client secret returned from server")
-      }
-
-      console.log("Client secret received successfully")
-      return result.clientSecret
-    } catch (err) {
-      console.error("Checkout error:", err)
-      console.error("Error details:", JSON.stringify(err, Object.getOwnPropertyNames(err)))
-
-      const errorMessage = err instanceof Error ? err.message : "Failed to start checkout"
-      setError(`Checkout failed: ${errorMessage}`)
-      throw err
+    if (result.error) {
+      console.error("[v0] Server returned error:", result.error)
+      setError(result.error)
+      throw new Error(result.error)
     }
+
+    if (!result.clientSecret) {
+      console.error("[v0] No client secret returned")
+      setError("No client secret returned from server")
+      throw new Error("No client secret returned")
+    }
+
+    console.log("[v0] Client secret received successfully")
+    return result.clientSecret
   }, [selectedPlan])
 
   // Check authentication on mount
@@ -142,13 +140,21 @@ export default function CheckoutPage() {
 
         {error ? (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
-            <p className="text-sm text-destructive">{error}</p>
-            <Link
-              href="/auth/login"
-              className="mt-3 inline-block text-sm text-primary hover:underline"
-            >
-              Sign in first
-            </Link>
+            <p className="text-sm text-destructive mb-3">{error}</p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => { setError(null); setCheckoutStarted(false) }}
+                className="text-sm text-primary hover:underline"
+              >
+                Try again
+              </button>
+              <Link
+                href="/auth/login?redirect=/checkout"
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Sign in again
+              </Link>
+            </div>
           </div>
         ) : !checkoutStarted ? (
           <div className="flex flex-col gap-6">
