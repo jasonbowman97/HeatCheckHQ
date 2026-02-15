@@ -108,3 +108,33 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ affiliate: data })
 }
+
+/**
+ * PATCH /api/affiliates — Mark all unpaid conversions as paid for an affiliate
+ */
+export async function PATCH(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { affiliateId } = body
+
+  if (!affiliateId) {
+    return NextResponse.json({ error: "affiliateId is required" }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from("affiliate_referrals")
+    .update({ commission_paid: true })
+    .eq("affiliate_id", affiliateId)
+    .eq("commission_paid", false)
+    .not("converted_at", "is", null)
+    .select("id")
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ marked: data?.length || 0 })
+}

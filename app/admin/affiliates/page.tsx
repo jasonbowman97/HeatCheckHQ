@@ -44,6 +44,7 @@ export default function AdminAffiliatesPage() {
   const [formTrialDays, setFormTrialDays] = useState("14")
   const [formNotes, setFormNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [payingId, setPayingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadAffiliates()
@@ -115,6 +116,28 @@ export default function AdminAffiliatesPage() {
     navigator.clipboard.writeText(`https://heatcheckhq.io/join/${code}`)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 2000)
+  }
+
+  async function handleMarkPaid(affiliateId: string, affiliateName: string, amount: string) {
+    if (!confirm(`Mark all unpaid conversions for "${affiliateName}" as paid (${amount})?`)) return
+
+    setPayingId(affiliateId)
+    try {
+      const res = await fetch("/api/affiliates", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ affiliateId }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Failed to mark as paid")
+      } else {
+        await loadAffiliates()
+      }
+    } catch {
+      setError("Failed to mark as paid")
+    }
+    setPayingId(null)
   }
 
   // Totals
@@ -367,6 +390,27 @@ export default function AdminAffiliatesPage() {
                     <span className="text-foreground">{affiliate.trial_days}d</span>
                   </div>
                 </div>
+
+                {affiliate.stats.unpaid > 0 && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() =>
+                        handleMarkPaid(
+                          affiliate.id,
+                          affiliate.name,
+                          `$${((affiliate.stats.unpaid * affiliate.commission_cents) / 100).toFixed(2)}`
+                        )
+                      }
+                      disabled={payingId === affiliate.id}
+                      className="flex items-center gap-1.5 rounded-md bg-green-500/10 border border-green-500/20 px-3 py-1.5 text-xs font-medium text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50"
+                    >
+                      <DollarSign className="h-3 w-3" />
+                      {payingId === affiliate.id
+                        ? "Marking..."
+                        : `Mark $${((affiliate.stats.unpaid * affiliate.commission_cents) / 100).toFixed(2)} as paid`}
+                    </button>
+                  </div>
+                )}
 
                 {affiliate.notes && (
                   <p className="mt-2 text-xs text-muted-foreground/70 italic">{affiliate.notes}</p>
