@@ -9,7 +9,7 @@ const supabase = createClient(
 )
 
 // Admin email(s) that can access affiliate management
-const ADMIN_EMAILS = ["jasonbowman97@gmail.com"]
+const ADMIN_EMAILS = ["jason.bowman34@gmail.com", "admin@heatcheckhq.io"]
 
 async function isAdmin(): Promise<boolean> {
   try {
