@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-15-v15-fix-stale-customer
+// Force redeploy: 2026-02-15-v16
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
