@@ -14,9 +14,9 @@ import { Logo } from "@/components/logo"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
+console.log("[v0] Stripe key mode:", stripeKey.startsWith("pk_live") ? "LIVE" : "TEST", "key prefix:", stripeKey.substring(0, 8))
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)

@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-13-v7-favicon-update
+// Force redeploy: 2026-02-15-v8-live-stripe-keys
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
