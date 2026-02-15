@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-15-v11-live-keys
+// Force redeploy: 2026-02-15-v12-debug-checkout
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,

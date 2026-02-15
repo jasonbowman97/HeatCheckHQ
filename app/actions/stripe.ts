@@ -6,7 +6,9 @@ import { PRODUCTS } from "@/lib/products"
 
 export async function createCheckoutSession(planId: string = "pro-monthly") {
   try {
-    console.log("[Stripe] Starting checkout session creation for plan:", planId)
+    console.log("[v0] Starting checkout session creation for plan:", planId)
+    console.log("[v0] STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY)
+    console.log("[v0] STRIPE_SECRET_KEY mode:", process.env.STRIPE_SECRET_KEY?.startsWith("sk_live") ? "LIVE" : "TEST")
 
     const supabase = await createClient()
     const {
