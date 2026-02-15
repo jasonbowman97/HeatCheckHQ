@@ -6,7 +6,6 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout,
 } from "@stripe/react-stripe-js"
-import { createCheckoutSession } from "@/app/actions/stripe"
 import { PRODUCTS } from "@/lib/products"
 import Link from "next/link"
 import { ArrowLeft, Check, Loader2 } from "lucide-react"
@@ -27,24 +26,20 @@ export default function CheckoutPage() {
 
   // Define fetchClientSecret first (before any conditional returns)
   const fetchClientSecret = useCallback(async () => {
-    console.log("[v0] Fetching client secret for plan:", selectedPlan)
-    const result = await createCheckoutSession(selectedPlan)
-    console.log("[v0] createCheckoutSession result:", JSON.stringify(result))
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId: selectedPlan }),
+    })
+    const data = await res.json()
 
-    if (result.error) {
-      console.error("[v0] Server returned error:", result.error)
-      setError(result.error)
-      throw new Error(result.error)
+    if (!res.ok || data.error) {
+      const msg = data.error || "Failed to start checkout"
+      setError(msg)
+      throw new Error(msg)
     }
 
-    if (!result.clientSecret) {
-      console.error("[v0] No client secret returned")
-      setError("No client secret returned from server")
-      throw new Error("No client secret returned")
-    }
-
-    console.log("[v0] Client secret received successfully")
-    return result.clientSecret
+    return data.clientSecret
   }, [selectedPlan])
 
   // Check authentication on mount
