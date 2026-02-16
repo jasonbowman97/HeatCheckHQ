@@ -48,8 +48,8 @@ export function HeroSection() {
 
           <FadeIn delay={0.2}>
             <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-foreground text-balance md:text-6xl lg:text-7xl">
-              Spot winning edges{" "}
-              <span className="text-primary">before the line moves</span>
+              Your daily heat checks{" "}
+              <span className="text-primary">for every play</span>
             </h1>
           </FadeIn>
 
