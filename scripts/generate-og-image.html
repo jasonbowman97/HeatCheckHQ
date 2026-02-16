@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head><title>HeatCheck HQ — OG Image Export</title></head>
+<body style="background: #0d1117; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; flex-direction: column;">
+  <div style="text-align: center;">
+    <h2 style="color: #fff; font-family: sans-serif;">Right-click the image below and "Save image as..." → og-image.png</h2>
+    <p style="color: #888; font-family: sans-serif;">1200x630px — This is the preview when shared via iMessage, Discord, Slack, Twitter, etc.</p>
+    <canvas id="canvas" width="1200" height="630" style="border: 1px solid #333; max-width: 90vw;"></canvas>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 1200, H = 630;
+
+    // Background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle radial glow behind center
+    const grd = ctx.createRadialGradient(W/2, H/2 - 30, 40, W/2, H/2 - 30, 450);
+    grd.addColorStop(0, 'rgba(45, 212, 168, 0.10)');
+    grd.addColorStop(1, 'rgba(45, 212, 168, 0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative grid dots
+    ctx.fillStyle = 'rgba(45, 212, 168, 0.05)';
+    for (let x = 40; x < W; x += 36) {
+      for (let y = 40; y < H; y += 36) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // --- Logo icon ---
+    const logoScale = 7;
+    const logoX = W/2 - 240;
+    const logoY = H/2 - 40;
+
+    ctx.save();
+    ctx.translate(logoX, logoY);
+    ctx.scale(logoScale, logoScale);
+    ctx.translate(-12, -14);
+
+    // Bar 1
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#2dd4a8';
+    ctx.beginPath();
+    ctx.roundRect(3, 17, 4, 5, 1);
+    ctx.fill();
+
+    // Bar 2
+    ctx.globalAlpha = 0.65;
+    ctx.beginPath();
+    ctx.roundRect(10, 13, 4, 9, 1);
+    ctx.fill();
+
+    // Bar 3
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.roundRect(17, 10, 4, 12, 1);
+    ctx.fill();
+
+    // Flame outer
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#2dd4a8';
+    ctx.beginPath();
+    ctx.moveTo(19, 10);
+    ctx.bezierCurveTo(19, 10, 16.2, 6.5, 16.2, 3.7);
+    ctx.bezierCurveTo(16.2, 2.2, 17, 1, 17.7, 0.4);
+    ctx.bezierCurveTo(18, 1.5, 18.8, 2.4, 19.6, 3.1);
+    ctx.bezierCurveTo(20.4, 3.9, 21.1, 4.8, 21.1, 6.1);
+    ctx.bezierCurveTo(21.1, 8.1, 19.9, 9.9, 19, 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Flame inner
+    ctx.fillStyle = '#0d1117';
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(19, 10);
+    ctx.bezierCurveTo(19, 10, 17.8, 8.5, 17.8, 7.2);
+    ctx.bezierCurveTo(17.8, 6.5, 18.15, 6, 18.4, 5.7);
+    ctx.bezierCurveTo(18.53, 6.2, 18.9, 6.6, 19.25, 6.9);
+    ctx.bezierCurveTo(19.6, 7.25, 19.9, 7.7, 19.9, 8.4);
+    ctx.bezierCurveTo(19.9, 9.3, 19.4, 9.6, 19, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // --- Brand text ---
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HeatCheck HQ', W/2 - 110, H/2 - 55);
+
+    // Tagline
+    ctx.fillStyle = '#2dd4a8';
+    ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Your daily heat checks for every play', W/2 - 110, H/2);
+
+    // Description
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Free sports betting analytics — heatmaps, streaks & matchup tools', W/2 - 110, H/2 + 40);
+
+    // Sport badges
+    const badges = ['MLB', 'NBA', 'NFL'];
+    const badgeStartX = W/2 - 110;
+    const badgeY = H/2 + 90;
+    badges.forEach((badge, i) => {
+      const bx = badgeStartX + i * 85;
+      // Badge bg
+      ctx.fillStyle = 'rgba(45, 212, 168, 0.12)';
+      ctx.beginPath();
+      ctx.roundRect(bx, badgeY - 14, 65, 28, 6);
+      ctx.fill();
+      // Badge border
+      ctx.strokeStyle = 'rgba(45, 212, 168, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(bx, badgeY - 14, 65, 28, 6);
+      ctx.stroke();
+      // Badge text
+      ctx.fillStyle = '#2dd4a8';
+      ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(badge, bx + 32.5, badgeY + 1);
+    });
+    ctx.textAlign = 'left';
+
+    // URL bottom-right
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('heatcheckhq.io', W - 40, H - 30);
+    ctx.textAlign = 'left';
+
+    // Convert to downloadable image
+    const img = new Image();
+    img.src = canvas.toDataURL('image/png');
+    img.style.cssText = 'cursor: pointer; margin-top: 20px; max-width: 90vw;';
+    img.title = 'Right-click to save as og-image.png';
+    canvas.parentElement.appendChild(img);
+    canvas.style.display = 'none';
+  </script>
+</body>
+</html>
