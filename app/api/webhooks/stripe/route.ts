@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       if (userId && subscriptionId) {
         // Upgrade to paid Pro — clear trial_expires_at so getUserTier
         // treats this as a real paid subscription, not a trial
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({
             subscription_tier: "pro",
@@ -44,6 +44,11 @@ export async function POST(request: Request) {
             trial_expires_at: null, // Clear trial — now a paid subscriber
           })
           .eq("id", userId)
+
+        if (error) {
+          console.error("[Stripe Webhook] Failed to upgrade user:", userId, error)
+          return NextResponse.json({ error: "DB write failed" }, { status: 500 })
+        }
 
         // Track affiliate conversion if this user was referred
         await trackAffiliateConversion(userId)
@@ -60,10 +65,15 @@ export async function POST(request: Request) {
           ? "pro"
           : "free"
 
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({ subscription_tier: tier })
         .eq("stripe_customer_id", customerId)
+
+      if (error) {
+        console.error("[Stripe Webhook] Failed to update subscription tier:", customerId, error)
+        return NextResponse.json({ error: "DB write failed" }, { status: 500 })
+      }
       break
     }
 
@@ -71,13 +81,18 @@ export async function POST(request: Request) {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
 
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({
           subscription_tier: "free",
           stripe_subscription_id: null,
         })
         .eq("stripe_customer_id", customerId)
+
+      if (error) {
+        console.error("[Stripe Webhook] Failed to downgrade subscription:", customerId, error)
+        return NextResponse.json({ error: "DB write failed" }, { status: 500 })
+      }
       break
     }
   }

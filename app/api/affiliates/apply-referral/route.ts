@@ -47,14 +47,23 @@ export async function POST(request: NextRequest) {
     trialExpiresAt.setDate(trialExpiresAt.getDate() + affiliate.trial_days)
 
     // Create the referral record
-    await supabase.from("affiliate_referrals").insert({
-      affiliate_id: affiliate.id,
-      user_id: userId,
-      trial_expires_at: trialExpiresAt.toISOString(),
-    })
+    const { data: referral, error: insertError } = await supabase
+      .from("affiliate_referrals")
+      .insert({
+        affiliate_id: affiliate.id,
+        user_id: userId,
+        trial_expires_at: trialExpiresAt.toISOString(),
+      })
+      .select("id")
+      .single()
+
+    if (insertError) {
+      console.error("[Affiliate] Failed to insert referral:", insertError)
+      return NextResponse.json({ error: "Failed to create referral" }, { status: 500 })
+    }
 
     // Update the user's profile with trial info
-    await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         referred_by_affiliate: affiliate.id,
@@ -62,6 +71,13 @@ export async function POST(request: NextRequest) {
         subscription_tier: "pro", // Grant Pro access during trial
       })
       .eq("id", userId)
+
+    if (updateError) {
+      // Rollback: delete the referral record since profile update failed
+      console.error("[Affiliate] Failed to update profile, rolling back referral:", updateError)
+      await supabase.from("affiliate_referrals").delete().eq("id", referral.id)
+      return NextResponse.json({ error: "Failed to apply referral" }, { status: 500 })
+    }
 
     return NextResponse.json({
       message: "Referral applied",

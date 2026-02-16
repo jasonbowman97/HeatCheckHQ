@@ -78,7 +78,7 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
     return rows
   }, [matchupStats, sortKey, sortDir])
 
-  const bounds = getStatBounds(sorted)
+  const bounds = useMemo(() => getStatBounds(sorted), [sorted])
 
   const SortHeader = ({ label, field, className }: { label: string; field: SortKey; className?: string }) => (
     <TableHead

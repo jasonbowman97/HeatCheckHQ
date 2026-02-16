@@ -110,6 +110,11 @@ function TierBadge({ tier }: { tier: Tier }) {
   return null
 }
 
+/* ─── Shared class constants (hoisted to avoid re-creation) ─── */
+
+const NAV_ACTIVE_CLASS = "text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md"
+const NAV_INACTIVE_CLASS = "text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+
 /* ─── Component ─── */
 
 interface DashboardShellProps {
@@ -142,8 +147,8 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
     return <>{children}</>
   }
 
-  const activeClass = "text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md"
-  const inactiveClass = "text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+  const activeClass = NAV_ACTIVE_CLASS
+  const inactiveClass = NAV_INACTIVE_CLASS
 
   const headerSubtitle = subtitle ?? `${config.subtitle} ${PAGE_NAMES[page] ?? page}`
 
@@ -193,7 +198,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground md:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-foreground md:hidden"
                 aria-label="Open navigation"
               >
                 <Menu className="h-5 w-5" />

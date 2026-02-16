@@ -9,6 +9,7 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { DateNavigator } from "@/components/nba/date-navigator"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -52,7 +53,7 @@ function FilterGroup<T extends string>({
         {showAll && (
           <button
             onClick={() => onChange("ALL" as T | "ALL")}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
               value === "ALL"
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -65,7 +66,7 @@ function FilterGroup<T extends string>({
           <button
             key={opt.key}
             onClick={() => onChange(opt.key)}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
               value === opt.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -189,7 +190,7 @@ export default function DefenseVsPositionPage() {
             <div className="flex rounded-lg border border-border overflow-hidden">
               <button
                 onClick={() => setViewMode("matchups")}
-                className={`px-4 py-2 text-xs font-semibold transition-colors ${
+                className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "matchups"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground hover:text-foreground"
@@ -199,7 +200,7 @@ export default function DefenseVsPositionPage() {
               </button>
               <button
                 onClick={() => setViewMode("rankings")}
-                className={`px-4 py-2 text-xs font-semibold transition-colors ${
+                className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "rankings"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground hover:text-foreground"
@@ -370,16 +371,7 @@ function MatchupsView({
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Loading defensive rankings...
-          </p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={5} />
   }
 
   if (matchups.length === 0) {
@@ -535,14 +527,7 @@ function RankingsView({
   const statLabel = STAT_CATEGORIES.find((c) => c.key === stat)?.label ?? stat
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading rankings...</p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={10} columns={6} />
   }
 
   if (rankings.length === 0) {

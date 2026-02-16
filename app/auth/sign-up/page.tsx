@@ -109,7 +109,7 @@ function SignUpForm() {
           </p>
         )}
 
-        <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+        <form onSubmit={handleSignUp} aria-label="Create account" className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="email" className="text-sm text-foreground">Email</Label>
             <Input
@@ -119,6 +119,8 @@ function SignUpForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              aria-describedby={error ? "signup-error" : undefined}
               className="bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
@@ -132,6 +134,7 @@ function SignUpForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
@@ -145,12 +148,13 @@ function SignUpForm() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive">{error}</p>
+            <p id="signup-error" role="alert" className="text-sm text-destructive">{error}</p>
           )}
 
           <Button

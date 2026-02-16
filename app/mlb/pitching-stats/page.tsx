@@ -87,7 +87,7 @@ export default function PitchingStatsPage() {
                       <button
                         key={v}
                         onClick={() => setViewFilter(v)}
-                        className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                        className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                           viewFilter === v
                             ? "bg-primary text-primary-foreground"
                             : "bg-card text-muted-foreground hover:text-foreground"
@@ -108,7 +108,7 @@ export default function PitchingStatsPage() {
                     <button
                       key={h}
                       onClick={() => setHandFilter(h)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
                         handFilter === h
                           ? "bg-primary text-primary-foreground"
                           : "bg-card text-muted-foreground hover:text-foreground"

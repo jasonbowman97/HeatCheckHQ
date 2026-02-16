@@ -138,7 +138,7 @@ export function WeatherPageClient() {
         {/* Title + badges */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-xl font-semibold text-foreground">
               Stadium Weather
             </h1>
             {liveGames.length > 0 && hasLiveWeather && (

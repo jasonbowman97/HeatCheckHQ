@@ -41,7 +41,7 @@ export function HeroSection() {
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-medium text-muted-foreground">
-                Live for the 2025-26 season — data updated daily
+                Live for the 2025–26 season — updated daily
               </span>
             </div>
           </FadeIn>

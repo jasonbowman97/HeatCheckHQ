@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock } from "lucide-react
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
@@ -69,7 +70,7 @@ export default function NrfiPage() {
         {/* Title */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground text-balance">No Run First Inning</h1>
+            <h1 className="text-xl font-semibold text-foreground">No Run First Inning</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -130,7 +131,7 @@ export default function NrfiPage() {
                   <button
                     key={hand}
                     onClick={() => setHandFilter(hand)}
-                    className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                       handFilter === hand
                         ? "bg-primary text-primary-foreground"
                         : "bg-card text-muted-foreground hover:text-foreground"
@@ -157,12 +158,7 @@ export default function NrfiPage() {
         </div>
 
         {/* Loading state */}
-        {isLoading && (
-          <div className="rounded-xl border border-border bg-card p-12 text-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Loading NRFI matchups...</p>
-          </div>
-        )}
+        {isLoading && <TableSkeleton rows={6} columns={5} />}
 
         {/* Data */}
         {!isLoading && (

@@ -15,6 +15,7 @@ import { H2HInjuries } from "@/components/nba/h2h-injuries"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { DateNavigator } from "@/components/nba/date-navigator"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -163,7 +164,7 @@ export default function NBAH2HPage() {
         {/* Heading */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-foreground">Head-to-Head</h2>
+            <h1 className="text-xl font-semibold text-foreground">Head-to-Head</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -183,6 +184,9 @@ export default function NBAH2HPage() {
             </p>
           </div>
         </div>
+
+        {/* Loading skeleton */}
+        {isLoading && games.length === 0 && <TableSkeleton rows={5} columns={4} />}
 
         {/* No games state */}
         {!isLoading && games.length === 0 && (

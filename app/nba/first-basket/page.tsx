@@ -227,7 +227,7 @@ export default function NBAFirstBasketPage() {
                       key={threshold}
                       type="button"
                       onClick={() => setMinGames(threshold)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
                         minGames === threshold
                           ? "bg-primary text-primary-foreground"
                           : "bg-card text-muted-foreground hover:text-foreground"

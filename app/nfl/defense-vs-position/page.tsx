@@ -94,7 +94,7 @@ function FilterGroup<T extends string>({
         {showAll && (
           <button
             onClick={() => onChange("ALL" as T | "ALL")}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
               value === "ALL"
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -107,7 +107,7 @@ function FilterGroup<T extends string>({
           <button
             key={opt.key}
             onClick={() => onChange(opt.key)}
-            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
               value === opt.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -207,7 +207,7 @@ export default function NFLDefenseVsPositionPage() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Defense vs Position</h2>
+            <h1 className="text-xl font-semibold text-foreground">Defense vs Position</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-sm text-muted-foreground">
@@ -220,7 +220,7 @@ export default function NFLDefenseVsPositionPage() {
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
               onClick={() => setViewMode("matchups")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
+              className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
                 viewMode === "matchups"
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-muted-foreground hover:text-foreground"
@@ -230,7 +230,7 @@ export default function NFLDefenseVsPositionPage() {
             </button>
             <button
               onClick={() => setViewMode("rankings")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
+              className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
                 viewMode === "rankings"
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-muted-foreground hover:text-foreground"

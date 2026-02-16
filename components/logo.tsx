@@ -6,42 +6,27 @@ export function Logo({ className = "h-5 w-5" }: { className?: string }) {
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Bar chart base - three ascending bars */}
-      <rect
-        x="2"
-        y="16"
-        width="4"
-        height="6"
-        rx="1"
-        className="fill-primary/60"
-      />
-      <rect
-        x="9"
-        y="12"
-        width="4"
-        height="10"
-        rx="1"
-        className="fill-primary/80"
-      />
-      <rect
-        x="16"
-        y="14"
-        width="4"
-        height="8"
-        rx="1"
+      {/* Flame — stylized upward fire shape */}
+      <path
+        d="M12 2C12 2 7 8.5 7 13a5 5 0 0 0 10 0c0-4.5-5-11-5-11z"
         className="fill-primary"
       />
-
-      {/* Flame on the tallest bar */}
+      {/* Inner flame highlight */}
       <path
-        d="M18 14c0 0-2.5-3-2.5-5.5c0-1.5 0.8-2.8 1.5-3.5c0.3 1.2 1.2 2 2 2.8c0.8 0.8 1.5 1.8 1.5 3.2c0 2-1.2 3-2.5 3z"
-        className="fill-primary"
-      />
-      <path
-        d="M18 14c0 0-1.2-1.5-1.2-2.8c0-0.8 0.4-1.4 0.7-1.7c0.15 0.6 0.6 1 1 1.4c0.4 0.4 0.7 0.9 0.7 1.6c0 1-0.6 1.5-1.2 1.5z"
+        d="M12 8c0 0-2.5 3.5-2.5 5.5a2.5 2.5 0 0 0 5 0c0-2-2.5-5.5-2.5-5.5z"
         className="fill-primary-foreground"
-        opacity="0.9"
+        opacity="0.85"
       />
+      {/* Checkmark at the base of the flame */}
+      <path
+        d="M9.5 14l1.75 1.75L14.5 12.5"
+        className="stroke-primary"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Bottom bar — data/analytics accent */}
+      <rect x="6" y="20" width="12" height="2" rx="1" className="fill-primary/50" />
     </svg>
   )
 }

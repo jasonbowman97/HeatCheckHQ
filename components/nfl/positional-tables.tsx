@@ -144,140 +144,88 @@ function HalfTable({
   )
 }
 
-// Passing
-export function PassingSection({
-  awayPlayers,
-  homePlayers,
+/* ============================================================
+   Generic section wrapper — eliminates boilerplate across
+   Passing / Rushing / Receiving sections.
+   ============================================================ */
+
+interface PositionalSectionProps<P> extends SideBySideProps {
+  title: string
+  col2Header: string
+  col3Header: string
+  logHeader: string
+  logLabel: "TDs" | "Att" | "Rec"
+  awayPlayers: P[]
+  homePlayers: P[]
+  mapPlayer: (p: P) => { name: string; position: string; col2: number; col3: number; gameLogs: GameLogEntry[] }
+}
+
+function PositionalSection<P>({
+  title,
   awayTeam,
   homeTeam,
-}: SideBySideProps & { awayPlayers: PassingPlayer[]; homePlayers: PassingPlayer[] }) {
+  col2Header,
+  col3Header,
+  logHeader,
+  logLabel,
+  awayPlayers,
+  homePlayers,
+  mapPlayer,
+}: PositionalSectionProps<P>) {
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-6 py-4 border-b border-border">
-        <h3 className="text-base font-bold text-foreground">Passing</h3>
+        <h3 className="text-base font-bold text-foreground">{title}</h3>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
-        <HalfTable
-          teamLabel={awayTeam}
-          col2Header="Yds/G"
-          col3Header="TDs/G"
-          logHeader="Game Logs — Yds (TDs)"
-          logLabel="TDs"
-          players={awayPlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.tdsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
-        <HalfTable
-          teamLabel={homeTeam}
-          col2Header="Yds/G"
-          col3Header="TDs/G"
-          logHeader="Game Logs — Yds (TDs)"
-          logLabel="TDs"
-          players={homePlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.tdsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
+        <HalfTable teamLabel={awayTeam} col2Header={col2Header} col3Header={col3Header} logHeader={logHeader} logLabel={logLabel} players={awayPlayers.map(mapPlayer)} />
+        <HalfTable teamLabel={homeTeam} col2Header={col2Header} col3Header={col3Header} logHeader={logHeader} logLabel={logLabel} players={homePlayers.map(mapPlayer)} />
       </div>
     </div>
+  )
+}
+
+// Passing
+export function PassingSection(props: SideBySideProps & { awayPlayers: PassingPlayer[]; homePlayers: PassingPlayer[] }) {
+  return (
+    <PositionalSection
+      {...props}
+      title="Passing"
+      col2Header="Yds/G"
+      col3Header="TDs/G"
+      logHeader="Game Logs — Yds (TDs)"
+      logLabel="TDs"
+      mapPlayer={(p) => ({ name: p.name, position: p.position, col2: p.yardsPerGame, col3: p.tdsPerGame, gameLogs: p.gameLogs })}
+    />
   )
 }
 
 // Rushing
-export function RushingSection({
-  awayPlayers,
-  homePlayers,
-  awayTeam,
-  homeTeam,
-}: SideBySideProps & { awayPlayers: RushingPlayer[]; homePlayers: RushingPlayer[] }) {
+export function RushingSection(props: SideBySideProps & { awayPlayers: RushingPlayer[]; homePlayers: RushingPlayer[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-6 py-4 border-b border-border">
-        <h3 className="text-base font-bold text-foreground">Rushing</h3>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
-        <HalfTable
-          teamLabel={awayTeam}
-          col2Header="Yds/G"
-          col3Header="Att/G"
-          logHeader="Game Logs — Yds (Att)"
-          logLabel="Att"
-          players={awayPlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.attemptsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
-        <HalfTable
-          teamLabel={homeTeam}
-          col2Header="Yds/G"
-          col3Header="Att/G"
-          logHeader="Game Logs — Yds (Att)"
-          logLabel="Att"
-          players={homePlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.attemptsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
-      </div>
-    </div>
+    <PositionalSection
+      {...props}
+      title="Rushing"
+      col2Header="Yds/G"
+      col3Header="Att/G"
+      logHeader="Game Logs — Yds (Att)"
+      logLabel="Att"
+      mapPlayer={(p) => ({ name: p.name, position: p.position, col2: p.yardsPerGame, col3: p.attemptsPerGame, gameLogs: p.gameLogs })}
+    />
   )
 }
 
 // Receiving
-export function ReceivingSection({
-  awayPlayers,
-  homePlayers,
-  awayTeam,
-  homeTeam,
-}: SideBySideProps & { awayPlayers: ReceivingPlayer[]; homePlayers: ReceivingPlayer[] }) {
+export function ReceivingSection(props: SideBySideProps & { awayPlayers: ReceivingPlayer[]; homePlayers: ReceivingPlayer[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-6 py-4 border-b border-border">
-        <h3 className="text-base font-bold text-foreground">Receiving</h3>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
-        <HalfTable
-          teamLabel={awayTeam}
-          col2Header="Yds/G"
-          col3Header="Tgts/G"
-          logHeader="Game Logs — Yds (Rec)"
-          logLabel="Rec"
-          players={awayPlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.targetsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
-        <HalfTable
-          teamLabel={homeTeam}
-          col2Header="Yds/G"
-          col3Header="Tgts/G"
-          logHeader="Game Logs — Yds (Rec)"
-          logLabel="Rec"
-          players={homePlayers.map((p) => ({
-            name: p.name,
-            position: p.position,
-            col2: p.yardsPerGame,
-            col3: p.targetsPerGame,
-            gameLogs: p.gameLogs,
-          }))}
-        />
-      </div>
-    </div>
+    <PositionalSection
+      {...props}
+      title="Receiving"
+      col2Header="Yds/G"
+      col3Header="Tgts/G"
+      logHeader="Game Logs — Yds (Rec)"
+      logLabel="Rec"
+      mapPlayer={(p) => ({ name: p.name, position: p.position, col2: p.yardsPerGame, col3: p.targetsPerGame, gameLogs: p.gameLogs })}
+    />
   )
 }

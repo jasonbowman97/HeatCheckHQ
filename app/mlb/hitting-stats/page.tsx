@@ -297,7 +297,7 @@ export default function Page() {
                       <button
                         key={hand}
                         onClick={() => setBatterHand(hand)}
-                        className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                        className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                           batterHand === hand
                             ? "bg-primary text-primary-foreground"
                             : "bg-card text-muted-foreground hover:text-foreground"
