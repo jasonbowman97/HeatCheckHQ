@@ -10,6 +10,10 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
+  Download,
+  Image as ImageIcon,
+  Sparkles,
+  Loader2,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 
@@ -39,6 +43,23 @@ interface TweetsResponse {
   tweets: Tweet[]
 }
 
+interface GeneratedSheet {
+  type: string
+  imageUrl: string
+  tweet: string
+  reply: string
+  altText: string
+  hashtags: string[]
+  dataAvailable: boolean
+}
+
+interface GenerateResponse {
+  date: string
+  generatedAt: string
+  sheets: GeneratedSheet[]
+  unavailable: string[]
+}
+
 type Category = keyof TweetsResponse["categories"]
 
 const CATEGORIES: { key: Category; label: string; time: string }[] = [
@@ -48,6 +69,14 @@ const CATEGORIES: { key: Category; label: string; time: string }[] = [
   { key: "engagement", label: "Engagement", time: "Anytime" },
   { key: "educational", label: "Educational", time: "1-2x/wk" },
 ]
+
+const SHEET_LABELS: Record<string, { label: string; emoji: string }> = {
+  nba_dvp: { label: "NBA DVP", emoji: "🏀" },
+  nba_parlay: { label: "NBA Parlay", emoji: "🏀" },
+  mlb_nrfi: { label: "MLB NRFI", emoji: "⚾" },
+  mlb_strikeout: { label: "MLB Strikeouts", emoji: "⚾" },
+  daily_recap: { label: "Daily Recap", emoji: "🔥" },
+}
 
 /* ── localStorage helpers ── */
 
@@ -84,6 +113,13 @@ export default function AdminSocialPage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set())
 
+  // Cheat sheet state
+  const [viewMode, setViewMode] = useState<"tweets" | "sheets">("sheets")
+  const [sheets, setSheets] = useState<GeneratedSheet[]>([])
+  const [sheetsLoading, setSheetsLoading] = useState(false)
+  const [sheetsError, setSheetsError] = useState<string | null>(null)
+  const [generatingCopy, setGeneratingCopy] = useState(false)
+
   const loadTweets = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -106,9 +142,49 @@ export default function AdminSocialPage() {
     }
   }, [])
 
+  const generateSheets = useCallback(async () => {
+    setGeneratingCopy(true)
+    setSheetsError(null)
+    try {
+      const res = await fetch("/api/social/generate", { method: "POST" })
+      if (!res.ok) throw new Error(`${res.status}`)
+      const json: GenerateResponse = await res.json()
+      setSheets(json.sheets)
+    } catch (e) {
+      setSheetsError(String(e))
+    } finally {
+      setGeneratingCopy(false)
+    }
+  }, [])
+
+  // Load sheet previews (images only, no Claude copy yet)
+  const loadSheetPreviews = useCallback(async () => {
+    setSheetsLoading(true)
+    setSheetsError(null)
+    try {
+      // Just build preview URLs for each sheet type
+      const sheetTypes = ["nba_dvp", "nba_parlay", "mlb_nrfi", "mlb_strikeout", "daily_recap"]
+      const previews: GeneratedSheet[] = sheetTypes.map((type) => ({
+        type,
+        imageUrl: `/api/social/sheets/${type}`,
+        tweet: "",
+        reply: "",
+        altText: "",
+        hashtags: [],
+        dataAvailable: true,
+      }))
+      setSheets(previews)
+    } catch (e) {
+      setSheetsError(String(e))
+    } finally {
+      setSheetsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     loadTweets()
-  }, [loadTweets])
+    loadSheetPreviews()
+  }, [loadTweets, loadSheetPreviews])
 
   function tweetKey(tweet: Tweet, idx: number): string {
     return `${tweet.timeSlot}-${tweet.type}-${idx}`
@@ -158,11 +234,26 @@ export default function AdminSocialPage() {
     }
   }
 
+  async function downloadImage(imageUrl: string, filename: string) {
+    try {
+      const res = await fetch(imageUrl)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error("Download failed:", e)
+    }
+  }
+
   const activeTweets = data?.categories[activeTab] ?? []
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Back link */}
         <Link
           href="/"
@@ -173,7 +264,7 @@ export default function AdminSocialPage() {
         </Link>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-6">
           <Logo className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Social Content Engine</h1>
@@ -183,31 +274,214 @@ export default function AdminSocialPage() {
                 : "Loading..."}
             </p>
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={generateSheets}
+              disabled={generatingCopy}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {generatingCopy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              {generatingCopy ? "Generating..." : "Generate with AI"}
+            </button>
+            <button
+              onClick={loadTweets}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* View mode tabs */}
+        <div className="flex gap-1 rounded-lg border border-border bg-card p-1 mb-6">
           <button
-            onClick={loadTweets}
-            disabled={loading}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+            onClick={() => setViewMode("sheets")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-colors ${
+              viewMode === "sheets"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            }`}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            <ImageIcon className="h-4 w-4" />
+            Cheat Sheets
+          </button>
+          <button
+            onClick={() => setViewMode("tweets")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-colors ${
+              viewMode === "tweets"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Template Tweets
           </button>
         </div>
 
         {/* Error */}
-        {error && (
+        {(error || sheetsError) && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 mb-6">
-            Failed to load tweets: {error}
+            {error ? `Failed to load tweets: ${error}` : `Failed to load sheets: ${sheetsError}`}
           </div>
         )}
 
         {/* Loading */}
-        {loading && !data && (
+        {loading && !data && viewMode === "tweets" && (
           <div className="flex items-center justify-center py-20">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
 
-        {data && (
+        {/* ── CHEAT SHEETS VIEW ── */}
+        {viewMode === "sheets" && (
+          <div className="flex flex-col gap-6">
+            {sheetsLoading && (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+
+            {sheets.map((sheet) => {
+              const meta = SHEET_LABELS[sheet.type] || {
+                label: sheet.type,
+                emoji: "📊",
+              }
+
+              return (
+                <div
+                  key={sheet.type}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  {/* Sheet header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{meta.emoji}</span>
+                      <span className="text-sm font-bold text-foreground">
+                        {meta.label.toUpperCase()} CHEAT SHEET
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          downloadImage(
+                            sheet.imageUrl,
+                            `${sheet.type}-${new Date().toISOString().slice(0, 10)}.png`
+                          )
+                        }
+                        className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download PNG
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sheet image preview */}
+                  <div className="p-4 bg-black/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={sheet.imageUrl}
+                      alt={sheet.altText || `${meta.label} cheat sheet`}
+                      className="w-full rounded-lg border border-border/50"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  {/* AI-generated copy (if available) */}
+                  {sheet.tweet && (
+                    <div className="border-t border-border">
+                      <div className="px-4 py-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-bold text-primary">
+                            AI-GENERATED COPY
+                          </span>
+                          <button
+                            onClick={() =>
+                              copyText(sheet.tweet, `sheet-tweet-${sheet.type}`)
+                            }
+                            className="ml-auto flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+                          >
+                            {copiedKey === `sheet-tweet-${sheet.type}` ? (
+                              <Check className="h-3 w-3 text-emerald-400" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                            Copy
+                          </button>
+                        </div>
+                        <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed mb-3">
+                          {sheet.tweet}
+                        </pre>
+
+                        {/* Reply */}
+                        {sheet.reply && (
+                          <div className="rounded-lg bg-secondary/30 p-3 mt-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-bold text-muted-foreground">
+                                REPLY TWEET
+                              </span>
+                              <button
+                                onClick={() =>
+                                  copyText(sheet.reply, `sheet-reply-${sheet.type}`)
+                                }
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {copiedKey === `sheet-reply-${sheet.type}` ? (
+                                  <Check className="h-3 w-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                            <pre className="whitespace-pre-wrap font-sans text-xs text-muted-foreground leading-relaxed">
+                              {sheet.reply}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* Hashtags */}
+                        {sheet.hashtags.length > 0 && (
+                          <div className="flex gap-2 mt-3">
+                            {sheet.hashtags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {sheets.length === 0 && !sheetsLoading && (
+              <div className="rounded-xl border border-border bg-card p-12 text-center">
+                <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  No cheat sheets loaded
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click &quot;Generate with AI&quot; to create today&apos;s sheets with Claude-powered copy.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TEMPLATE TWEETS VIEW ── */}
+        {viewMode === "tweets" && data && (
           <>
             {/* Category tabs */}
             <div className="flex gap-1 rounded-lg border border-border bg-card p-1 mb-6 overflow-x-auto">
