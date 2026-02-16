@@ -17,7 +17,7 @@ import type { Trend } from "./trends-types"
 const BATCH_SIZE = 15
 const MIN_MPG = 20
 
-interface NBAGameLogEntry {
+export interface NBAGameLogEntry {
   date: string
   opponent: string
   stats: Record<string, number>
@@ -25,7 +25,7 @@ interface NBAGameLogEntry {
 
 /** Parse ESPN NBA gamelog response into flat stat entries.
  *  Handles hyphenated "made-attempted" fields (FG, 3PT, FT) by splitting them. */
-function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
+export function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
   const labels = (raw.labels ?? []) as string[]
   const eventMeta = (raw.events ?? {}) as Record<string, Record<string, unknown>>
 
@@ -56,6 +56,9 @@ function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
         }
       })
       const meta = eventMeta[eventId]
+      // Skip All-Star, Rising Stars, and other exhibition events
+      const eventNote = (meta?.eventNote as string) ?? ""
+      if (eventNote.includes("All-Star")) continue
       const opponent = (meta?.opponent as Record<string, unknown>)?.abbreviation as string ?? ""
       const date = (meta?.gameDate as string) ?? ""
       entries.push({ date, opponent, stats: statMap })
@@ -66,12 +69,12 @@ function parseNBAGameLog(raw: Record<string, unknown>): NBAGameLogEntry[] {
   return entries.slice(0, 20)
 }
 
-function seasonAvg(gameLogs: NBAGameLogEntry[], stat: string): number {
+export function seasonAvg(gameLogs: NBAGameLogEntry[], stat: string): number {
   if (gameLogs.length === 0) return 0
   return gameLogs.reduce((s, g) => s + (g.stats[stat] ?? 0), 0) / gameLogs.length
 }
 
-function isRotationPlayer(gameLogs: NBAGameLogEntry[]): boolean {
+export function isRotationPlayer(gameLogs: NBAGameLogEntry[]): boolean {
   if (gameLogs.length < 5) return false
   return seasonAvg(gameLogs, "MIN") >= MIN_MPG
 }
@@ -129,6 +132,7 @@ function detectNBAStreaks(
       recentGames: bigScoringGames, currentStreak: scoringStreak,
       statValue: `${recentAvg.toFixed(1)} PPG`,
       seasonAvg: `${avgPts.toFixed(1)} PPG`,
+      eliteStreak: true,
     })
   }
 
@@ -214,7 +218,23 @@ function detectNBAStreaks(
     })
   }
 
-  // 7. Assist streak (8+)
+  // 7a. Assist streak (6+) — for social graphics
+  const ast6Games = last10.map((g) => (g.stats.AST ?? 0) >= 6)
+  const ast6Streak = calcStreak(ast6Games)
+  if (ast6Streak >= 5) {
+    const recentAst = last10.reduce((s, g) => s + (g.stats.AST ?? 0), 0) / last10.length
+    streaks.push({
+      playerId, playerName, team, position,
+      streakType: "hot", category: "Assists", statLabel: "6+ AST Games",
+      streakDescription: `${ast6Streak} straight games with 6+ assists`,
+      recentGames: ast6Games, currentStreak: ast6Streak,
+      statValue: `${recentAst.toFixed(1)} APG`,
+      seasonAvg: `${avgAst.toFixed(1)} APG`,
+      eliteStreak: true,
+    })
+  }
+
+  // 7b. Assist streak (8+)
   const assistGames = last10.map((g) => (g.stats.AST ?? 0) >= 8)
   const assistStreak = calcStreak(assistGames)
   if (assistStreak >= 4) {
@@ -229,7 +249,23 @@ function detectNBAStreaks(
     })
   }
 
-  // 8. Rebounding streak (10+)
+  // 8a. Rebounding streak (8+) — for social graphics
+  const reb8Games = last10.map((g) => (g.stats.REB ?? 0) >= 8)
+  const reb8Streak = calcStreak(reb8Games)
+  if (reb8Streak >= 5) {
+    const recentReb = last10.reduce((s, g) => s + (g.stats.REB ?? 0), 0) / last10.length
+    streaks.push({
+      playerId, playerName, team, position,
+      streakType: "hot", category: "Rebounds", statLabel: "8+ REB Games",
+      streakDescription: `${reb8Streak} straight games with 8+ rebounds`,
+      recentGames: reb8Games, currentStreak: reb8Streak,
+      statValue: `${recentReb.toFixed(1)} RPG`,
+      seasonAvg: `${avgReb.toFixed(1)} RPG`,
+      eliteStreak: true,
+    })
+  }
+
+  // 8b. Rebounding streak (10+)
   const rebGames = last10.map((g) => (g.stats.REB ?? 0) >= 10)
   const rebStreak = calcStreak(rebGames)
   if (rebStreak >= 4) {
@@ -262,6 +298,7 @@ function detectNBAStreaks(
   }
 
   // ═══ THRESHOLD CONSISTENCY (prop-style O/U thresholds) ═══
+
 
   // Points thresholds — common prop lines
   const ptsThresholds = [
@@ -307,6 +344,7 @@ function detectNBAStreaks(
   const rebThresholds = [
     { line: 5.5, minAvg: 4.5 },
     { line: 7.5, minAvg: 6.5 },
+    { line: 9.5, minAvg: 8 },
     { line: 10.5, minAvg: 9 },
   ]
   for (const { line, minAvg } of rebThresholds) {
@@ -345,7 +383,9 @@ function detectNBAStreaks(
   // Assists thresholds
   const astThresholds = [
     { line: 4.5, minAvg: 3.5 },
+    { line: 5.5, minAvg: 4.5 },
     { line: 6.5, minAvg: 5.5 },
+    { line: 7.5, minAvg: 6 },
     { line: 9.5, minAvg: 8 },
   ]
   for (const { line, minAvg } of astThresholds) {
@@ -526,7 +566,7 @@ function detectNBAStreaks(
 }
 
 /** Get ALL NBA players from team rosters */
-async function getAllNBAPlayers(): Promise<Array<{ id: string; name: string; team: string; position: string }>> {
+export async function getAllNBAPlayers(): Promise<Array<{ id: string; name: string; team: string; position: string }>> {
   const teamsRaw = await fetchNBATeams()
   const sports = (teamsRaw as Record<string, unknown[]>).sports ?? []
   const teamIds: { id: string; abbr: string }[] = []
@@ -565,7 +605,7 @@ async function getAllNBAPlayers(): Promise<Array<{ id: string; name: string; tea
 }
 
 /** Get today's games to tag players as "playing today" */
-async function getTodayGames(): Promise<Map<string, string>> {
+export async function getTodayGames(): Promise<Map<string, string>> {
   const teamToOpponent = new Map<string, string>()
   try {
     const scoreboard = await fetchNBAScoreboard()
@@ -628,6 +668,7 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
       const opponent = todayGames.get(streak.team)
       return {
         id: `nba-streak-${idx}`,
+        playerId: streak.playerId,
         playerName: streak.playerName,
         team: streak.team,
         position: streak.position,
@@ -644,6 +685,7 @@ export async function getNBAStreakTrends(): Promise<Trend[]> {
         playingToday: !!opponent,
         opponent: opponent ?? undefined,
         threshold: streak.threshold,
+        eliteStreak: streak.eliteStreak,
       }
     })
 

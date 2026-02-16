@@ -47,6 +47,7 @@ const NBA_NAV: NavLink[] = [
   { href: "/nba/first-basket", label: "First Basket", tier: "free" },
   { href: "/nba/head-to-head", label: "H2H", tier: "free" },
   { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free" },
+  { href: "/nba/streaks", label: "Streak Tracker", tier: "free" },
   { href: "/nba/trends", label: "Trends", tier: "free" },
 ]
 
@@ -96,6 +97,7 @@ const PAGE_NAMES: Record<string, string> = {
   "head-to-head": "Head-to-Head",
   "defense-vs-position": "Defense vs Position",
   matchup: "Matchup",
+  streaks: "Streak Tracker",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
