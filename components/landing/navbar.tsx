@@ -98,6 +98,9 @@ export function Navbar() {
           <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Pricing
           </a>
+          <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Blog
+          </Link>
 
           <div className="h-4 w-px bg-border" />
 
@@ -159,6 +162,7 @@ export function Navbar() {
             <a href="#dashboards" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Dashboards</a>
             <a href="#features" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Features</a>
             <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Pricing</a>
+            <Link href="/blog" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Blog</Link>
 
             {sportLinks.map((sport) => (
               <div key={sport.sport} className="border-t border-border/50 pt-3">

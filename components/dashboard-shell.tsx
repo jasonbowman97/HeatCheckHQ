@@ -19,8 +19,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { OnboardingTooltip } from "@/components/onboarding-tooltip"
+import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
+import { useUserTier } from "@/components/user-tier-provider"
 
 /* ─── Navigation config per sport ─── */
 
@@ -119,6 +121,15 @@ interface DashboardShellProps {
 export function DashboardShell({ children, subtitle }: DashboardShellProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
+  const userTier = useUserTier()
+
+  useEffect(() => {
+    if (userTier !== "anonymous" && !isOnboarded()) {
+      const timer = setTimeout(() => setShowWelcome(true), 500)
+      return () => clearTimeout(timer)
+    }
+  }, [userTier])
 
   // Derive sport and page from pathname
   const segments = pathname.split("/").filter(Boolean)
@@ -287,6 +298,9 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+
+      {/* ── Welcome modal for first-time authenticated users ── */}
+      <WelcomeModal open={showWelcome} onOpenChange={setShowWelcome} />
 
       {/* ── Onboarding tips for first-time visitors ── */}
       <OnboardingTooltip pathname={pathname} />
