@@ -104,10 +104,9 @@ export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
                   fontFamily: "Inter-SemiBold",
                   fontSize: 14,
                   color: COLORS.muted,
-                  textTransform: "uppercase" as const,
                 }}
               >
-                {row.statCategory}
+                {row.statCategory.toUpperCase()}
               </span>
             </div>
 
@@ -169,10 +168,9 @@ function HeaderCell({ width, text }: { width: number; text: string }) {
           fontSize: 12,
           color: COLORS.primary,
           letterSpacing: 1.5,
-          textTransform: "uppercase" as const,
         }}
       >
-        {text}
+        {text.toUpperCase()}
       </span>
     </div>
   )

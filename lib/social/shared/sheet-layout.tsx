@@ -23,43 +23,13 @@ export function SheetLayout({
         flexDirection: "column",
         width,
         height,
-        background: `linear-gradient(180deg, ${COLORS.background} 0%, ${COLORS.backgroundAlt} 100%)`,
+        backgroundColor: COLORS.background,
         fontFamily: "Inter-Regular",
         color: COLORS.foreground,
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Subtle dot pattern overlay */}
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `radial-gradient(circle, ${COLORS.border} 1px, transparent 1px)`,
-          backgroundSize: "24px 24px",
-          opacity: 0.3,
-        }}
-      />
-
-      {/* Subtle glow behind title */}
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          top: -100,
-          left: "50%",
-          width: 600,
-          height: 300,
-          borderRadius: 9999,
-          background: `radial-gradient(circle, rgba(45, 212, 168, 0.08), transparent)`,
-          transform: "translateX(-50%)",
-        }}
-      />
-
       {/* Header bar */}
       <div
         style={{
@@ -68,8 +38,6 @@ export function SheetLayout({
           justifyContent: "space-between",
           padding: `${SHEET.padding}px ${SHEET.padding}px 0`,
           height: SHEET.headerHeight,
-          position: "relative",
-          zIndex: 1,
         }}
       >
         {/* Logo + Brand */}
@@ -81,10 +49,9 @@ export function SheetLayout({
               fontSize: 18,
               color: COLORS.primary,
               letterSpacing: 1,
-              textTransform: "uppercase" as const,
             }}
           >
-            {BRAND.url}
+            {BRAND.url.toUpperCase()}
           </span>
         </div>
 
@@ -108,24 +75,32 @@ export function SheetLayout({
           alignItems: "center",
           justifyContent: "center",
           padding: `16px ${SHEET.padding}px`,
-          position: "relative",
-          zIndex: 1,
         }}
       >
-        <h1
+        <span
           style={{
             fontFamily: "Inter-Bold",
             fontSize: 36,
             color: COLORS.foreground,
             letterSpacing: 2,
-            textTransform: "uppercase" as const,
-            textAlign: "center" as const,
-            margin: 0,
           }}
         >
           {title}
-        </h1>
+        </span>
       </div>
+
+      {/* Accent line */}
+      <div
+        style={{
+          display: "flex",
+          height: 2,
+          marginLeft: SHEET.padding,
+          marginRight: SHEET.padding,
+          backgroundColor: COLORS.primary,
+          opacity: 0.3,
+          marginBottom: 12,
+        }}
+      />
 
       {/* Content area */}
       <div
@@ -134,8 +109,6 @@ export function SheetLayout({
           flexDirection: "column",
           flex: 1,
           padding: `0 ${SHEET.padding}px`,
-          position: "relative",
-          zIndex: 1,
         }}
       >
         {children}
@@ -149,8 +122,6 @@ export function SheetLayout({
           justifyContent: "space-between",
           padding: `0 ${SHEET.padding}px ${SHEET.padding / 2}px`,
           height: SHEET.footerHeight,
-          position: "relative",
-          zIndex: 1,
         }}
       >
         <span
@@ -175,7 +146,6 @@ function BrandLogo({ size = 24 }: { size?: number }) {
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      style={{ flexShrink: 0 }}
     >
       <rect
         x="3"
