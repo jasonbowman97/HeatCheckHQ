@@ -64,9 +64,26 @@ export interface RecapSection {
   detail: string
 }
 
+export interface StreakSheetRow {
+  playerName: string
+  team: string
+  teamLogo: string
+  statLabel: string        // "25+ PTS", "10+ REB", "8+ AST"
+  hitCount: number         // 7, 8, 9, or 10
+  windowSize: number       // 10
+  recentGames: boolean[]   // last 10 hit/miss
+  gameStats: number[]      // actual stat values per game (e.g., [28, 22, 30, ...])
+  windowAvg: number        // average over window
+  seasonAvg: number        // season average
+  opponent?: string        // if playing today
+}
+
 export type SheetType =
   | "nba_dvp"
   | "nba_parlay"
   | "mlb_nrfi"
   | "mlb_strikeout"
   | "daily_recap"
+  | "nba_pts_streaks"
+  | "nba_reb_streaks"
+  | "nba_ast_streaks"

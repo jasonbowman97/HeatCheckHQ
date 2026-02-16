@@ -1,5 +1,7 @@
 export interface Trend {
   id: string
+  /** ESPN athlete ID — used for fetching game logs on click */
+  playerId?: string
   playerName: string
   team: string
   position: string
@@ -31,4 +33,6 @@ export interface Trend {
     /** Hit rate as a decimal for sorting (e.g. 0.8) */
     hitPct: number
   }
+  /** Flagged as an elite streak for social media graphics (20+ PTS, 8+ REB, 6+ AST consecutive) */
+  eliteStreak?: boolean
 }

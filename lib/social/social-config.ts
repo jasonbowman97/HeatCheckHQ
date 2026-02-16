@@ -67,3 +67,11 @@ export const BRAND = {
   url: "heatcheckhq.io",
   tagline: "Your daily heat checks for every play",
 } as const
+
+/* ── Social Persona ── */
+
+export const PERSONA = {
+  name: "Velma",
+  handle: "@HeatCheckHQ",
+  voice: "confident, data-driven, playful — she brings the receipts and the personality",
+} as const

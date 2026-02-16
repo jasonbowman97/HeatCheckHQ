@@ -22,10 +22,10 @@ interface SheetContext {
   dataSummary: string
 }
 
-const SYSTEM_PROMPT = `You are the social media voice of HeatCheck HQ (heatcheckhq.io), a free sports analytics platform. Your tweets accompany daily cheat sheet graphics posted on Twitter/X.
+const SYSTEM_PROMPT = `You are Velma, the social media voice of HeatCheck HQ (heatcheckhq.io), a free sports analytics platform. Your tweets accompany daily cheat sheet graphics posted on Twitter/X.
 
 BRAND VOICE:
-- Confident, data-backed, conversational — never salesy
+- You're Velma — confident, data-driven, playful. You bring the receipts and the personality.
 - Position as "your daily heat checks" — the edge bettors screenshot and save
 - Use emojis sparingly (1-3 per tweet max): 🔥🏀⚾🏈💰📊
 - Vary tone: some analytical ("The data says..."), some hype ("This is filthy"), some educational ("Did you know...")
@@ -144,6 +144,24 @@ function templateFallback(context: SheetContext): TweetCopy {
       altText: `Daily sports recap card for ${date} with DVP mismatch spotlight, hottest streak, parlay piece, and fade alert.`,
       hashtags: ["SportsBetting", "DFS", "GamblingTwitter"],
     },
+    nba_pts_streaks: {
+      mainTweet: `🏀 POINTS STREAK WATCH — ${date}\n\nThese players are on active 20+ point streaks. Consecutive games.\n\nWho keeps the streak alive tonight? 👇`,
+      replyTweet: `📊 Track every NBA player's streaks → heatcheckhq.io/nba/trends\n\nVelma's got the receipts.`,
+      altText: `NBA points streak watch for ${date} showing players on active 20+ point scoring streaks.`,
+      hashtags: ["NBA", "PlayerProps", "GamblingTwitter"],
+    },
+    nba_reb_streaks: {
+      mainTweet: `🏀 REBOUNDS STREAK WATCH — ${date}\n\nThese players are on active 8+ rebound streaks. Every. Single. Game.\n\nWho's dominating the glass tonight? 👇`,
+      replyTweet: `📊 Full rebound streaks and more → heatcheckhq.io/nba/trends\n\nAll free. All data.`,
+      altText: `NBA rebounds streak watch for ${date} showing players on active 8+ rebound streaks.`,
+      hashtags: ["NBA", "Rebounds", "PlayerProps"],
+    },
+    nba_ast_streaks: {
+      mainTweet: `🏀 ASSISTS STREAK WATCH — ${date}\n\nThese players are on active 6+ assist streaks. Dishing it out nightly.\n\nWho's running the offense tonight? 👇`,
+      replyTweet: `📊 Assist streaks and prop consistency → heatcheckhq.io/nba/trends\n\nVelma never misses.`,
+      altText: `NBA assists streak watch for ${date} showing players on active 6+ assist streaks.`,
+      hashtags: ["NBA", "Assists", "PlayerProps"],
+    },
   }
 
   return templates[type] || templates.daily_recap
@@ -238,6 +256,31 @@ export function buildDataSummary(type: string, data: Record<string, unknown>): s
       }>
       if (!sections?.length) return "No recap data today."
       return sections.map((s) => `${s.title}: ${s.playerName} — ${s.stat}. ${s.detail}`).join(" | ")
+    }
+    case "nba_pts_streaks":
+    case "nba_reb_streaks":
+    case "nba_ast_streaks": {
+      const rows = data.rows as Array<{
+        playerName: string
+        team: string
+        hitCount: number
+        windowSize: number
+        windowAvg: number
+        seasonAvg: number
+        opponent?: string
+      }>
+      if (!rows?.length) return "No streak data today."
+      const statName = type === "nba_pts_streaks" ? "points" : type === "nba_reb_streaks" ? "rebounds" : "assists"
+      const threshold = type === "nba_pts_streaks" ? 20 : type === "nba_reb_streaks" ? 8 : 6
+      const top3 = rows.slice(0, 3)
+      return [
+        `${rows.length} players on active ${threshold}+ ${statName} streaks (consecutive games).`,
+        `Top: ${top3[0].playerName} (${top3[0].team}) — ${top3[0].hitCount} straight games.`,
+        top3.length > 1 ? `Also: ${top3[1].playerName} (${top3[1].team}) — ${top3[1].hitCount} straight.` : "",
+        top3.length > 2 ? `And: ${top3[2].playerName} (${top3[2].team}) — ${top3[2].hitCount} straight.` : "",
+      ]
+        .filter(Boolean)
+        .join(" ")
     }
     default:
       return "General sports data summary."

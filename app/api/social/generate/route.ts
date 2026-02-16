@@ -68,6 +68,17 @@ export async function POST(req: NextRequest) {
     const teams = teamsResult.status === "fulfilled" ? teamsResult.value : []
     const mlbGames = mlbResult.status === "fulfilled" ? mlbResult.value.games : []
 
+    // Extract elite consecutive streaks by stat for streak sheets
+    const elitePtsStreaks = trends.filter(
+      (t: Trend) => t.eliteStreak && t.type === "hot" && t.statLabel === "20+ PTS Games"
+    )
+    const eliteRebStreaks = trends.filter(
+      (t: Trend) => t.eliteStreak && t.type === "hot" && t.statLabel === "8+ REB Games"
+    )
+    const eliteAstStreaks = trends.filter(
+      (t: Trend) => t.eliteStreak && t.type === "hot" && t.statLabel === "6+ AST Games"
+    )
+
     // Determine which sheets have data
     const hasDvp = dvpMatchups.length > 0 && dvpMatchups.some((m) => m.insights.length > 0)
     const hasParlay = trends.filter((t: Trend) => t.threshold && t.playingToday && t.type === "hot").length > 0
@@ -204,6 +215,50 @@ export async function POST(req: NextRequest) {
                 ].filter(Boolean)
               : []),
           ],
+        },
+      },
+      // Streak sheets — the sheet renderer fetches gamelogs internally,
+      // but we pass summary data for Claude copywriter context.
+      {
+        type: "nba_pts_streaks",
+        available: elitePtsStreaks.length > 0,
+        data: {
+          rows: elitePtsStreaks.map((t) => ({
+            playerName: t.playerName,
+            team: t.team || "",
+            hitCount: t.streakLength,
+            windowSize: 10,
+            windowAvg: t.threshold?.hitPct ? t.threshold.hitPct * 10 : t.streakLength,
+            seasonAvg: 0,
+          })),
+        },
+      },
+      {
+        type: "nba_reb_streaks",
+        available: eliteRebStreaks.length > 0,
+        data: {
+          rows: eliteRebStreaks.map((t) => ({
+            playerName: t.playerName,
+            team: t.team || "",
+            hitCount: t.streakLength,
+            windowSize: 10,
+            windowAvg: t.threshold?.hitPct ? t.threshold.hitPct * 10 : t.streakLength,
+            seasonAvg: 0,
+          })),
+        },
+      },
+      {
+        type: "nba_ast_streaks",
+        available: eliteAstStreaks.length > 0,
+        data: {
+          rows: eliteAstStreaks.map((t) => ({
+            playerName: t.playerName,
+            team: t.team || "",
+            hitCount: t.streakLength,
+            windowSize: 10,
+            windowAvg: t.threshold?.hitPct ? t.threshold.hitPct * 10 : t.streakLength,
+            seasonAvg: 0,
+          })),
         },
       },
     ]

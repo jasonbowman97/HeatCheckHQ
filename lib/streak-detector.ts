@@ -32,6 +32,8 @@ export interface StreakResult {
     hitRate: string
     hitPct: number
   }
+  /** Flagged as an elite streak for social media graphics */
+  eliteStreak?: boolean
 }
 
 /**

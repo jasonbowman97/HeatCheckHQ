@@ -73,6 +73,9 @@ const CATEGORIES: { key: Category; label: string; time: string }[] = [
 const SHEET_LABELS: Record<string, { label: string; emoji: string }> = {
   nba_dvp: { label: "NBA DVP", emoji: "🏀" },
   nba_parlay: { label: "NBA Parlay", emoji: "🏀" },
+  nba_pts_streaks: { label: "PTS Streaks", emoji: "🏀" },
+  nba_reb_streaks: { label: "REB Streaks", emoji: "🏀" },
+  nba_ast_streaks: { label: "AST Streaks", emoji: "🏀" },
   mlb_nrfi: { label: "MLB NRFI", emoji: "⚾" },
   mlb_strikeout: { label: "MLB Strikeouts", emoji: "⚾" },
   daily_recap: { label: "Daily Recap", emoji: "🔥" },
@@ -163,7 +166,7 @@ export default function AdminSocialPage() {
     setSheetsError(null)
     try {
       // Just build preview URLs for each sheet type
-      const sheetTypes = ["nba_dvp", "nba_parlay", "mlb_nrfi", "mlb_strikeout", "daily_recap"]
+      const sheetTypes = ["nba_dvp", "nba_parlay", "nba_pts_streaks", "nba_reb_streaks", "nba_ast_streaks", "mlb_nrfi", "mlb_strikeout", "daily_recap"]
       const previews: GeneratedSheet[] = sheetTypes.map((type) => ({
         type,
         imageUrl: `/api/social/sheets/${type}`,
@@ -563,8 +566,12 @@ export default function AdminSocialPage() {
                       {/* Card header */}
                       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/80">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-                            {tweet.type.replace(/_/g, " ")}
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                            tweet.type === "streak_poll"
+                              ? "text-violet-400 bg-violet-400/10"
+                              : "text-muted-foreground bg-secondary"
+                          }`}>
+                            {tweet.type === "streak_poll" ? "Poll" : tweet.type.replace(/_/g, " ")}
                           </span>
                           {isPosted && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">

@@ -7,11 +7,14 @@ import { getSchedule, getSeasonLinescores, computePitcherNrfi, getPitcherSeasonS
 import { getTeamLogos } from "@/lib/social/shared/team-logo"
 import { NbaDvpSheet } from "@/lib/social/sheets/nba-dvp-sheet"
 import { NbaParlaySheet } from "@/lib/social/sheets/nba-parlay-sheet"
+import { NbaStreakSheet } from "@/lib/social/sheets/nba-streak-sheet"
 import { MlbNrfiSheet } from "@/lib/social/sheets/mlb-nrfi-sheet"
 import { MlbStrikeoutSheet } from "@/lib/social/sheets/mlb-strikeout-sheet"
 import { DailyRecapSheet } from "@/lib/social/sheets/daily-recap-sheet"
 import { SHEET } from "@/lib/social/social-config"
-import type { DvpRow, ParlayRow, NrfiRow, StrikeoutRow, RecapSection } from "@/lib/social/card-types"
+import { parseNBAGameLog } from "@/lib/nba-streaks"
+import { fetchNBAAthleteGameLog } from "@/lib/espn/client"
+import type { DvpRow, ParlayRow, NrfiRow, StrikeoutRow, RecapSection, StreakSheetRow } from "@/lib/social/card-types"
 import type { Trend } from "@/lib/trends-types"
 import { readFile } from "fs/promises"
 import { join } from "path"
@@ -75,6 +78,12 @@ export async function GET(
         return await renderMlbStrikeout()
       case "daily_recap":
         return await renderDailyRecap()
+      case "nba_pts_streaks":
+        return await renderNbaStreakSheet("PTS", "20+ PTS Games", 20, "🏀  POINTS STREAK WATCH")
+      case "nba_reb_streaks":
+        return await renderNbaStreakSheet("REB", "8+ REB Games", 8, "🏀  REBOUNDS STREAK WATCH")
+      case "nba_ast_streaks":
+        return await renderNbaStreakSheet("AST", "6+ AST Games", 6, "🏀  ASSISTS STREAK WATCH")
       default:
         return new Response(`Unknown sheet type: ${type}`, { status: 404 })
     }
@@ -438,5 +447,98 @@ async function renderDailyRecap() {
   return new ImageResponse(
     <DailyRecapSheet sections={sections} date={formatDate()} logos={logos} />,
     { width: SHEET.compactWidth, height: SHEET.compactWidth, fonts }
+  )
+}
+
+/* ── NBA Streak Sheets (PTS / REB / AST) ── */
+
+async function renderNbaStreakSheet(
+  stat: string,
+  statLabel: string,
+  displayThreshold: number,
+  title: string
+) {
+  const [fonts, trends, teams] = await Promise.all([
+    loadFonts(),
+    getNBAStreakTrends(),
+    getNBATeams(),
+  ])
+
+  // Build team logo map
+  const teamLogoMap = new Map<string, string>()
+  for (const t of teams) {
+    teamLogoMap.set(t.abbreviation, t.logo)
+  }
+
+  // Filter to elite consecutive streaks matching this stat
+  const eliteStreaks = trends.filter(
+    (t: Trend) =>
+      t.eliteStreak &&
+      t.type === "hot" &&
+      t.statLabel === statLabel
+  )
+  .sort((a: Trend, b: Trend) => (b.streakLength ?? 0) - (a.streakLength ?? 0))
+  .slice(0, 15)
+
+  if (eliteStreaks.length === 0) {
+    return noDataResponse(`No ${stat} streaks found — no players on a ${displayThreshold}+ streak`)
+  }
+
+  // Fetch actual game stats for each player (batched)
+  const BATCH = 5
+  const rows: StreakSheetRow[] = []
+
+  for (let i = 0; i < eliteStreaks.length; i += BATCH) {
+    const batch = eliteStreaks.slice(i, i + BATCH)
+    const batchResults = await Promise.allSettled(
+      batch.map(async (trend: Trend) => {
+        if (!trend.playerId) return null
+        const raw = await fetchNBAAthleteGameLog(trend.playerId)
+        const games = parseNBAGameLog(raw)
+        const last10 = games.slice(0, 10)
+        const gameStats = last10.map((g) => g.stats[stat] ?? 0)
+        const windowAvg = gameStats.length > 0
+          ? gameStats.reduce((s, v) => s + v, 0) / gameStats.length
+          : 0
+        const allGamesAvg = games.length > 0
+          ? games.reduce((s, g) => s + (g.stats[stat] ?? 0), 0) / games.length
+          : 0
+
+        return {
+          playerName: trend.playerName,
+          team: trend.team,
+          teamLogo: teamLogoMap.get(trend.team) || espnLogo("nba", trend.team),
+          statLabel: `${displayThreshold}+ ${stat}`,
+          hitCount: trend.streakLength,
+          windowSize: 10,
+          recentGames: trend.recentGames,
+          gameStats,
+          windowAvg,
+          seasonAvg: allGamesAvg,
+          opponent: trend.opponent,
+        } satisfies StreakSheetRow
+      })
+    )
+
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value) {
+        rows.push(result.value)
+      }
+    }
+  }
+
+  if (rows.length === 0) {
+    return noDataResponse(`No ${stat} streak data available — game logs could not be fetched`)
+  }
+
+  const allLogos = rows.map((r) => r.teamLogo)
+  const logos = await getTeamLogos(allLogos)
+
+  const contentHeight = 240 + rows.length * 56 + 80
+  const height = Math.max(900, contentHeight)
+
+  return new ImageResponse(
+    <NbaStreakSheet rows={rows} date={formatDate()} logos={logos} title={title} threshold={displayThreshold} />,
+    { width: SHEET.width, height, fonts }
   )
 }

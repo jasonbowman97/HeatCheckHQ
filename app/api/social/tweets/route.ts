@@ -454,6 +454,34 @@ function generateEducationalTweets(): Tweet[] {
   return tweets
 }
 
+/* ── Engagement: Streak Poll ── */
+
+function generateStreakPollTweet(trends: Trend[]): Tweet[] {
+  const tweets: Tweet[] = []
+
+  // Find elite streaks across all three categories
+  const eliteStreaks = trends
+    .filter((t) => t.eliteStreak && t.type === "hot")
+    .sort((a, b) => b.streakLength - a.streakLength)
+    .slice(0, 4) // Max 4 options for a Twitter poll
+
+  if (eliteStreaks.length >= 3) {
+    const options = eliteStreaks.map((t, i) =>
+      `${i + 1}. ${t.playerName} — ${t.statLabel} (${t.statValue})`
+    )
+
+    tweets.push({
+      type: "streak_poll",
+      text: `Which of these streaks ends first?\n\n${options.join("\n")}\n\n[CREATE AS POLL]\n\nDrop your pick below 👇`,
+      reply: `Track every NBA player's hot and cold streaks — 100% free\n\nheatcheckhq.io/nba/trends`,
+      timeSlot: "engagement",
+      priority: 1,
+    })
+  }
+
+  return tweets
+}
+
 /* ── No-Games Fallback ── */
 
 function generateOffDayTweets(fb: BPFirstBasketData, trends: Trend[]): Tweet[] {
@@ -540,10 +568,16 @@ export async function GET() {
       morning = generateMorningTweets(fb, todayGames)
       midday = generateMiddayTweets(dvpMatchups)
       pregame = generatePregameTweets(streakTrends, todayGames)
-      engagement = generateEngagementTweets(fb, streakTrends, dvpMatchups, todayGames)
+      engagement = [
+        ...generateEngagementTweets(fb, streakTrends, dvpMatchups, todayGames),
+        ...generateStreakPollTweet(streakTrends),
+      ]
     } else {
       // Off day — generate engagement-only content
-      engagement = generateOffDayTweets(fb, streakTrends)
+      engagement = [
+        ...generateOffDayTweets(fb, streakTrends),
+        ...generateStreakPollTweet(streakTrends),
+      ]
     }
 
     const allTweets = [...morning, ...midday, ...pregame, ...engagement, ...educational]
