@@ -43,8 +43,8 @@ async function generate() {
   await sharp(avatarBuf).resize(192, 192).png().toFile(join(publicDir, 'icon-192.png'));
   console.log('✓ icon-192.png (192x192)');
 
-  // favicon.ico — 32x32 from icon-only SVG (transparent)
-  const favicon32 = await sharp(svgBuf).resize(32, 32).png().toBuffer();
+  // favicon.ico — 32x32 with dark background
+  const favicon32 = await sharp(avatarBuf).resize(32, 32).png().toBuffer();
   await sharp(favicon32).toFile(join(publicDir, 'favicon.ico'));
   console.log('✓ favicon.ico (32x32)');
 
