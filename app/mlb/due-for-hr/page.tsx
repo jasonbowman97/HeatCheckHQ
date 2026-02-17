@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
 import Image from "next/image"
-import { Loader2, ChevronUp, ChevronDown, Flame } from "lucide-react"
+import { Loader2, ChevronUp, ChevronDown, Flame, AlertCircle, RefreshCw } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
@@ -93,7 +93,7 @@ export default function DueForHRPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc")
   const [minPA, setMinPA] = useState(0)
 
-  const { data, isLoading, error } = useSWR<{ players: SavantBatter[]; year: number }>(
+  const { data, isLoading, error, mutate } = useSWR<{ players: SavantBatter[]; year: number }>(
     "/api/mlb/due-for-hr",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -281,10 +281,19 @@ export default function DueForHRPage() {
         {isLoading ? (
           <TableSkeleton rows={10} columns={11} />
         ) : error ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Unable to load Statcast data. The season may not have started yet, or Baseball Savant may be temporarily unavailable.
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load Statcast data</p>
+            <p className="text-xs text-muted-foreground">
+              The season may not have started yet, or Baseball Savant may be temporarily unavailable.
             </p>
+            <button
+              onClick={() => mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
           </div>
         ) : sorted.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center">

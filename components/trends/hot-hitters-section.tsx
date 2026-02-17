@@ -14,6 +14,8 @@ import {
   Shield,
   Snowflake,
   CalendarCheck,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
 // Streak types (mirrored from lib/hot-hitters.ts to avoid importing server-only module)
 type StreakType =
@@ -130,7 +132,7 @@ export function HotHittersSection() {
   const [activeTab, setActiveTab] = useState<StreakType>("hitting")
   const [teamFilter, setTeamFilter] = useState<string>("All")
   const [showPlayingToday, setShowPlayingToday] = useState(false)
-  const { data, isLoading } = useSWR<{ streaks: HotHitter[]; todayGames?: TodayGame[]; cached?: boolean }>(
+  const { data, isLoading, error, mutate } = useSWR<{ streaks: HotHitter[]; todayGames?: TodayGame[]; cached?: boolean }>(
     "/api/hot-hitters",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -208,7 +210,24 @@ export function HotHittersSection() {
         </p>
       </div>
 
+      {/* Error state */}
+      {error && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <AlertCircle className="h-8 w-8 text-red-400" />
+          <p className="text-sm font-medium text-foreground">Failed to load streak data</p>
+          <p className="text-xs text-muted-foreground">Something went wrong fetching Hot Hitters. Try again.</p>
+          <button
+            onClick={() => mutate()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Streak type tabs — scrollable row */}
+      {!error && (<>
       <div className="overflow-x-auto -mx-6 px-6">
         <div className="flex items-center rounded-lg border border-border bg-card p-1 gap-1 w-fit">
           {tabs.map((tab) => {
@@ -392,6 +411,7 @@ export function HotHittersSection() {
           </p>
         </div>
       )}
+      </>)}
     </div>
   )
 }

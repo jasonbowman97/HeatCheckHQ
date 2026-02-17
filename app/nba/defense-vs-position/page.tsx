@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, Shield, ChevronDown, Zap, ArrowRight, Lock } from "lucide-react"
+import { Loader2, Shield, ChevronDown, Zap, ArrowRight, Lock, AlertCircle, RefreshCw } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
@@ -109,14 +109,14 @@ export default function DefenseVsPositionPage() {
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
 
   // Matchups data (fetch for selected date)
-  const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: TodayMatchup[] }>(
+  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: TodayMatchup[] }>(
     `/api/nba/defense-vs-position?mode=matchups&date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
-  const { data: rankingsData, isLoading: rankingsLoading } = useSWR<{ rankings: PositionRankingRow[] }>(
+  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: PositionRankingRow[] }>(
     viewMode === "rankings" ? `/api/nba/defense-vs-position?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -125,6 +125,7 @@ export default function DefenseVsPositionPage() {
   const matchups = matchupsData?.matchups ?? []
   const rankings = rankingsData?.rankings ?? []
   const isLoading = (viewMode === "matchups" && matchupsLoading) || (viewMode === "rankings" && rankingsLoading)
+  const hasError = (viewMode === "matchups" && matchupsError) || (viewMode === "rankings" && rankingsError)
 
   // Collect today's team abbreviations for highlighting in rankings
   const todayTeams = useMemo(() => {
@@ -226,8 +227,24 @@ export default function DefenseVsPositionPage() {
           </div>
         </div>
 
+        {/* Error state */}
+        {hasError && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
+            <button
+              onClick={() => { mutateMatchups(); mutateRankings() }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Content */}
-        {viewMode === "matchups" && (
+        {!hasError && viewMode === "matchups" && (
           isAnonymous && matchups.length > PREVIEW_GAMES ? (
             <SignupGate
               headline="See every matchup breakdown — free"
@@ -257,7 +274,7 @@ export default function DefenseVsPositionPage() {
           )
         )}
 
-        {viewMode === "rankings" && (
+        {!hasError && viewMode === "rankings" && (
           isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
             <SignupGate
               headline="See all 30 teams ranked — free"

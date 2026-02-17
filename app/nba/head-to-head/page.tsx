@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { Loader2, Lock } from "lucide-react"
+import { Loader2, Lock, AlertCircle, RefreshCw } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import type { NBAGame } from "@/lib/nba-h2h-data"
 import type { NBAScheduleGame, NBATeamSummary } from "@/lib/nba-api"
@@ -135,7 +135,7 @@ export default function NBAH2HPage() {
 
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
 
-  const { data, isLoading } = useSWR<{
+  const { data, isLoading, error, mutate } = useSWR<{
     games: NBAScheduleGame[]
     summaries: Record<string, NBATeamSummary>
     h2hData: Record<string, H2HApiData | null>
@@ -188,8 +188,24 @@ export default function NBAH2HPage() {
         {/* Loading skeleton */}
         {isLoading && games.length === 0 && <TableSkeleton rows={5} columns={4} />}
 
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load matchup data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try again.</p>
+            <button
+              onClick={() => mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* No games state */}
-        {!isLoading && games.length === 0 && (
+        {!isLoading && !error && games.length === 0 && (
           <div className="flex items-center justify-center py-16">
             <p className="text-sm text-muted-foreground">
               No games scheduled for {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}.

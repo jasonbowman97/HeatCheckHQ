@@ -3,11 +3,12 @@
 import { useState, useMemo } from "react"
 import useSWR from "swr"
 import Image from "next/image"
-import { Loader2, Shield, ChevronDown, Zap, ArrowRight } from "lucide-react"
+import { Loader2, Shield, ChevronDown, Zap, ArrowRight, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 import type {
   NFLDvpPosition,
   NFLDvpStat,
@@ -138,14 +139,14 @@ export default function NFLDefenseVsPositionPage() {
   const [rankStat, setRankStat] = useState<NFLDvpStat>("PASS_YDS")
 
   // Matchups data
-  const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: NFLDvpMatchup[] }>(
+  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: NFLDvpMatchup[] }>(
     "/api/nfl/dvp?mode=matchups",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
-  const { data: rankingsData, isLoading: rankingsLoading } = useSWR<{ rankings: NFLDvpRankingRow[] }>(
+  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: NFLDvpRankingRow[] }>(
     viewMode === "rankings" ? `/api/nfl/dvp?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -154,6 +155,7 @@ export default function NFLDefenseVsPositionPage() {
   const matchups = matchupsData?.matchups ?? []
   const rankings = rankingsData?.rankings ?? []
   const isLoading = (viewMode === "matchups" && matchupsLoading) || (viewMode === "rankings" && rankingsLoading)
+  const hasError = (viewMode === "matchups" && matchupsError) || (viewMode === "rankings" && rankingsError)
 
   // Collect this week's team abbreviations for highlighting in rankings
   const weekTeams = useMemo(() => {
@@ -260,8 +262,24 @@ export default function NFLDefenseVsPositionPage() {
           )}
         </div>
 
+        {/* Error state */}
+        {hasError && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
+            <button
+              onClick={() => { mutateMatchups(); mutateRankings() }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Content */}
-        {viewMode === "matchups" && (
+        {!hasError && viewMode === "matchups" && (
           isAnonymous && matchups.length > PREVIEW_GAMES ? (
             <SignupGate
               headline="See every matchup breakdown — free"
@@ -291,7 +309,7 @@ export default function NFLDefenseVsPositionPage() {
           )
         )}
 
-        {viewMode === "rankings" && (
+        {!hasError && viewMode === "rankings" && (
           isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
             <SignupGate
               headline="See all 32 teams ranked — free"
@@ -383,14 +401,7 @@ function MatchupsView({
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading defensive rankings...</p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={5} />
   }
 
   if (matchups.length === 0) {
@@ -534,14 +545,7 @@ function RankingsView({
   const isInverted = INVERTED_STATS.has(stat)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading rankings...</p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={10} columns={4} />
   }
 
   if (rankings.length === 0) {

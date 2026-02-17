@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock, AlertCircle, RefreshCw } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
@@ -38,7 +38,7 @@ export default function NrfiPage() {
     day: "numeric",
   })
 
-  const { data, isLoading } = useSWR<{ games: NrfiGame[]; date: string }>(
+  const { data, isLoading, error, mutate } = useSWR<{ games: NrfiGame[]; date: string }>(
     `/api/mlb/nrfi?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -160,8 +160,24 @@ export default function NrfiPage() {
         {/* Loading state */}
         {isLoading && <TableSkeleton rows={6} columns={5} />}
 
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load NRFI data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try again.</p>
+            <button
+              onClick={() => mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Data */}
-        {!isLoading && (
+        {!isLoading && !error && (
           <>
             {isAnonymous && filteredGames.length > PREVIEW_GAMES ? (
               <SignupGate

@@ -55,9 +55,21 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-foreground">
               Check your email for a password reset link. It may take a minute to arrive.
             </p>
+            <p className="text-xs text-muted-foreground">
+              Don&apos;t see it? Check your spam or junk folder.
+            </p>
+            <button
+              onClick={() => {
+                setSuccess(false)
+                setLoading(false)
+              }}
+              className="text-sm text-primary hover:underline"
+            >
+              Send again
+            </button>
             <Link
               href="/auth/login"
-              className="flex items-center gap-1 text-sm text-primary hover:underline"
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3 w-3" />
               Back to login

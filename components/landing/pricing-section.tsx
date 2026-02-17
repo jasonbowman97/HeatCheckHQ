@@ -81,7 +81,7 @@ export function PricingSection() {
           </div>
         </FadeIn>
 
-        <div className="mx-auto grid max-w-5xl gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-4 sm:gap-6 md:grid-cols-3">
           {plans.map((plan, index) => (
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
