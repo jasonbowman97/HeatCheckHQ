@@ -1,7 +1,5 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
+import { AuthCta } from "@/components/landing/auth-cta"
 
 export function CtaSection() {
   return (
@@ -22,16 +20,7 @@ export function CtaSection() {
                 Join for free in 30 seconds. No credit card required. Get instant
                 access to heatmaps, streaks, and matchup tools across all three sports.
               </p>
-              <Button
-                size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8"
-                asChild
-              >
-                <Link href="/auth/sign-up">
-                  Create free account
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              <AuthCta />
             </div>
           </div>
         </FadeIn>
