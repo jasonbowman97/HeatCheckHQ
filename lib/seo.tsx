@@ -26,7 +26,7 @@ function getBaseUrl(): string {
 
 const baseUrl = getBaseUrl()
 const siteName = "HeatCheck HQ"
-const defaultImage = `${baseUrl}/og-image.png`
+const defaultImage = `${baseUrl}/og-image.png?v=2`
 
 /**
  * Generate comprehensive SEO metadata for pages
