@@ -8,6 +8,7 @@ import type { PitcherStats } from "@/lib/pitching-data"
 import { PitchingTable } from "@/components/mlb/pitching-table"
 import { PitcherArsenal } from "@/components/mlb/pitcher-arsenal"
 import type { PitchingLeader } from "@/lib/mlb-api"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -48,7 +49,7 @@ export default function PitchingStatsPage() {
   const [viewFilter, setViewFilter] = useState<ViewFilter>("ALL")
   const [selectedPitcher, setSelectedPitcher] = useState<PitcherStats | null>(null)
 
-  const { data, isLoading } = useSWR<{ leaders: EnrichedPitchingLeader[]; hasStatcast: boolean; todayStarterIds: number[] }>(
+  const { data, isLoading } = useSWR<{ leaders: EnrichedPitchingLeader[]; hasStatcast: boolean; todayStarterIds: number[]; updatedAt?: string }>(
     "/api/mlb/pitching",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -132,6 +133,8 @@ export default function PitchingStatsPage() {
                 </span>
               </div>
             </div>
+
+            <LastUpdated timestamp={data?.updatedAt} />
 
             {/* Loading state */}
             {isLoading && (

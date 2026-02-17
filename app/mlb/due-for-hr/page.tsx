@@ -9,7 +9,9 @@ import { SignupGate } from "@/components/signup-gate"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import { useUserTier } from "@/components/user-tier-provider"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { CsvExport } from "@/components/ui/csv-export"
 import type { SavantBatter } from "@/lib/savant"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -83,6 +85,21 @@ const COLUMNS: Column[] = [
   { key: "xSLGDiff", label: "xSLG Gap", shortLabel: "Gap", sortable: true, align: "right", className: "w-16 sm:w-20" },
 ]
 
+/* ─── CSV export columns ─── */
+
+const CSV_COLUMNS = [
+  { key: "name", label: "Player" },
+  { key: "age", label: "Age" },
+  { key: "pa", label: "PA" },
+  { key: "hr", label: "HR" },
+  { key: "barrelPct", label: "Barrel%" },
+  { key: "hardHitPct", label: "HardHit%" },
+  { key: "avgEV", label: "AvgEV" },
+  { key: "xSLG", label: "xSLG" },
+  { key: "slg", label: "SLG" },
+  { key: "xSLGDiff", label: "xSLG Gap" },
+]
+
 /* ─── Component ─── */
 
 export default function DueForHRPage() {
@@ -93,7 +110,7 @@ export default function DueForHRPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc")
   const [minPA, setMinPA] = useState(0)
 
-  const { data, isLoading, error, mutate } = useSWR<{ players: SavantBatter[]; year: number }>(
+  const { data, isLoading, error, mutate } = useSWR<{ players: SavantBatter[]; year: number; updatedAt?: string }>(
     "/api/mlb/due-for-hr",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -241,17 +258,20 @@ export default function DueForHRPage() {
           <p className="text-sm text-muted-foreground">
             Hitters making elite contact (high barrel rate, exit velo) whose actual slugging lags behind expected — they&apos;re due for more homers.
           </p>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Min PA:</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
+            <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Minimum plate appearances">
               {PA_FILTERS.map((f) => (
                 <button
                   key={f.value}
                   onClick={() => setMinPA(f.value)}
+                  aria-pressed={minPA === f.value}
+                  aria-label={f.value === 0 ? "All plate appearances" : `Minimum ${f.value} plate appearances`}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     minPA === f.value
                       ? "bg-primary text-primary-foreground"
@@ -268,6 +288,14 @@ export default function DueForHRPage() {
             <span className="text-xs text-muted-foreground">
               {sorted.length} qualified batters
             </span>
+          )}
+
+          {!isLoading && sorted.length > 0 && (
+            <CsvExport
+              data={sorted as unknown as Record<string, unknown>[]}
+              filename={`due-for-hr-${year}`}
+              columns={CSV_COLUMNS}
+            />
           )}
         </div>
 

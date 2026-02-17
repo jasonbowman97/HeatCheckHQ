@@ -10,6 +10,7 @@ import { DateNavigator } from "@/components/nba/date-navigator"
 import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
 import { TopPicks } from "@/components/nba/top-picks"
 import { SignupGate } from "@/components/signup-gate"
+import { LastUpdated } from "@/components/ui/last-updated"
 import { useUserTier } from "@/components/user-tier-provider"
 import type { NBAScheduleGame } from "@/lib/nba-api"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
@@ -114,6 +115,7 @@ export default function NBAFirstBasketPage() {
   const { data: fbData, isLoading: fbLoading, error: fbError, mutate: mutateFb } = useSWR<{
     players: BPFirstBasketPlayer[]
     teams: BPTeamTipoff[]
+    updatedAt?: string
   }>("/api/nba/first-basket", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
@@ -229,6 +231,7 @@ export default function NBAFirstBasketPage() {
           <p className="text-sm text-muted-foreground">
             Track which players score the first basket and their team{"'"}s tipoff win rate.
           </p>
+          <LastUpdated timestamp={fbData?.updatedAt} />
         </div>
 
         {/* Filters row */}
@@ -251,7 +254,7 @@ export default function NBAFirstBasketPage() {
             <div className={isAnonymous ? "pointer-events-none opacity-40 flex flex-wrap items-center gap-3 sm:gap-4" : "flex flex-wrap items-center gap-3 sm:gap-4"}>
               <div className="flex items-center gap-2">
                 <Select value={gameFilter} onValueChange={setGameFilter}>
-                  <SelectTrigger className="w-[160px] sm:w-[180px] h-9 bg-card border-border text-sm">
+                  <SelectTrigger className="w-[160px] sm:w-[180px] h-9 bg-card border-border text-sm" aria-label="Filter by game matchup">
                     <SelectValue placeholder="All Matchups" />
                   </SelectTrigger>
                   <SelectContent>
@@ -268,12 +271,14 @@ export default function NBAFirstBasketPage() {
               {/* Min games started filter */}
               <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min GP</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
+                <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Minimum games played">
                   {([0, 10, 20, 30] as const).map((threshold) => (
                     <button
                       key={threshold}
                       type="button"
                       onClick={() => setMinGames(threshold)}
+                      aria-pressed={minGames === threshold}
+                      aria-label={threshold === 0 ? "All games played" : `Minimum ${threshold} games played`}
                       className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                         minGames === threshold
                           ? "bg-primary text-primary-foreground"
@@ -290,6 +295,8 @@ export default function NBAFirstBasketPage() {
               <button
                 type="button"
                 onClick={() => setStartersOnly((prev) => !prev)}
+                aria-pressed={startersOnly}
+                aria-label="Show starters only"
                 className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold rounded-lg border transition-colors ${
                   startersOnly
                     ? "bg-primary text-primary-foreground border-primary"
@@ -306,7 +313,7 @@ export default function NBAFirstBasketPage() {
         {/* Games strip — locked for anonymous users */}
         {games.length > 0 && (
           <div className={isAnonymous ? "pointer-events-none opacity-40" : ""}>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by game">
               <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
               {games.map((game) => (
                 <button
@@ -316,6 +323,8 @@ export default function NBAFirstBasketPage() {
                       prev === `${toBP(game.away)}-${toBP(game.home)}` ? "all" : `${toBP(game.away)}-${toBP(game.home)}`
                     )
                   }
+                  aria-pressed={gameFilter === `${toBP(game.away)}-${toBP(game.home)}`}
+                  aria-label={`Filter to ${game.label}`}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     gameFilter === `${toBP(game.away)}-${toBP(game.home)}`
                       ? "bg-primary/15 text-primary border border-primary/30"

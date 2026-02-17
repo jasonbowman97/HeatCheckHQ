@@ -10,6 +10,7 @@ import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { GameWeather } from "@/lib/mlb-weather-data"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 /* ---------- helpers: parse ESPN / OpenWeather wind strings ---------- */
 function getWindDir(windStr: string): GameWeather["windDir"] {
@@ -117,7 +118,7 @@ export function WeatherPageClient() {
     day: "numeric",
   })
 
-  const { data, isLoading } = useSWR<{ games: APIWeatherGame[]; date: string; hasLiveWeather: boolean; isOffseason: boolean }>(
+  const { data, isLoading } = useSWR<{ games: APIWeatherGame[]; date: string; hasLiveWeather: boolean; isOffseason: boolean; updatedAt?: string }>(
     `/api/mlb/weather?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 },
@@ -166,6 +167,7 @@ export function WeatherPageClient() {
           <p className="text-sm text-muted-foreground">
             Temperature, wind direction, and conditions for today{"'"}s ballparks.
           </p>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
         {/* Date navigator */}

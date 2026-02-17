@@ -131,7 +131,7 @@ export default function CheckoutPage() {
               </p>
               {!isAuthenticated && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  No account needed — we&apos;ll create one for you at checkout.
+                  No account needed — you&apos;ll receive login credentials at the email you provide during payment.
                   Already have an account?{" "}
                   <Link href="/auth/login?redirect=/checkout" className="text-primary hover:underline">
                     Sign in

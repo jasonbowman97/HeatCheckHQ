@@ -4,6 +4,7 @@ import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import useSWR from "swr"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { StreaksDashboard } from "@/components/streaks/streaks-dashboard"
+import { LastUpdated } from "@/components/ui/last-updated"
 import type { EnrichedPlayer } from "@/lib/streak-types"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -47,7 +48,10 @@ export default function NFLStreaksPage() {
             </p>
           </div>
         ) : (
-          <StreaksDashboard players={players} sport="nfl" />
+          <>
+            <LastUpdated timestamp={data?.updatedAt} />
+            <StreaksDashboard players={players} sport="nfl" />
+          </>
         )}
       </main>
     </DashboardShell>

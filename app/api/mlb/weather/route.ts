@@ -52,6 +52,7 @@ export async function GET(request: Request) {
       hasLiveWeather: useOpenWeather && Object.keys(liveWeather).length > 0,
       isOffseason: !isMLBSeason(),
       date: date ?? new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString(),
     })
     res.headers.set("Cache-Control", cacheHeader(CACHE.WEATHER))
     return res

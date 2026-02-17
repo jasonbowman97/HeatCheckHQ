@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Crown, User, CreditCard } from "lucide-react"
+import { ArrowLeft, Crown, User, CreditCard, Users, Copy, Check } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -20,6 +20,10 @@ export default function AccountPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [referral, setReferral] = useState<{ code: string; signups: number } | null>(null)
+  const [referralLoading, setReferralLoading] = useState(false)
+  const [referralCopied, setReferralCopied] = useState(false)
+  const [referralError, setReferralError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -41,10 +45,50 @@ export default function AccountPage() {
 
       setProfile(profile)
       setLoading(false)
+
+      // Load referral data
+      try {
+        const refRes = await fetch("/api/referrals/me")
+        if (refRes.ok) {
+          const refData = await refRes.json()
+          if (refData.affiliate) {
+            setReferral({ code: refData.affiliate.code, signups: refData.affiliate.signups })
+          }
+        }
+      } catch {
+        // Silently fail — referral section will show "Generate" button
+      }
     }
 
     loadAccount()
   }, [router])
+
+  async function generateReferralLink() {
+    setReferralLoading(true)
+    setReferralError(null)
+    try {
+      const res = await fetch("/api/referrals/me", { method: "POST" })
+      const data = await res.json()
+      if (res.ok && data.affiliate) {
+        setReferral({ code: data.affiliate.code, signups: 0 })
+      } else if (res.status === 409 && data.code) {
+        // Already exists — just load it
+        setReferral({ code: data.code, signups: 0 })
+      } else {
+        setReferralError(data.error || "Failed to generate referral link")
+      }
+    } catch {
+      setReferralError("Failed to generate referral link")
+    }
+    setReferralLoading(false)
+  }
+
+  function copyReferralLink() {
+    if (!referral) return
+    navigator.clipboard.writeText(`https://heatcheckhq.io/join/${referral.code}`)
+    setReferralCopied(true)
+    setTimeout(() => setReferralCopied(false), 2000)
+  }
 
   if (loading) {
     return (
@@ -178,6 +222,70 @@ export default function AccountPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Refer a Friend Card */}
+          <div className="rounded-lg border border-border bg-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Refer a Friend</h2>
+            </div>
+
+            {referral ? (
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Share your referral link and give friends a free 14-day Pro trial when they sign up.
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground select-all overflow-hidden text-ellipsis whitespace-nowrap">
+                    heatcheckhq.io/join/{referral.code}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-border text-muted-foreground hover:text-foreground"
+                    onClick={copyReferralLink}
+                  >
+                    {referralCopied ? (
+                      <>
+                        <Check className="mr-1.5 h-3.5 w-3.5 text-green-400" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                        Copy Link
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Friends referred</span>
+                  <span className="text-sm font-semibold text-foreground">{referral.signups}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Generate a personal referral link to share with friends. They get a free 14-day Pro trial when they sign up.
+                </p>
+
+                {referralError && (
+                  <p className="text-sm text-destructive">{referralError}</p>
+                )}
+
+                <Button
+                  size="sm"
+                  className="w-fit bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={generateReferralLink}
+                  disabled={referralLoading}
+                >
+                  {referralLoading ? "Generating..." : "Generate Referral Link"}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

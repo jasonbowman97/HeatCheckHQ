@@ -7,7 +7,7 @@ export const revalidate = 43200
 export async function GET() {
   try {
     const data = await scrapeFirstBasketData()
-    const res = NextResponse.json(data)
+    const res = NextResponse.json({ ...data, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
     return res
   } catch (e) {

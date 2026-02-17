@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    const res = NextResponse.json({ games, date: schedule.date })
+    const res = NextResponse.json({ games, date: schedule.date, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
     return res
   } catch (e) {

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock, AlertCircle, RefreshCw } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock, AlertCircle, RefreshCw, ArrowUpDown } from "lucide-react"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
@@ -12,10 +12,25 @@ import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { NrfiGame } from "@/lib/nrfi-data"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 type HandFilter = "All" | "RHP" | "LHP"
+type NrfiSort = "time" | "nrfiPct" | "streak"
+
+const SORT_OPTIONS: { value: NrfiSort; label: string }[] = [
+  { value: "time", label: "Game Time" },
+  { value: "nrfiPct", label: "NRFI %" },
+  { value: "streak", label: "Streak" },
+]
+
+function avgPitcherStat(game: NrfiGame, key: "nrfiPct" | "streak"): number {
+  const vals: number[] = []
+  if (game.away.pitcher) vals.push(game.away.pitcher[key])
+  if (game.home.pitcher) vals.push(game.home.pitcher[key])
+  return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+}
 
 const PREVIEW_GAMES = 3
 
@@ -23,6 +38,7 @@ export default function NrfiPage() {
   const userTier = useUserTier()
   const isAnonymous = userTier === "anonymous"
   const [handFilter, setHandFilter] = useState<HandFilter>("All")
+  const [sortBy, setSortBy] = useState<NrfiSort>("time")
   const [dateOffset, setDateOffset] = useState(0)
 
   // Date navigation
@@ -38,7 +54,7 @@ export default function NrfiPage() {
     day: "numeric",
   })
 
-  const { data, isLoading, error, mutate } = useSWR<{ games: NrfiGame[]; date: string }>(
+  const { data, isLoading, error, mutate } = useSWR<{ games: NrfiGame[]; date: string; updatedAt?: string }>(
     `/api/mlb/nrfi?date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -56,6 +72,15 @@ export default function NrfiPage() {
       (g.away.pitcher?.hand === hand) || (g.home.pitcher?.hand === hand)
     )
   }, [handFilter, games])
+
+  // Sort filtered games
+  const sortedGames = useMemo(() => {
+    if (sortBy === "time") return filteredGames
+    return [...filteredGames].sort((a, b) => {
+      if (sortBy === "nrfiPct") return avgPitcherStat(b, "nrfiPct") - avgPitcherStat(a, "nrfiPct")
+      return avgPitcherStat(b, "streak") - avgPitcherStat(a, "streak")
+    })
+  }, [filteredGames, sortBy])
 
   // Count pitchers with NRFI data
   const pitcherCount = games.reduce((n, g) => {
@@ -83,6 +108,7 @@ export default function NrfiPage() {
               ? `${games.length} games, ${pitcherCount} probable starters with NRFI records.`
               : "Matchup pairs with pitcher NRFI records and streaks."}
           </p>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
         {/* Filters row */}
@@ -126,11 +152,13 @@ export default function NrfiPage() {
             )}
             <div className={`flex items-center gap-3 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pitcher</span>
-              <div className="flex rounded-lg border border-border overflow-hidden">
+              <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Filter by pitcher hand">
                 {(["All", "RHP", "LHP"] as const).map((hand) => (
                   <button
                     key={hand}
                     onClick={() => setHandFilter(hand)}
+                    aria-pressed={handFilter === hand}
+                    aria-label={`Filter by ${hand === "All" ? "all pitchers" : hand}`}
                     className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                       handFilter === hand
                         ? "bg-primary text-primary-foreground"
@@ -142,6 +170,21 @@ export default function NrfiPage() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as NrfiSort)}
+              aria-label="Sort games by"
+              className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Reset to today */}
@@ -179,16 +222,16 @@ export default function NrfiPage() {
         {/* Data */}
         {!isLoading && !error && (
           <>
-            {isAnonymous && filteredGames.length > PREVIEW_GAMES ? (
+            {isAnonymous && sortedGames.length > PREVIEW_GAMES ? (
               <SignupGate
                 headline="See all NRFI matchups — free"
                 description="Unlock every pitcher matchup, NRFI streaks, and game probabilities. Free forever, no credit card."
-                countLabel={`${filteredGames.length} games today — updated with probable starters`}
-                preview={<NrfiTable games={filteredGames.slice(0, PREVIEW_GAMES)} />}
-                gated={<NrfiTable games={filteredGames.slice(PREVIEW_GAMES)} />}
+                countLabel={`${sortedGames.length} games today — updated with probable starters`}
+                preview={<NrfiTable games={sortedGames.slice(0, PREVIEW_GAMES)} />}
+                gated={<NrfiTable games={sortedGames.slice(PREVIEW_GAMES)} />}
               />
             ) : (
-              <NrfiTable games={filteredGames} />
+              <NrfiTable games={sortedGames} />
             )}
           </>
         )}

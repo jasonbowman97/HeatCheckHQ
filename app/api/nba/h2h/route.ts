@@ -123,7 +123,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const res = NextResponse.json({ games, summaries, h2hData, lastRecords })
+    const res = NextResponse.json({ games, summaries, h2hData, lastRecords, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
     return res
   } catch (e) {

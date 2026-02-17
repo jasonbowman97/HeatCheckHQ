@@ -16,6 +16,7 @@ import type {
   NFLDvpInsight,
   NFLDvpRankingRow,
 } from "@/lib/nfl-defense-vs-position"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -91,10 +92,12 @@ function FilterGroup<T extends string>({
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-      <div className="flex rounded-lg border border-border overflow-hidden">
+      <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label={`Filter by ${label.toLowerCase()}`}>
         {showAll && (
           <button
             onClick={() => onChange("ALL" as T | "ALL")}
+            aria-pressed={value === "ALL"}
+            aria-label={`All ${label.toLowerCase()} options`}
             className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === "ALL"
                 ? "bg-primary text-primary-foreground"
@@ -108,6 +111,8 @@ function FilterGroup<T extends string>({
           <button
             key={opt.key}
             onClick={() => onChange(opt.key)}
+            aria-pressed={value === opt.key}
+            aria-label={`${label} ${opt.label}`}
             className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === opt.key
                 ? "bg-primary text-primary-foreground"
@@ -139,14 +144,14 @@ export default function NFLDefenseVsPositionPage() {
   const [rankStat, setRankStat] = useState<NFLDvpStat>("PASS_YDS")
 
   // Matchups data
-  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: NFLDvpMatchup[] }>(
+  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: NFLDvpMatchup[]; updatedAt?: string }>(
     "/api/nfl/dvp?mode=matchups",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
-  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: NFLDvpRankingRow[] }>(
+  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: NFLDvpRankingRow[]; updatedAt?: string }>(
     viewMode === "rankings" ? `/api/nfl/dvp?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -215,13 +220,16 @@ export default function NFLDefenseVsPositionPage() {
           <p className="text-sm text-muted-foreground">
             Which defenses allow the most stats to each position — QB, RB, WR, TE.
           </p>
+          <LastUpdated timestamp={matchupsData?.updatedAt} />
         </div>
 
         {/* View mode toggle + filters */}
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="flex rounded-lg border border-border overflow-hidden">
+          <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode("matchups")}
+              aria-pressed={viewMode === "matchups"}
+              aria-label="View this week's matchups"
               className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                 viewMode === "matchups"
                   ? "bg-primary text-primary-foreground"
@@ -232,6 +240,8 @@ export default function NFLDefenseVsPositionPage() {
             </button>
             <button
               onClick={() => setViewMode("rankings")}
+              aria-pressed={viewMode === "rankings"}
+              aria-label="View full rankings"
               className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                 viewMode === "rankings"
                   ? "bg-primary text-primary-foreground"

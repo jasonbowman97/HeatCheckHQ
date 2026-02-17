@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const { players, year } = await fetchSavantBatters()
 
-    const res = NextResponse.json({ players, year })
+    const res = NextResponse.json({ players, year, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
     return res
   } catch (err) {

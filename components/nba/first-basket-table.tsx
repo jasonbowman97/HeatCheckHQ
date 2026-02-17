@@ -13,6 +13,7 @@ import {
 import { ArrowUpDown, Loader2 } from "lucide-react"
 import { getHeatmapClass } from "@/lib/nba-first-basket-data"
 import { HeatmapLegend } from "@/components/ui/heatmap-legend"
+import { InfoTooltip } from "@/components/ui/info-tooltip"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 
 interface FirstBasketTableProps {
@@ -203,18 +204,22 @@ export function FirstBasketTable({
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px]">
                 <SortHeader field="tipWinPct" label="Tip %" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="How often this player's team wins the opening tipoff" />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px] border-l border-border">
                 <SortHeader field="firstShotPct" label="1st Shot" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="Percentage of games where this player takes the first shot attempt" />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px]">
                 <SortHeader field="firstBaskets" label="Made" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[90px]">
                 <SortHeader field="firstBasketPct" label="1st Bkt %" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="First Basket percentage — how often this player scores the first basket" />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px] border-l border-border">
                 <SortHeader field="teamRank" label="Rank" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="Player's rank on their team for first baskets scored" />
               </TableHead>
               <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center pr-4 w-[60px]">
                 <SortHeader field="teamFirstBaskets" label="Total" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
@@ -226,7 +231,7 @@ export function FirstBasketTable({
               return (
                 <TableRow
                   key={row.id}
-                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                  className={`border-b border-border/50 hover:bg-secondary/30 transition-colors${row.gamesStarted < 10 ? " opacity-60" : ""}`}
                 >
                   {/* Player cell with headshot + opponent */}
                   <TableCell className="py-3 pl-4">
@@ -258,6 +263,9 @@ export function FirstBasketTable({
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <span className="text-sm text-foreground font-mono tabular-nums">{row.gamesStarted}</span>
+                    {row.gamesStarted < 10 && (
+                      <span className="text-[9px] text-muted-foreground/50 ml-1">(low sample)</span>
+                    )}
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <span

@@ -11,6 +11,7 @@ import { useUserTier } from "@/components/user-tier-provider"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -49,10 +50,12 @@ function FilterGroup<T extends string>({
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-      <div className="flex rounded-lg border border-border overflow-hidden">
+      <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label={`Filter by ${label.toLowerCase()}`}>
         {showAll && (
           <button
             onClick={() => onChange("ALL" as T | "ALL")}
+            aria-pressed={value === "ALL"}
+            aria-label={`All ${label.toLowerCase()} options`}
             className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === "ALL"
                 ? "bg-primary text-primary-foreground"
@@ -66,6 +69,8 @@ function FilterGroup<T extends string>({
           <button
             key={opt.key}
             onClick={() => onChange(opt.key)}
+            aria-pressed={value === opt.key}
+            aria-label={`${label} ${opt.label}`}
             className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === opt.key
                 ? "bg-primary text-primary-foreground"
@@ -109,14 +114,14 @@ export default function DefenseVsPositionPage() {
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
 
   // Matchups data (fetch for selected date)
-  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: TodayMatchup[] }>(
+  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: TodayMatchup[]; updatedAt?: string }>(
     `/api/nba/defense-vs-position?mode=matchups&date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
-  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: PositionRankingRow[] }>(
+  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: PositionRankingRow[]; updatedAt?: string }>(
     viewMode === "rankings" ? `/api/nba/defense-vs-position?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -172,6 +177,7 @@ export default function DefenseVsPositionPage() {
               Which teams allow the most stats to each position — PG, SG, SF, PF, C.
             </p>
           </div>
+          <LastUpdated timestamp={matchupsData?.updatedAt} />
         </div>
 
         {/* View mode toggle + filters — locked for anonymous users */}
@@ -188,9 +194,11 @@ export default function DefenseVsPositionPage() {
             </div>
           )}
           <div className={`flex flex-wrap items-center gap-3 sm:gap-4 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
-            <div className="flex rounded-lg border border-border overflow-hidden">
+            <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="View mode">
               <button
                 onClick={() => setViewMode("matchups")}
+                aria-pressed={viewMode === "matchups"}
+                aria-label="View today's matchups"
                 className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "matchups"
                     ? "bg-primary text-primary-foreground"
@@ -201,6 +209,8 @@ export default function DefenseVsPositionPage() {
               </button>
               <button
                 onClick={() => setViewMode("rankings")}
+                aria-pressed={viewMode === "rankings"}
+                aria-label="View full rankings"
                 className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "rankings"
                     ? "bg-primary text-primary-foreground"

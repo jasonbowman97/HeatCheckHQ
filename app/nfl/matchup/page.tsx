@@ -10,6 +10,7 @@ import type { LiveMatchup } from "@/lib/nfl-api"
 import Image from "next/image"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -131,7 +132,7 @@ export default function NFLMatchupPage() {
 
   // Fetch matchup data for selected game
   const matchupUrl = effectiveGameId ? `/api/nfl/matchup?gameId=${effectiveGameId}` : null
-  const { data: matchupData, isLoading: matchupLoading, error: matchupError, mutate: mutateMatchup } = useSWR<{ matchup: LiveMatchup | null }>(
+  const { data: matchupData, isLoading: matchupLoading, error: matchupError, mutate: mutateMatchup } = useSWR<{ matchup: LiveMatchup | null; updatedAt?: string }>(
     hasLiveGames ? matchupUrl : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -259,6 +260,7 @@ export default function NFLMatchupPage() {
             {displayMatchup.week}
             {!isLive && " — Sample data (no live games available)"}
           </p>
+          <LastUpdated timestamp={matchupData?.updatedAt} />
         </div>
 
         {/* Team Stats Comparison */}

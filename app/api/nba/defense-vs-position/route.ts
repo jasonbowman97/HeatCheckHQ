@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       const position = (searchParams.get("position") ?? "PG") as Position
       const stat = (searchParams.get("stat") ?? "PTS") as StatCategory
       const rankings = await getPositionRankings(position, stat)
-      const res = NextResponse.json({ rankings })
+      const res = NextResponse.json({ rankings, updatedAt: new Date().toISOString() })
       res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
       return res
     }
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     // Default: matchup insights (optionally for a specific date)
     const date = searchParams.get("date") ?? undefined
     const matchups = await getTodayMatchupInsights(date)
-    const res = NextResponse.json({ matchups })
+    const res = NextResponse.json({ matchups, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
     return res
   } catch (err) {

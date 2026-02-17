@@ -65,7 +65,7 @@ export async function GET() {
   try {
     // Return cached data if still fresh
     if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-      const res = NextResponse.json({ streaks: cachedData.data, todayGames: cachedData.todayTeams, cached: true })
+      const res = NextResponse.json({ streaks: cachedData.data, todayGames: cachedData.todayTeams, cached: true, updatedAt: new Date().toISOString() })
       res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
       return res
     }
@@ -77,7 +77,7 @@ export async function GET() {
 
     cachedData = { data: streaks, todayTeams: todayGames, timestamp: Date.now() }
 
-    const res = NextResponse.json({ streaks, todayGames, cached: false })
+    const res = NextResponse.json({ streaks, todayGames, cached: false, updatedAt: new Date().toISOString() })
     res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
     return res
   } catch (err) {

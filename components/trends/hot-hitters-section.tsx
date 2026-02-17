@@ -17,6 +17,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react"
+import { LastUpdated } from "@/components/ui/last-updated"
 // Streak types (mirrored from lib/hot-hitters.ts to avoid importing server-only module)
 type StreakType =
   | "hitting"
@@ -132,7 +133,7 @@ export function HotHittersSection() {
   const [activeTab, setActiveTab] = useState<StreakType>("hitting")
   const [teamFilter, setTeamFilter] = useState<string>("All")
   const [showPlayingToday, setShowPlayingToday] = useState(false)
-  const { data, isLoading, error, mutate } = useSWR<{ streaks: HotHitter[]; todayGames?: TodayGame[]; cached?: boolean }>(
+  const { data, isLoading, error, mutate } = useSWR<{ streaks: HotHitter[]; todayGames?: TodayGame[]; cached?: boolean; updatedAt?: string }>(
     "/api/hot-hitters",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -208,6 +209,7 @@ export function HotHittersSection() {
         <p className="text-sm text-muted-foreground mt-1">
           Active streaks across all MLB rosters. Scans every batter&apos;s game log to find betting-relevant trends.
         </p>
+        <LastUpdated timestamp={data?.updatedAt} />
       </div>
 
       {/* Error state */}
@@ -229,7 +231,7 @@ export function HotHittersSection() {
       {/* Streak type tabs — scrollable row */}
       {!error && (<>
       <div className="overflow-x-auto -mx-6 px-6">
-        <div className="flex items-center rounded-lg border border-border bg-card p-1 gap-1 w-fit">
+        <div className="flex items-center rounded-lg border border-border bg-card p-1 gap-1 w-fit" role="tablist" aria-label="Streak type">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const count = liveStreaks.filter((h) => h.streakType === tab.key).length
@@ -239,6 +241,9 @@ export function HotHittersSection() {
               <button
                 key={tab.key}
                 type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`${tab.label} streaks`}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                   isActive
@@ -272,6 +277,7 @@ export function HotHittersSection() {
           <select
             value={teamFilter}
             onChange={(e) => setTeamFilter(e.target.value)}
+            aria-label="Filter by team"
             className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary w-fit"
           >
             <option value="All">All Teams</option>
@@ -286,6 +292,8 @@ export function HotHittersSection() {
           <button
             type="button"
             onClick={() => setShowPlayingToday(!showPlayingToday)}
+            aria-pressed={showPlayingToday}
+            aria-label="Filter to players playing today"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
               showPlayingToday
                 ? "border-amber-500/50 bg-amber-500/10 text-amber-400"

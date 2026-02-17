@@ -16,6 +16,7 @@ import { SignupGate } from "@/components/signup-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { DateNavigator } from "@/components/nba/date-navigator"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -141,6 +142,7 @@ export default function NBAH2HPage() {
     h2hData: Record<string, H2HApiData | null>
     lastRecords: Record<string, LastRecord>
     dvpRankings: Record<string, unknown>
+    updatedAt?: string
   }>(`/api/nba/h2h?date=${dateParam}`, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
@@ -183,6 +185,7 @@ export default function NBAH2HPage() {
               Season series, team form, and injury reports.
             </p>
           </div>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
         {/* Loading skeleton */}

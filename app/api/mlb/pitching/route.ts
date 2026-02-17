@@ -40,6 +40,7 @@ export async function GET() {
       leaders: enriched,
       hasStatcast: statcast.length > 0,
       todayStarterIds: Array.from(todayStarterIds),
+      updatedAt: new Date().toISOString(),
     })
     res.headers.set("Cache-Control", cacheHeader(CACHE.DAILY))
     return res
