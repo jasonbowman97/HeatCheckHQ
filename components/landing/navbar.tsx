@@ -17,7 +17,8 @@ const sportLinks = [
       { name: "Pitching Stats", href: "/mlb/pitching-stats", tier: "pro" as Tier },
       { name: "NRFI", href: "/mlb/nrfi", tier: "free" as Tier },
       { name: "Weather", href: "/mlb/weather", tier: "free" as Tier },
-      { name: "Trends", href: "/mlb/trends", tier: "free" as Tier },
+      { name: "Due for HR", href: "/mlb/due-for-hr", tier: "free" as Tier },
+      { name: "Streak Tracker", href: "/mlb/streaks", tier: "pro" as Tier },
     ],
   },
   {
@@ -26,7 +27,7 @@ const sportLinks = [
       { name: "First Basket", href: "/nba/first-basket", tier: "free" as Tier },
       { name: "Head-to-Head", href: "/nba/head-to-head", tier: "free" as Tier },
       { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
-      { name: "Trends", href: "/nba/trends", tier: "free" as Tier },
+      { name: "Streak Tracker", href: "/nba/streaks", tier: "pro" as Tier },
     ],
   },
   {
@@ -34,7 +35,7 @@ const sportLinks = [
     pages: [
       { name: "Matchup", href: "/nfl/matchup", tier: "pro" as Tier },
       { name: "Def vs Pos", href: "/nfl/defense-vs-position", tier: "free" as Tier },
-      { name: "Trends", href: "/nfl/trends", tier: "free" as Tier },
+      { name: "Streak Tracker", href: "/nfl/streaks", tier: "pro" as Tier },
     ],
   },
 ]

@@ -29,7 +29,8 @@ export function Footer() {
               <Link href="/mlb/pitching-stats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pitching Stats</Link>
               <Link href="/mlb/nrfi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">NRFI</Link>
               <Link href="/mlb/weather" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Weather</Link>
-              <Link href="/mlb/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
+              <Link href="/mlb/due-for-hr" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Due for HR</Link>
+              <Link href="/mlb/streaks" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Streak Tracker</Link>
             </div>
           </div>
 
@@ -37,10 +38,10 @@ export function Footer() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">NBA</p>
             <div className="flex flex-col gap-2">
+              <Link href="/nba/streaks" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Streak Tracker</Link>
               <Link href="/nba/first-basket" className="text-xs text-muted-foreground hover:text-foreground transition-colors">First Basket</Link>
               <Link href="/nba/head-to-head" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Head-to-Head</Link>
               <Link href="/nba/defense-vs-position" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Def vs Position</Link>
-              <Link href="/nba/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
             </div>
           </div>
 
@@ -50,7 +51,7 @@ export function Footer() {
             <div className="flex flex-col gap-2">
               <Link href="/nfl/matchup" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Matchup</Link>
               <Link href="/nfl/defense-vs-position" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Def vs Position</Link>
-              <Link href="/nfl/trends" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Trends</Link>
+              <Link href="/nfl/streaks" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Streak Tracker</Link>
             </div>
           </div>
         </div>

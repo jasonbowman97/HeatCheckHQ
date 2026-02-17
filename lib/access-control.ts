@@ -2,8 +2,8 @@
  * Access tiers for HeatCheck HQ dashboards:
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
- * "free"    — Free account required (NBA DVP, NFL DVP, H2H, all Trends pages)
- * "pro"     — Paid $12/mo subscription (Hitter vs Pitcher, Pitching Stats, Hot Hitters, NFL Matchup)
+ * "free"    — Free account required (NBA DVP, NFL DVP, H2H)
+ * "pro"     — Paid subscription (Streak Trackers, Hot Hitters, Hitter vs Pitcher, Pitching Stats, NFL Matchup)
  */
 
 export type AccessTier = "public" | "free" | "pro"
@@ -21,12 +21,14 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/first-basket", tier: "public", label: "First Basket" },
 
   // Free account required
+  { pattern: "/mlb/due-for-hr", tier: "free", label: "Due for HR" },
   { pattern: "/nba/defense-vs-position", tier: "free", label: "Defense vs Position" },
   { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },
   { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
-  { pattern: "/mlb/trends", tier: "free", label: "MLB Trends" },
-  { pattern: "/nba/trends", tier: "free", label: "NBA Trends" },
-  { pattern: "/nfl/trends", tier: "free", label: "NFL Trends" },
+  // Pro subscription required
+  { pattern: "/nba/streaks", tier: "pro", label: "Streak Tracker" },
+  { pattern: "/mlb/streaks", tier: "pro", label: "MLB Streak Tracker" },
+  { pattern: "/nfl/streaks", tier: "pro", label: "NFL Streak Tracker" },
 
   // Pro subscription required
   { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },

@@ -16,10 +16,16 @@ const MLB_DASHBOARDS = [
     tier: "free" as const,
   },
   {
-    name: "Trends",
-    href: "/mlb/trends",
-    description: "Active streaks plus O/U consistency — who's hitting over or under key stat thresholds",
+    name: "Due for HR",
+    href: "/mlb/due-for-hr",
+    description: "Statcast barrel rate, exit velocity, and xSLG gap — find hitters due for more homers",
     tier: "free" as const,
+  },
+  {
+    name: "Streak Tracker",
+    href: "/mlb/streaks",
+    description: "Set custom stat thresholds for H, HR, RBI, R, SB, TB, K — see which batters and pitchers consistently hit your lines",
+    tier: "pro" as const,
   },
   {
     name: "Hot Hitters",

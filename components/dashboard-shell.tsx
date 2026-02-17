@@ -40,21 +40,21 @@ const MLB_NAV: NavLink[] = [
   { href: "/mlb/pitching-stats", label: "Pitching Stats", tier: "pro" },
   { href: "/mlb/nrfi", label: "NRFI", tier: "free" },
   { href: "/mlb/weather", label: "Weather", tier: "free" },
-  { href: "/mlb/trends", label: "Trends", tier: "free" },
+  { href: "/mlb/due-for-hr", label: "Due for HR", tier: "free" },
+  { href: "/mlb/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
 const NBA_NAV: NavLink[] = [
   { href: "/nba/first-basket", label: "First Basket", tier: "free" },
   { href: "/nba/head-to-head", label: "H2H", tier: "free" },
   { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free" },
-  { href: "/nba/streaks", label: "Streak Tracker", tier: "free" },
-  { href: "/nba/trends", label: "Trends", tier: "free" },
+  { href: "/nba/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
 const NFL_NAV: NavLink[] = [
   { href: "/nfl/matchup", label: "Matchup", tier: "pro" },
   { href: "/nfl/defense-vs-position", label: "Def vs Pos", tier: "free" },
-  { href: "/nfl/trends", label: "Trends", tier: "free" },
+  { href: "/nfl/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
 const SPORT_CONFIG: Record<string, { nav: NavLink[]; subtitle: string; otherSports: { href: string; label: string }[] }> = {
@@ -92,6 +92,7 @@ const PAGE_NAMES: Record<string, string> = {
   "pitching-stats": "Pitching Stats",
   nrfi: "NRFI",
   weather: "Weather",
+  "due-for-hr": "Due for HR",
   trends: "Trends",
   "first-basket": "First Basket",
   "head-to-head": "Head-to-Head",

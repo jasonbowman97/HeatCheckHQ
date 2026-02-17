@@ -46,7 +46,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/mlb/trends`,
+      url: `${baseUrl}/mlb/streaks`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,
@@ -57,7 +57,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'hourly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/mlb/due-for-hr`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
     // NBA Pages
+    {
+      url: `${baseUrl}/nba/streaks`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.95,
+    },
     {
       url: `${baseUrl}/nba/first-basket`,
       lastModified: currentDate,
@@ -77,7 +89,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/nba/trends`,
+      url: `${baseUrl}/nba/streaks`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,
@@ -96,7 +108,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/nfl/trends`,
+      url: `${baseUrl}/nfl/streaks`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,

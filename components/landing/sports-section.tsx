@@ -17,7 +17,8 @@ const sports = [
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
       { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
       { name: "Weather", href: "/mlb/weather", description: "Ballpark temps, wind direction & speed, altitude" },
-      { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },
+      { name: "Due for HR", href: "/mlb/due-for-hr", description: "Statcast barrel rate, exit velo, xSLG gap — hitters due for homers" },
+      { name: "Streak Tracker", href: "/mlb/streaks", description: "Custom stat thresholds for batters and pitchers" },
     ],
   },
   {
@@ -28,10 +29,10 @@ const sports = [
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
     dashboards: [
+      { name: "Streak Tracker", href: "/nba/streaks", description: "Custom stat thresholds — see who consistently hits your lines" },
       { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank by player" },
       { name: "Head-to-Head", href: "/nba/head-to-head", description: "Team H2H, momentum, defense vs position, injuries" },
       { name: "Def vs Position", href: "/nba/defense-vs-position", description: "Which teams give up the most stats to each position" },
-      { name: "Trends", href: "/nba/trends", description: "Scoring runs, 3PT streaks, rebound and assist surges" },
     ],
   },
   {
@@ -44,7 +45,7 @@ const sports = [
     dashboards: [
       { name: "Matchup", href: "/nfl/matchup", description: "Team stats, positional splits, game log trends" },
       { name: "Def vs Position", href: "/nfl/defense-vs-position", description: "Which defenses give up the most to QBs, RBs, and WRs" },
-      { name: "Trends", href: "/nfl/trends", description: "Passing yard streaks, rushing TDs, target surges" },
+      { name: "Streak Tracker", href: "/nfl/streaks", description: "Custom stat thresholds for QBs, RBs, and WRs" },
     ],
   },
 ]
@@ -82,9 +83,6 @@ export function SportsSection() {
                     <h3 className="text-xl font-bold text-foreground">{sport.name}</h3>
                     <p className="text-xs text-muted-foreground">{sport.label}</p>
                   </div>
-                  <span className="ml-auto text-xs font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-                    {sport.dashboards.length} views
-                  </span>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {sport.description}
