@@ -1,5 +1,6 @@
 import { COLORS } from "../social-config"
 import { SheetLayout } from "../shared/sheet-layout"
+import { HeaderCell } from "../shared/header-cell"
 import { nrfiColor, streakColor } from "../shared/color-utils"
 import type { NrfiRow } from "../card-types"
 
@@ -12,7 +13,7 @@ interface MlbNrfiSheetProps {
 /** MLB NRFI cheat sheet — two-sided matchup table with pitcher NRFI rates */
 export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
   return (
-    <SheetLayout title={"⚾  NRFI CHEAT SHEET"} date={date}>
+    <SheetLayout title="⚾  NO RUNS FIRST INNING" date={date} sport="mlb">
       {/* Column headers */}
       <div
         style={{
@@ -21,18 +22,19 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
           padding: "12px 16px",
           marginBottom: 4,
           borderRadius: 8,
-          background: COLORS.primaryMuted,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
         }}
       >
-        <HeaderCell width={140} text="AWAY" />
-        <HeaderCell width={140} text="PITCHER" />
-        <HeaderCell width={60} text="NRFI%" />
-        <HeaderCell width={70} text="STREAK" />
-        <HeaderCell width={80} text="COMBINED" />
-        <HeaderCell width={70} text="STREAK" />
-        <HeaderCell width={60} text="NRFI%" />
-        <HeaderCell width={140} text="PITCHER" />
-        <HeaderCell width={140} text="HOME" />
+        <HeaderCell width={140} label="AWAY" />
+        <HeaderCell width={140} label="PITCHER" />
+        <HeaderCell width={60} label="NRFI%" />
+        <HeaderCell width={70} label="STREAK" />
+        <HeaderCell width={80} label="COMBINED" align="center" />
+        <HeaderCell width={70} label="STREAK" />
+        <HeaderCell width={60} label="NRFI%" />
+        <HeaderCell width={140} label="PITCHER" />
+        <HeaderCell width={140} label="HOME" />
       </div>
 
       {/* Data rows */}
@@ -57,10 +59,10 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.awayLogo) || row.awayLogo}
-                width={22}
-                height={22}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 3 }}
+                style={{ borderRadius: 6 }}
               />
               <span
                 style={{
@@ -113,21 +115,27 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
               </span>
             </div>
 
-            {/* Away streak */}
+            {/* Away streak — pill badge */}
             <div style={{ display: "flex", width: 70 }}>
-              <span
-                style={{
-                  fontFamily: "Inter-Bold",
-                  fontSize: 13,
-                  color: streakColor(row.awayStreak),
-                }}
-              >
-                {row.awayStreak > 0
-                  ? `${row.awayStreak}W`
-                  : row.awayStreak < 0
-                    ? `${Math.abs(row.awayStreak)}L`
-                    : "—"}
-              </span>
+              {row.awayStreak !== 0 ? (
+                <span
+                  style={{
+                    fontFamily: "Inter-Bold",
+                    fontSize: 11,
+                    color: row.awayStreak > 0 ? COLORS.green : COLORS.red,
+                    background: row.awayStreak > 0 ? COLORS.greenBg : COLORS.redBg,
+                    padding: "3px 8px",
+                    borderRadius: 4,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {row.awayStreak > 0
+                    ? `${row.awayStreak} NRFI`
+                    : `${Math.abs(row.awayStreak)} RFI`}
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: COLORS.muted }}>—</span>
+              )}
             </div>
 
             {/* Combined NRFI% (center highlight) */}
@@ -135,32 +143,38 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
               <span
                 style={{
                   fontFamily: "Inter-Bold",
-                  fontSize: 16,
+                  fontSize: 18,
                   color: combinedColors.text,
                   background: combinedColors.bg,
-                  padding: "4px 10px",
-                  borderRadius: 6,
+                  padding: "6px 12px",
+                  borderRadius: 8,
                 }}
               >
                 {row.combinedPct > 0 ? `${row.combinedPct.toFixed(0)}%` : "—"}
               </span>
             </div>
 
-            {/* Home streak */}
+            {/* Home streak — pill badge */}
             <div style={{ display: "flex", width: 70 }}>
-              <span
-                style={{
-                  fontFamily: "Inter-Bold",
-                  fontSize: 13,
-                  color: streakColor(row.homeStreak),
-                }}
-              >
-                {row.homeStreak > 0
-                  ? `${row.homeStreak}W`
-                  : row.homeStreak < 0
-                    ? `${Math.abs(row.homeStreak)}L`
-                    : "—"}
-              </span>
+              {row.homeStreak !== 0 ? (
+                <span
+                  style={{
+                    fontFamily: "Inter-Bold",
+                    fontSize: 11,
+                    color: row.homeStreak > 0 ? COLORS.green : COLORS.red,
+                    background: row.homeStreak > 0 ? COLORS.greenBg : COLORS.redBg,
+                    padding: "3px 8px",
+                    borderRadius: 4,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {row.homeStreak > 0
+                    ? `${row.homeStreak} NRFI`
+                    : `${Math.abs(row.homeStreak)} RFI`}
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: COLORS.muted }}>—</span>
+              )}
             </div>
 
             {/* Home NRFI% */}
@@ -208,10 +222,10 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.homeLogo) || row.homeLogo}
-                width={22}
-                height={22}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 3 }}
+                style={{ borderRadius: 6 }}
               />
               <span
                 style={{
@@ -227,7 +241,7 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
         )
       })}
 
-      {/* Venue info footer */}
+      {/* Legend footer */}
       {rows.length > 0 && (
         <div
           style={{
@@ -235,7 +249,8 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
             marginTop: 12,
             padding: "8px 16px",
             borderRadius: 6,
-            background: COLORS.primaryMuted,
+            background: COLORS.card,
+            border: `1px solid ${COLORS.border}`,
           }}
         >
           <span
@@ -245,27 +260,10 @@ export function MlbNrfiSheet({ rows, date, logos }: MlbNrfiSheetProps) {
               color: COLORS.muted,
             }}
           >
-            {"NRFI = No Run First Inning  •  Combined % = (Away NRFI% + Home NRFI%) / 2  •  Streak: W = consecutive NRFI, L = consecutive RFI"}
+            {"NRFI = No Run First Inning  •  Combined % = (Away NRFI% + Home NRFI%) / 2"}
           </span>
         </div>
       )}
     </SheetLayout>
-  )
-}
-
-function HeaderCell({ width, text }: { width: number; text: string }) {
-  return (
-    <div style={{ display: "flex", width }}>
-      <span
-        style={{
-          fontFamily: "Inter-Bold",
-          fontSize: 11,
-          color: COLORS.primary,
-          letterSpacing: 1,
-        }}
-      >
-        {text.toUpperCase()}
-      </span>
-    </div>
   )
 }

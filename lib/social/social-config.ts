@@ -27,6 +27,45 @@ export const COLORS = {
   grayBg: "rgba(107, 114, 128, 0.10)",
 } as const
 
+/* ── Teal Gradient (header) ── */
+
+export const GRADIENT = {
+  /** Darkest layer — base of the gradient */
+  base: "#0a1a1a",
+  /** Mid-tone teal at 60% opacity */
+  mid: "#0d9373",
+  /** Bright teal at 40% opacity */
+  bright: "#2dd4a8",
+} as const
+
+/* ── Sport Accent Colors (4px stripe below header) ── */
+
+export type Sport = "nba" | "mlb" | "nfl" | "multi"
+
+export const SPORT_ACCENT: Record<Sport, string> = {
+  nba: "#F97316",  // warm orange — basketball color, indoor energy
+  mlb: "#3B82F6",  // deep blue — blue sky, stats-heavy trust
+  nfl: "#10B981",  // emerald green — green turf, harmonious with brand
+  multi: "#2dd4a8", // brand teal — default for cross-sport content
+} as const
+
+/* ── Social Handle & CTA ── */
+
+export const SOCIAL = {
+  handle: "@HEATCHECKIO",
+  cta: "FREE DAILY ANALYTICS",
+  url: "HEATCHECKHQ.IO",
+} as const
+
+/* ── Glow / Highlight ── */
+
+export const GLOW = {
+  /** Subtle teal glow for stat highlights */
+  teal: "rgba(45, 212, 168, 0.25)",
+  /** Slightly brighter for hit streaks */
+  tealBright: "rgba(45, 212, 168, 0.40)",
+} as const
+
 /* ── Typography ── */
 
 export const FONTS = {
@@ -45,9 +84,12 @@ export const SHEET = {
   compactWidth: 1200,
   compactHeight: 675,
   padding: 40,
-  headerHeight: 80,
-  footerHeight: 60,
+  /** Premium header: gradient + title + sport stripe */
+  headerHeight: 130,
+  footerHeight: 64,
   rowHeight: 52,
+  /** Sport accent stripe height */
+  accentStripeHeight: 4,
 } as const
 
 /* ── Logo SVG path data (Concept D: ascending bars + flame) ── */

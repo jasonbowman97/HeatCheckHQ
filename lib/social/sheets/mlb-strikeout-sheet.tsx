@@ -1,5 +1,6 @@
 import { COLORS } from "../social-config"
 import { SheetLayout } from "../shared/sheet-layout"
+import { HeaderCell } from "../shared/header-cell"
 import type { StrikeoutRow } from "../card-types"
 
 interface MlbStrikeoutSheetProps {
@@ -11,7 +12,7 @@ interface MlbStrikeoutSheetProps {
 /** MLB Strikeout prop sheet — pitcher K lines vs opponent K% */
 export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps) {
   return (
-    <SheetLayout title={"⚾  STRIKEOUT SHEET"} date={date}>
+    <SheetLayout title="⚾  STRIKEOUT SHEET" date={date} sport="mlb">
       {/* Column headers */}
       <div
         style={{
@@ -20,16 +21,17 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
           padding: "12px 16px",
           marginBottom: 4,
           borderRadius: 8,
-          background: COLORS.primaryMuted,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
         }}
       >
-        <HeaderCell width={180} text="PITCHER" />
-        <HeaderCell width={120} text="VS" />
-        <HeaderCell width={100} text="K LINE" />
-        <HeaderCell width={110} text="K/GAME" />
-        <HeaderCell width={110} text="OPP K%" />
-        <HeaderCell width={110} text="L3 AVG" />
-        <HeaderCell width={120} text="VERDICT" />
+        <HeaderCell width={180} label="PITCHER" />
+        <HeaderCell width={120} label="VS" />
+        <HeaderCell width={100} label="K LINE" />
+        <HeaderCell width={110} label="K/GAME" />
+        <HeaderCell width={110} label="OPP K%" />
+        <HeaderCell width={110} label="L3 AVG" />
+        <HeaderCell width={120} label="VERDICT" />
       </div>
 
       {/* Data rows */}
@@ -64,10 +66,10 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.teamLogo) || row.teamLogo}
-                width={24}
-                height={24}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 4 }}
+                style={{ borderRadius: 6 }}
               />
               <span
                 style={{
@@ -86,10 +88,10 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.opponentLogo) || row.opponentLogo}
-                width={20}
-                height={20}
+                width={24}
+                height={24}
                 alt=""
-                style={{ borderRadius: 3 }}
+                style={{ borderRadius: 4 }}
               />
               <span
                 style={{
@@ -115,8 +117,8 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
               </span>
             </div>
 
-            {/* K/Game */}
-            <div style={{ display: "flex", width: 110 }}>
+            {/* K/Game with delta */}
+            <div style={{ display: "flex", width: 110, alignItems: "baseline", gap: 4 }}>
               <span
                 style={{
                   fontFamily: "Inter-Bold",
@@ -126,6 +128,17 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
               >
                 {row.kPerGame.toFixed(1)}
               </span>
+              {Math.abs(kDiff) >= 0.3 && (
+                <span
+                  style={{
+                    fontFamily: "Inter-SemiBold",
+                    fontSize: 12,
+                    color: kDiff > 0 ? COLORS.green : COLORS.red,
+                  }}
+                >
+                  {kDiff > 0 ? "+" : ""}{kDiff.toFixed(1)}
+                </span>
+              )}
             </div>
 
             {/* Opp K% */}
@@ -154,16 +167,16 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
               </span>
             </div>
 
-            {/* Verdict badge */}
+            {/* Verdict badge — larger */}
             <div style={{ display: "flex", width: 120 }}>
               <span
                 style={{
                   fontFamily: "Inter-Bold",
-                  fontSize: 13,
+                  fontSize: 14,
                   color: verdictColor,
                   background: verdictBg,
-                  padding: "4px 14px",
-                  borderRadius: 6,
+                  padding: "6px 16px",
+                  borderRadius: 8,
                   letterSpacing: 0.5,
                 }}
               >
@@ -174,22 +187,5 @@ export function MlbStrikeoutSheet({ rows, date, logos }: MlbStrikeoutSheetProps)
         )
       })}
     </SheetLayout>
-  )
-}
-
-function HeaderCell({ width, text }: { width: number; text: string }) {
-  return (
-    <div style={{ display: "flex", width }}>
-      <span
-        style={{
-          fontFamily: "Inter-Bold",
-          fontSize: 12,
-          color: COLORS.primary,
-          letterSpacing: 1.5,
-        }}
-      >
-        {text.toUpperCase()}
-      </span>
-    </div>
   )
 }

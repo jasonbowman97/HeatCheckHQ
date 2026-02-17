@@ -1,6 +1,7 @@
 import { COLORS } from "../social-config"
 import { SheetLayout } from "../shared/sheet-layout"
-import { hitRateColor } from "../shared/color-utils"
+import { HeaderCell } from "../shared/header-cell"
+import { hitRateColor, fireLevel } from "../shared/color-utils"
 import type { ParlayRow } from "../card-types"
 
 interface NbaParlaySheetProps {
@@ -12,7 +13,7 @@ interface NbaParlaySheetProps {
 /** NBA Parlay Pieces cheat sheet — player props with hit rates and trends */
 export function NbaParlaySheet({ rows, date, logos }: NbaParlaySheetProps) {
   return (
-    <SheetLayout title={"🏀  NBA PARLAY PIECES"} date={date}>
+    <SheetLayout title="🏀  PARLAY PIECES" date={date} sport="nba">
       {/* Column headers */}
       <div
         style={{
@@ -21,20 +22,22 @@ export function NbaParlaySheet({ rows, date, logos }: NbaParlaySheetProps) {
           padding: "12px 16px",
           marginBottom: 4,
           borderRadius: 8,
-          background: COLORS.primaryMuted,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
         }}
       >
-        <HeaderCell width={200} text="PLAYER" />
-        <HeaderCell width={160} text="PROP" />
-        <HeaderCell width={100} text="LINE" />
-        <HeaderCell width={120} text="HIT RATE" />
-        <HeaderCell width={200} text="LAST 10" />
-        <HeaderCell width={120} text="TREND" />
+        <HeaderCell width={200} label="PLAYER" />
+        <HeaderCell width={160} label="PROP" />
+        <HeaderCell width={100} label="LINE" />
+        <HeaderCell width={120} label="HIT RATE" />
+        <HeaderCell width={200} label="LAST 10" />
+        <HeaderCell width={120} label="TREND" />
       </div>
 
       {/* Data rows */}
       {rows.map((row, i) => {
         const colors = hitRateColor(row.hitPct)
+        const fire = fireLevel(row.hitPct)
         return (
           <div
             key={`${row.playerName}-${row.prop}-${i}`}
@@ -51,10 +54,10 @@ export function NbaParlaySheet({ rows, date, logos }: NbaParlaySheetProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.teamLogo) || row.teamLogo}
-                width={24}
-                height={24}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 4 }}
+                style={{ borderRadius: 6 }}
               />
               <span
                 style={{
@@ -93,19 +96,19 @@ export function NbaParlaySheet({ rows, date, logos }: NbaParlaySheetProps) {
               </span>
             </div>
 
-            {/* Hit rate badge */}
+            {/* Hit rate badge with fire emojis */}
             <div style={{ display: "flex", width: 120 }}>
               <span
                 style={{
                   fontFamily: "Inter-Bold",
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.text,
                   background: colors.bg,
-                  padding: "4px 12px",
+                  padding: "4px 10px",
                   borderRadius: 6,
                 }}
               >
-                {row.hitRate}
+                {fire}{fire ? " " : ""}{row.hitRate}
               </span>
             </div>
 
@@ -135,29 +138,12 @@ export function NbaParlaySheet({ rows, date, logos }: NbaParlaySheetProps) {
                   color: row.trend === "hot" ? COLORS.green : COLORS.red,
                 }}
               >
-                {row.trend === "hot" ? "🔥 HOT" : "🧊 COLD"}
+                {row.trend === "hot" ? "↑ HOT" : "↓ COLD"}
               </span>
             </div>
           </div>
         )
       })}
     </SheetLayout>
-  )
-}
-
-function HeaderCell({ width, text }: { width: number; text: string }) {
-  return (
-    <div style={{ display: "flex", width }}>
-      <span
-        style={{
-          fontFamily: "Inter-Bold",
-          fontSize: 12,
-          color: COLORS.primary,
-          letterSpacing: 1.5,
-        }}
-      >
-        {text.toUpperCase()}
-      </span>
-    </div>
   )
 }

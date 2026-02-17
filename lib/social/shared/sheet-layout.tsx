@@ -1,18 +1,27 @@
-import { COLORS, SHEET, BRAND, LOGO_PATHS } from "../social-config"
+import { COLORS, SHEET, BRAND, LOGO_PATHS, SOCIAL } from "../social-config"
+import type { Sport } from "../social-config"
+import { GradientHeader } from "./gradient-header"
 
 interface SheetLayoutProps {
   title: string
   date: string
   children: React.ReactNode
+  sport?: Sport
+  subtitle?: string
   width?: number
   height?: number
 }
 
-/** Shared wrapper for all cheat sheet graphics — dark bg, header, footer, logo watermark */
+/**
+ * Shared wrapper for all cheat sheet graphics.
+ * Premium teal gradient header + content area + branded footer.
+ */
 export function SheetLayout({
   title,
   date,
   children,
+  sport = "multi",
+  subtitle,
   width = SHEET.width,
   height = SHEET.height,
 }: SheetLayoutProps) {
@@ -26,80 +35,15 @@ export function SheetLayout({
         backgroundColor: COLORS.background,
         fontFamily: "Inter-Regular",
         color: COLORS.foreground,
-        position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Header bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: `${SHEET.padding}px ${SHEET.padding}px 0`,
-          height: SHEET.headerHeight,
-        }}
-      >
-        {/* Logo + Brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <BrandLogo size={32} />
-          <span
-            style={{
-              fontFamily: "Inter-Bold",
-              fontSize: 18,
-              color: COLORS.primary,
-              letterSpacing: 1,
-            }}
-          >
-            {BRAND.url.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Date */}
-        <span
-          style={{
-            fontFamily: "Inter-SemiBold",
-            fontSize: 16,
-            color: COLORS.muted,
-            letterSpacing: 1,
-          }}
-        >
-          {date}
-        </span>
-      </div>
-
-      {/* Title bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: `16px ${SHEET.padding}px`,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "Inter-Bold",
-            fontSize: 36,
-            color: COLORS.foreground,
-            letterSpacing: 2,
-          }}
-        >
-          {title}
-        </span>
-      </div>
-
-      {/* Accent line */}
-      <div
-        style={{
-          display: "flex",
-          height: 2,
-          marginLeft: SHEET.padding,
-          marginRight: SHEET.padding,
-          backgroundColor: COLORS.primary,
-          opacity: 0.3,
-          marginBottom: 12,
-        }}
+      {/* Premium gradient header */}
+      <GradientHeader
+        title={title}
+        date={date}
+        sport={sport}
+        subtitle={subtitle}
       />
 
       {/* Content area */}
@@ -108,32 +52,62 @@ export function SheetLayout({
           display: "flex",
           flexDirection: "column",
           flex: 1,
-          padding: `0 ${SHEET.padding}px`,
+          padding: `12px ${SHEET.padding}px 0`,
         }}
       >
         {children}
       </div>
 
-      {/* Footer bar */}
+      {/* Premium footer */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: `0 ${SHEET.padding}px ${SHEET.padding / 2}px`,
+          padding: `0 ${SHEET.padding}px`,
           height: SHEET.footerHeight,
+          borderTop: `1px solid ${COLORS.border}`,
         }}
       >
+        {/* Left: logo + URL */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <BrandLogo size={20} />
+          <span
+            style={{
+              fontFamily: "Inter-SemiBold",
+              fontSize: 13,
+              color: COLORS.muted,
+              letterSpacing: 0.5,
+            }}
+          >
+            {BRAND.url}
+          </span>
+        </div>
+
+        {/* Center: CTA */}
         <span
           style={{
-            fontFamily: "Inter-Regular",
-            fontSize: 14,
-            color: COLORS.muted,
+            fontFamily: "Inter-Bold",
+            fontSize: 12,
+            color: COLORS.primary,
+            letterSpacing: 1.5,
+            opacity: 0.8,
           }}
         >
-          {BRAND.url} — Free sports analytics
+          {SOCIAL.cta}
         </span>
-        <BrandLogo size={20} />
+
+        {/* Right: social handle */}
+        <span
+          style={{
+            fontFamily: "Inter-SemiBold",
+            fontSize: 13,
+            color: COLORS.muted,
+            letterSpacing: 0.5,
+          }}
+        >
+          {SOCIAL.handle}
+        </span>
       </div>
     </div>
   )
@@ -142,11 +116,7 @@ export function SheetLayout({
 /** Inline SVG logo for Satori (no className, uses direct fill) */
 function BrandLogo({ size = 24 }: { size?: number }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-    >
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <rect
         x="3"
         y="17"

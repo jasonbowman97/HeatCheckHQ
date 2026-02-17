@@ -1,6 +1,7 @@
 import { COLORS, SHEET } from "../social-config"
 import { SheetLayout } from "../shared/sheet-layout"
-import { rankColor, rankLabel } from "../shared/color-utils"
+import { HeaderCell } from "../shared/header-cell"
+import { rankColor, rankLabel, fireLevel } from "../shared/color-utils"
 import type { DvpRow } from "../card-types"
 
 interface NbaDvpSheetProps {
@@ -9,10 +10,10 @@ interface NbaDvpSheetProps {
   logos: Map<string, string>
 }
 
-/** NBA Defense vs Position cheat sheet — TheProfessor305-style dense data table */
+/** NBA Defense vs Position cheat sheet — premium data table */
 export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
   return (
-    <SheetLayout title="🏀  NBA DVP CHEAT SHEET" date={date}>
+    <SheetLayout title="🏀  NBA DVP CHEAT SHEET" date={date} sport="nba">
       {/* Column headers */}
       <div
         style={{
@@ -21,21 +22,23 @@ export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
           padding: "12px 16px",
           marginBottom: 4,
           borderRadius: 8,
-          background: COLORS.primaryMuted,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
         }}
       >
-        <HeaderCell width={180} text="DEFENSE" />
-        <HeaderCell width={80} text="VS" />
-        <HeaderCell width={80} text="POS" />
-        <HeaderCell width={140} text="STAT" />
-        <HeaderCell width={130} text="AVG ALLOWED" />
-        <HeaderCell width={130} text="RANK" />
-        <HeaderCell width={260} text="PLAYER TO TARGET" />
+        <HeaderCell width={180} label="DEFENSE" />
+        <HeaderCell width={80} label="VS" />
+        <HeaderCell width={80} label="POS" />
+        <HeaderCell width={140} label="STAT" />
+        <HeaderCell width={130} label="AVG ALLOWED" />
+        <HeaderCell width={130} label="RANK" />
+        <HeaderCell width={260} label="PLAYER TO TARGET" />
       </div>
 
       {/* Data rows */}
       {rows.map((row, i) => {
         const colors = rankColor(row.rank)
+        const fire = row.rank <= 3 ? "🔥 " : ""
         return (
           <div
             key={`${row.teamAbbr}-${row.position}-${row.statCategory}-${i}`}
@@ -52,10 +55,10 @@ export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.teamLogo) || row.teamLogo}
-                width={24}
-                height={24}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 4 }}
+                style={{ borderRadius: 6 }}
               />
               <span
                 style={{
@@ -74,10 +77,10 @@ export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.opponentLogo) || row.opponentLogo}
-                width={20}
-                height={20}
+                width={24}
+                height={24}
                 alt=""
-                style={{ borderRadius: 3 }}
+                style={{ borderRadius: 4 }}
               />
             </div>
 
@@ -149,29 +152,12 @@ export function NbaDvpSheet({ rows, date, logos }: NbaDvpSheetProps) {
                   color: COLORS.foreground,
                 }}
               >
-                {row.playerName || "—"}
+                {fire}{row.playerName || "—"}
               </span>
             </div>
           </div>
         )
       })}
     </SheetLayout>
-  )
-}
-
-function HeaderCell({ width, text }: { width: number; text: string }) {
-  return (
-    <div style={{ display: "flex", width }}>
-      <span
-        style={{
-          fontFamily: "Inter-Bold",
-          fontSize: 12,
-          color: COLORS.primary,
-          letterSpacing: 1.5,
-        }}
-      >
-        {text.toUpperCase()}
-      </span>
-    </div>
   )
 }

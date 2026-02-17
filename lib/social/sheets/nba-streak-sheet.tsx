@@ -1,20 +1,21 @@
-import { COLORS } from "../social-config"
+import { COLORS, GLOW } from "../social-config"
 import { SheetLayout } from "../shared/sheet-layout"
-import { hitRateColor } from "../shared/color-utils"
+import { HeaderCell } from "../shared/header-cell"
+import { hitRateColor, fireLevel } from "../shared/color-utils"
 import type { StreakSheetRow } from "../card-types"
 
 interface NbaStreakSheetProps {
   rows: StreakSheetRow[]
   date: string
   logos: Map<string, string>
-  title: string       // e.g., "🏀  POINTS STREAK WATCH"
-  threshold: number   // e.g., 25
+  title: string
+  threshold: number
 }
 
 /** NBA Streak Watch cheat sheet — players consistently hitting a stat threshold */
 export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStreakSheetProps) {
   return (
-    <SheetLayout title={title} date={date}>
+    <SheetLayout title={title} date={date} sport="nba">
       {/* Column headers */}
       <div
         style={{
@@ -23,19 +24,24 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
           padding: "12px 16px",
           marginBottom: 4,
           borderRadius: 8,
-          background: COLORS.primaryMuted,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
         }}
       >
-        <HeaderCell width={180} text="PLAYER" />
-        <HeaderCell width={460} text="LAST 10 GAMES" />
-        <HeaderCell width={100} text="HIT RATE" />
-        <HeaderCell width={100} text="AVG" />
-        <HeaderCell width={100} text="SZN AVG" />
+        <HeaderCell width={180} label="PLAYER" />
+        <HeaderCell width={460} label="LAST 10 GAMES" />
+        <HeaderCell width={100} label="HIT RATE" />
+        <HeaderCell width={100} label="AVG" />
+        <HeaderCell width={100} label="SZN AVG" />
       </div>
 
       {/* Data rows */}
       {rows.map((row, i) => {
-        const colors = hitRateColor(row.hitCount / row.windowSize)
+        const hitPct = row.hitCount / row.windowSize
+        const colors = hitRateColor(hitPct)
+        const fire = fireLevel(hitPct)
+        const avgDiff = row.windowAvg - row.seasonAvg
+
         return (
           <div
             key={`${row.playerName}-${i}`}
@@ -52,10 +58,10 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logos.get(row.teamLogo) || row.teamLogo}
-                width={24}
-                height={24}
+                width={36}
+                height={36}
                 alt=""
-                style={{ borderRadius: 4 }}
+                style={{ borderRadius: 6 }}
               />
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
@@ -81,7 +87,7 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
               </div>
             </div>
 
-            {/* Last 10 games — stat value boxes */}
+            {/* Last 10 games — stat value boxes (larger) */}
             <div style={{ display: "flex", width: 460, gap: 4, alignItems: "center" }}>
               {row.gameStats.slice(0, 10).map((stat, j) => {
                 const hit = stat >= threshold
@@ -92,11 +98,11 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      width: 42,
-                      height: 36,
+                      width: 46,
+                      height: 38,
                       borderRadius: 6,
                       background: hit ? COLORS.greenBg : COLORS.redBg,
-                      border: `1px solid ${hit ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.2)"}`,
+                      border: `1px solid ${hit ? GLOW.teal : "rgba(239, 68, 68, 0.2)"}`,
                     }}
                   >
                     <span
@@ -113,24 +119,24 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
               })}
             </div>
 
-            {/* Hit rate badge */}
+            {/* Hit rate badge with fire */}
             <div style={{ display: "flex", width: 100 }}>
               <span
                 style={{
                   fontFamily: "Inter-Bold",
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.text,
                   background: colors.bg,
-                  padding: "4px 12px",
+                  padding: "4px 10px",
                   borderRadius: 6,
                 }}
               >
-                {row.hitCount}/{row.windowSize}
+                {fire}{fire ? " " : ""}{row.hitCount}/{row.windowSize}
               </span>
             </div>
 
-            {/* Window avg */}
-            <div style={{ display: "flex", width: 100 }}>
+            {/* Window avg with arrow comparison */}
+            <div style={{ display: "flex", width: 100, alignItems: "baseline", gap: 4 }}>
               <span
                 style={{
                   fontFamily: "Inter-Bold",
@@ -140,6 +146,17 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
               >
                 {row.windowAvg.toFixed(1)}
               </span>
+              {Math.abs(avgDiff) >= 1 && (
+                <span
+                  style={{
+                    fontFamily: "Inter-SemiBold",
+                    fontSize: 12,
+                    color: avgDiff > 0 ? COLORS.green : COLORS.red,
+                  }}
+                >
+                  {avgDiff > 0 ? "↑" : "↓"}
+                </span>
+              )}
             </div>
 
             {/* Season avg */}
@@ -158,22 +175,5 @@ export function NbaStreakSheet({ rows, date, logos, title, threshold }: NbaStrea
         )
       })}
     </SheetLayout>
-  )
-}
-
-function HeaderCell({ width, text }: { width: number; text: string }) {
-  return (
-    <div style={{ display: "flex", width }}>
-      <span
-        style={{
-          fontFamily: "Inter-Bold",
-          fontSize: 12,
-          color: COLORS.primary,
-          letterSpacing: 1.5,
-        }}
-      >
-        {text}
-      </span>
-    </div>
   )
 }
