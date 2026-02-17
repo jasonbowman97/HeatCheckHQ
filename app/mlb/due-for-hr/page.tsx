@@ -70,17 +70,17 @@ interface Column {
 }
 
 const COLUMNS: Column[] = [
-  { key: "rank", label: "#", sortable: false, align: "right", className: "w-10" },
-  { key: "name", label: "Player", sortable: false, align: "left", className: "min-w-[160px]" },
-  { key: "age", label: "Age", sortable: true, align: "right", className: "w-14" },
-  { key: "pa", label: "PA", sortable: true, align: "right", className: "w-14" },
-  { key: "hr", label: "HR", sortable: true, align: "right", className: "w-14" },
-  { key: "barrelPct", label: "Barrel%", shortLabel: "Brl%", sortable: true, align: "right", className: "w-20" },
-  { key: "hardHitPct", label: "Hard Hit%", shortLabel: "HH%", sortable: true, align: "right", className: "w-20" },
-  { key: "avgEV", label: "Avg EV", shortLabel: "EV", sortable: true, align: "right", className: "w-20" },
-  { key: "xSLG", label: "xSLG", sortable: true, align: "right", className: "w-16" },
-  { key: "slg", label: "SLG", sortable: true, align: "right", className: "w-16" },
-  { key: "xSLGDiff", label: "xSLG Gap", shortLabel: "Gap", sortable: true, align: "right", className: "w-20" },
+  { key: "rank", label: "#", sortable: false, align: "right", className: "w-8 sm:w-10" },
+  { key: "name", label: "Player", sortable: false, align: "left", className: "min-w-[120px] sm:min-w-[160px]" },
+  { key: "age", label: "Age", sortable: true, align: "right", className: "w-12 hidden sm:table-cell" },
+  { key: "pa", label: "PA", sortable: true, align: "right", className: "w-12 hidden sm:table-cell" },
+  { key: "hr", label: "HR", sortable: true, align: "right", className: "w-12 sm:w-14" },
+  { key: "barrelPct", label: "Barrel%", shortLabel: "Brl%", sortable: true, align: "right", className: "w-16 sm:w-20" },
+  { key: "hardHitPct", label: "Hard Hit%", shortLabel: "HH%", sortable: true, align: "right", className: "w-16 sm:w-20" },
+  { key: "avgEV", label: "Avg EV", shortLabel: "EV", sortable: true, align: "right", className: "w-16 sm:w-20 hidden xs:table-cell" },
+  { key: "xSLG", label: "xSLG", sortable: true, align: "right", className: "w-14 sm:w-16 hidden md:table-cell" },
+  { key: "slg", label: "SLG", sortable: true, align: "right", className: "w-14 sm:w-16 hidden md:table-cell" },
+  { key: "xSLGDiff", label: "xSLG Gap", shortLabel: "Gap", sortable: true, align: "right", className: "w-16 sm:w-20" },
 ]
 
 /* ─── Component ─── */
@@ -153,7 +153,7 @@ export default function DueForHRPage() {
                 return (
                   <th
                     key={col.key}
-                    className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap ${
+                    className={`px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap ${
                       col.align === "left" ? "text-left" : "text-right"
                     } ${col.className ?? ""} ${isSortable ? "cursor-pointer hover:text-foreground select-none" : ""}`}
                     onClick={isSortable ? () => handleSort(col.key as SortKey) : undefined}
@@ -183,37 +183,37 @@ export default function DueForHRPage() {
                 key={player.playerId}
                 className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
               >
-                <td className="px-3 py-2 text-right text-xs text-muted-foreground tabular-nums">{rank}</td>
-                <td className="px-3 py-2 text-left">
-                  <div className="flex items-center gap-2.5">
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs text-muted-foreground tabular-nums">{rank}</td>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-left">
+                  <div className="flex items-center gap-2">
                     <Image
                       src={player.image}
                       alt={player.name}
-                      width={32}
-                      height={32}
-                      className="rounded-full bg-secondary"
+                      width={28}
+                      height={28}
+                      className="rounded-full bg-secondary shrink-0 sm:w-8 sm:h-8"
                       unoptimized
                     />
-                    <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
+                    <span className="text-[11px] sm:text-sm font-medium text-foreground truncate max-w-[100px] sm:max-w-[140px]">
                       {player.name}
                     </span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">{player.age}</td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">{player.pa}</td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums font-semibold text-foreground">{player.hr}</td>
-                <td className={`px-3 py-2 text-right text-xs tabular-nums rounded-sm ${ranges ? heatColor(player.barrelPct, ranges.barrelPct.min, ranges.barrelPct.max) : ""}`}>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums text-muted-foreground hidden sm:table-cell">{player.age}</td>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums text-muted-foreground hidden sm:table-cell">{player.pa}</td>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums font-semibold text-foreground">{player.hr}</td>
+                <td className={`px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums rounded-sm ${ranges ? heatColor(player.barrelPct, ranges.barrelPct.min, ranges.barrelPct.max) : ""}`}>
                   {player.barrelPct.toFixed(1)}
                 </td>
-                <td className={`px-3 py-2 text-right text-xs tabular-nums rounded-sm ${ranges ? heatColor(player.hardHitPct, ranges.hardHitPct.min, ranges.hardHitPct.max) : ""}`}>
+                <td className={`px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums rounded-sm ${ranges ? heatColor(player.hardHitPct, ranges.hardHitPct.min, ranges.hardHitPct.max) : ""}`}>
                   {player.hardHitPct.toFixed(1)}
                 </td>
-                <td className={`px-3 py-2 text-right text-xs tabular-nums rounded-sm ${ranges ? heatColor(player.avgEV, ranges.avgEV.min, ranges.avgEV.max) : ""}`}>
+                <td className={`px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums rounded-sm hidden xs:table-cell ${ranges ? heatColor(player.avgEV, ranges.avgEV.min, ranges.avgEV.max) : ""}`}>
                   {player.avgEV.toFixed(1)}
                 </td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">{player.xSLG.toFixed(3)}</td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">{player.slg.toFixed(3)}</td>
-                <td className={`px-3 py-2 text-right text-xs tabular-nums rounded-sm ${gapColor(player.xSLGDiff)}`}>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums text-muted-foreground hidden md:table-cell">{player.xSLG.toFixed(3)}</td>
+                <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums text-muted-foreground hidden md:table-cell">{player.slg.toFixed(3)}</td>
+                <td className={`px-2 sm:px-3 py-1.5 sm:py-2 text-right text-[11px] sm:text-xs tabular-nums rounded-sm ${gapColor(player.xSLGDiff)}`}>
                   {player.xSLGDiff > 0 ? "+" : ""}{player.xSLGDiff.toFixed(3)}
                 </td>
               </tr>
@@ -226,7 +226,7 @@ export default function DueForHRPage() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Title */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">

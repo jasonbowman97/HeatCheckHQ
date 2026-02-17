@@ -18,7 +18,7 @@ import type { Trend } from "./trends-types"
 
 const NFL_WEB_BASE = "https://site.web.api.espn.com/apis/common/v3/sports/football/nfl"
 
-interface NFLGameLogEntry {
+export interface NFLGameLogEntry {
   date: string
   opponent: string
   stats: Record<string, number>
@@ -58,7 +58,7 @@ function parseNFLGameLog(raw: Record<string, unknown>): NFLGameLogEntry[] {
 }
 
 /** Fetch NFL player game log from ESPN web API */
-async function getNFLPlayerGameLog(athleteId: string): Promise<NFLGameLogEntry[]> {
+export async function getNFLPlayerGameLog(athleteId: string): Promise<NFLGameLogEntry[]> {
   try {
     const res = await fetch(`${NFL_WEB_BASE}/athletes/${athleteId}/gamelog`, {
       headers: { Accept: "application/json" },

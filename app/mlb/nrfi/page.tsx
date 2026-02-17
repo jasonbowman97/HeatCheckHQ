@@ -66,11 +66,11 @@ export default function NrfiPage() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Title */}
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-foreground">No Run First Inning</h1>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">No Run First Inning</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -86,7 +86,7 @@ export default function NrfiPage() {
         </div>
 
         {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           {/* Date navigator */}
           <div className="flex items-center rounded-lg border border-border overflow-hidden bg-card">
             <button

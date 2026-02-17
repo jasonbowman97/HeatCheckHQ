@@ -1,4 +1,6 @@
 import { generateSEO } from "@/lib/seo"
+import { getUserTier } from "@/lib/get-user-tier"
+import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
   title: "MLB Stadium Weather - Ballpark Conditions | HeatCheck HQ",
@@ -15,10 +17,16 @@ export const metadata = generateSEO({
   ],
 })
 
-export default function WeatherLayout({
+export default async function WeatherLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return children
+  const userTier = await getUserTier()
+
+  return (
+    <UserTierProvider tier={userTier}>
+      {children}
+    </UserTierProvider>
+  )
 }

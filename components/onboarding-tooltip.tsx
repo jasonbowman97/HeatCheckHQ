@@ -45,12 +45,12 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
       "Hot + wind out = more home runs. Cold + wind in = pitcher-friendly.",
     ],
   },
-  "/mlb/trends": {
-    title: "MLB Trends & Streaks",
+  "/mlb/streaks": {
+    title: "MLB Streak Tracker",
     tips: [
-      "Scans ALL rostered players for active hot/cold streaks and consistency trends.",
-      "Blue 'Over' and orange 'Under' cards show players consistently hitting over or under key stat thresholds.",
-      "Use category filters (Hitting, Power, Pitching, Consistency) to find specific trends.",
+      "Set custom thresholds for H, HR, RBI, R, SB, TB, and K — see who consistently hits your lines.",
+      "Both batters and pitchers are tracked. Pitchers use strikeouts (K) as the key stat.",
+      "Adjust the game window (5, 10, 15, or season) to see short-term vs long-term consistency.",
     ],
   },
   "/nba/first-basket": {
@@ -77,12 +77,12 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
       "Great for player prop research — find soft matchups for points, rebounds, assists.",
     ],
   },
-  "/nba/trends": {
-    title: "NBA Trends & Streaks",
+  "/nba/streaks": {
+    title: "NBA Streak Tracker",
     tips: [
-      "Active streaks for scoring, threes, rebounds, assists, and combo stats.",
-      "Consistency trends show who's been going over/under key prop lines recently.",
-      "Filter by category, team, or search for a specific player.",
+      "Set custom thresholds for PTS, REB, AST, 3PM, STL, BLK — see who consistently hits your lines.",
+      "Use the game window selector to compare last 5, 10, 15, or full season consistency.",
+      "Filter by team, search for a player, or toggle 'Playing Today' to find tonight's best bets.",
     ],
   },
   "/nfl/matchup": {
@@ -101,12 +101,12 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
       "Rankings update throughout the season as games are played.",
     ],
   },
-  "/nfl/trends": {
-    title: "NFL Trends & Streaks",
+  "/nfl/streaks": {
+    title: "NFL Streak Tracker",
     tips: [
-      "Tracks active passing, rushing, receiving, and TD streaks for top NFL players.",
-      "Consistency trends use a 2/3 recent game window since NFL has fewer games.",
-      "Great for identifying players on heaters or cold stretches heading into game day.",
+      "Set custom thresholds for Pass YD, Pass TD, Rush YD, Rush TD, Rec YD, REC, Rec TD.",
+      "Top 30 QBs, RBs, and WRs by season stats are tracked with full game logs.",
+      "Adjust the game window to see short-term hot streaks or season-long consistency.",
     ],
   },
 }

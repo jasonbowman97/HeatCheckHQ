@@ -47,13 +47,13 @@ function FilterGroup<T extends string>({
   showAll?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
       <div className="flex rounded-lg border border-border overflow-hidden">
         {showAll && (
           <button
             onClick={() => onChange("ALL" as T | "ALL")}
-            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
+            className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === "ALL"
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -66,7 +66,7 @@ function FilterGroup<T extends string>({
           <button
             key={opt.key}
             onClick={() => onChange(opt.key)}
-            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
+            className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
               value === opt.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground hover:text-foreground"
@@ -155,15 +155,15 @@ export default function DefenseVsPositionPage() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Page heading */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Shield className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {viewMode === "matchups" && (
               <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
             )}
@@ -186,11 +186,11 @@ export default function DefenseVsPositionPage() {
               </Link>
             </div>
           )}
-          <div className={`flex flex-wrap items-center gap-4 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
+          <div className={`flex flex-wrap items-center gap-3 sm:gap-4 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
             <div className="flex rounded-lg border border-border overflow-hidden">
               <button
                 onClick={() => setViewMode("matchups")}
-                className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "matchups"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground hover:text-foreground"
@@ -200,7 +200,7 @@ export default function DefenseVsPositionPage() {
               </button>
               <button
                 onClick={() => setViewMode("rankings")}
-                className={`px-4 py-2.5 text-xs font-semibold transition-colors ${
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "rankings"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground hover:text-foreground"
@@ -294,14 +294,14 @@ export default function DefenseVsPositionPage() {
         )}
         {/* Pro upsell for free users */}
         {userTier === "free" && (
-          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <Zap className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Go Pro for unlimited data, all filters & zero gates</p>
-                <p className="text-xs text-muted-foreground">Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
+                <p className="text-xs text-muted-foreground">Full access to every dashboard — $12/mo</p>
               </div>
             </div>
             <Link
@@ -407,8 +407,8 @@ function MatchupsView({
             className="rounded-xl border border-border bg-card overflow-hidden"
           >
             {/* Game header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/80">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 border-b border-border bg-card/80">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-2">
                   {matchup.awayTeam.logo && (
                     <Image
@@ -443,7 +443,7 @@ function MatchupsView({
             </div>
 
             {/* Insights */}
-            <div className="px-5 py-3">
+            <div className="px-3 sm:px-5 py-3">
               {filtered.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">
                   No notable position matchups (top 5) for this game with current filters.
@@ -542,7 +542,7 @@ function RankingsView({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-5 py-4 border-b border-border">
+      <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">
           {statLabel} Allowed to {positionLabel(position)} — All 30 Teams
         </h3>
@@ -555,12 +555,12 @@ function RankingsView({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border text-left">
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-16">Rank</th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-16">Rank</th>
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                 Avg {statLabel} Allowed
               </th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48" />
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48" />
             </tr>
           </thead>
           <tbody>
@@ -577,12 +577,12 @@ function RankingsView({
                     isPlaying ? "bg-primary/[0.03]" : ""
                   }`}
                 >
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
                     <span className={`text-sm font-bold ${isTop5 ? "text-emerald-400" : isBottom5 ? "text-red-400" : "text-foreground"}`}>
                       {row.rank}
                     </span>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
                       {isPlaying && (
@@ -597,7 +597,7 @@ function RankingsView({
                       {row.avgAllowed.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${

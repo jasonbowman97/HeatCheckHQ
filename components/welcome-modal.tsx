@@ -55,8 +55,8 @@ const SPORTS = [
   {
     key: "nfl",
     label: "NFL",
-    description: "Matchup analysis, Defense vs Position, Trends",
-    href: "/nfl/trends",
+    description: "Matchup analysis, Defense vs Position, Streak Tracker",
+    href: "/nfl/defense-vs-position",
     icon: (
       <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)" />

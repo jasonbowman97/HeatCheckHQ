@@ -11,7 +11,6 @@ import Link from "next/link"
 import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 import { analytics } from "@/lib/analytics"
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
@@ -23,9 +22,8 @@ export default function CheckoutPage() {
   const [checkoutStarted, setCheckoutStarted] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const router = useRouter()
 
-  // Define fetchClientSecret first (before any conditional returns)
+  // Define fetchClientSecret (works for both authed and guest users)
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch("/api/checkout", {
       method: "POST",
@@ -43,43 +41,26 @@ export default function CheckoutPage() {
     return data.clientSecret
   }, [selectedPlan])
 
-  // Check authentication on mount
+  // Check authentication on mount — but don't redirect if not authed
   useEffect(() => {
     async function checkAuth() {
       try {
         const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-        // First check session
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Session check:', session ? 'Found' : 'Not found')
-
-        if (!session) {
-          console.log('No session, redirecting to login')
-          router.push('/auth/login?redirect=/checkout')
-          return
+        if (user) {
+          setIsAuthenticated(true)
         }
-
-        // Double check user
-        const { data: { user }, error } = await supabase.auth.getUser()
-        console.log('User check:', user ? user.email : 'Not found', error)
-
-        if (!user) {
-          console.log('No user, redirecting to login')
-          router.push('/auth/login?redirect=/checkout')
-          return
-        }
-
-        console.log('Auth successful, showing checkout')
-        setIsAuthenticated(true)
+        // If not authenticated, that's fine — guest checkout is supported
+      } catch {
+        // Auth check failed — still allow guest checkout
+      } finally {
         setIsCheckingAuth(false)
-      } catch (error) {
-        console.error('Auth check error:', error)
-        router.push('/auth/login?redirect=/checkout')
       }
     }
 
     checkAuth()
-  }, [router])
+  }, [])
 
   // Show loading state while checking authentication
   if (isCheckingAuth) {
@@ -87,15 +68,10 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Checking authentication...</p>
+          <p className="text-sm text-muted-foreground">Loading checkout...</p>
         </div>
       </div>
     )
-  }
-
-  // Don't render checkout if not authenticated (router.push will redirect)
-  if (!isAuthenticated) {
-    return null
   }
 
   // Check if Stripe is configured
@@ -144,12 +120,6 @@ export default function CheckoutPage() {
               >
                 Try again
               </button>
-              <Link
-                href="/auth/login?redirect=/checkout"
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                Sign in again
-              </Link>
             </div>
           </div>
         ) : !checkoutStarted ? (
@@ -159,6 +129,15 @@ export default function CheckoutPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 Full access to every dashboard across MLB, NBA, and NFL.
               </p>
+              {!isAuthenticated && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No account needed — we&apos;ll create one for you at checkout.
+                  Already have an account?{" "}
+                  <Link href="/auth/login?redirect=/checkout" className="text-primary hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

@@ -131,3 +131,96 @@ export function getStarterAtPosition(
   }
   return null
 }
+
+/* ── Recent lineup position map ── */
+
+/**
+ * Maps team abbreviation → position → player name.
+ * Built by scanning recent game days so every team is covered
+ * even when today's lineups aren't posted yet.
+ */
+export type PositionMap = Map<string, Map<string, NBALineupPlayer>>
+
+let cachedPositionMap: { data: PositionMap; timestamp: number } | null = null
+const POSITION_MAP_TTL_MS = 4 * 60 * 60 * 1000 // 4 hours
+
+function dateStrDaysAgo(daysAgo: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  const et = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }))
+  const yyyy = et.getFullYear()
+  const mm = String(et.getMonth() + 1).padStart(2, "0")
+  const dd = String(et.getDate()).padStart(2, "0")
+  return `${yyyy}${mm}${dd}`
+}
+
+/**
+ * Fetches lineups from the last several days to build a complete
+ * team → position → player map. Most recent lineup takes priority.
+ * Covers all 30 teams even during All-Star break, off days, etc.
+ */
+export async function fetchRecentPositionMap(): Promise<PositionMap> {
+  if (cachedPositionMap && Date.now() - cachedPositionMap.timestamp < POSITION_MAP_TTL_MS) {
+    return cachedPositionMap.data
+  }
+
+  const map: PositionMap = new Map()
+  const DAYS_TO_CHECK = 7
+
+  // Fetch most recent day first → oldest last. Most recent data wins (set first).
+  for (let daysAgo = 0; daysAgo < DAYS_TO_CHECK; daysAgo++) {
+    const dateStr = dateStrDaysAgo(daysAgo)
+
+    try {
+      const games = await fetchTodayLineups(dateStr)
+
+      for (const game of games) {
+        const allStarters = [
+          ...game.homeStarters.map((p) => ({ ...p, teamAbbreviation: game.homeTeamAbbr })),
+          ...game.awayStarters.map((p) => ({ ...p, teamAbbreviation: game.awayTeamAbbr })),
+        ]
+
+        for (const player of allStarters) {
+          if (!player.position) continue
+          const teamAbbr = player.teamAbbreviation
+
+          if (!map.has(teamAbbr)) {
+            map.set(teamAbbr, new Map())
+          }
+
+          const teamPositions = map.get(teamAbbr)!
+          // Only set if not already populated (most recent day wins)
+          if (!teamPositions.has(player.position)) {
+            teamPositions.set(player.position, player)
+          }
+        }
+      }
+
+      // Stop early if we've covered all 30 teams with 5 positions each
+      let totalCovered = 0
+      for (const [, positions] of map) {
+        if (positions.size >= 5) totalCovered++
+      }
+      if (totalCovered >= 30) break
+    } catch {
+      // Skip failed dates
+      continue
+    }
+  }
+
+  cachedPositionMap = { data: map, timestamp: Date.now() }
+  console.log(`[NBA Lineups] Position map: ${map.size} teams covered`)
+  return map
+}
+
+/**
+ * Get the starter at a specific position for a team from the recent position map.
+ * Falls back gracefully if no data is available.
+ */
+export function getPlayerAtPosition(
+  positionMap: PositionMap,
+  teamAbbr: string,
+  position: "PG" | "SG" | "SF" | "PF" | "C"
+): NBALineupPlayer | null {
+  return positionMap.get(teamAbbr)?.get(position) ?? null
+}

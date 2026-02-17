@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-15-v16
+// Force redeploy: 2026-02-16-v17
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: '/nba/trends', destination: '/nba/streaks', permanent: true },
+      { source: '/mlb/trends', destination: '/mlb/streaks', permanent: true },
+      { source: '/nfl/trends', destination: '/nfl/streaks', permanent: true },
+    ]
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

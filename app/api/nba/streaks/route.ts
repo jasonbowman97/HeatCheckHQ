@@ -59,6 +59,10 @@ export async function GET() {
             fga: g.stats.FGA ?? 0,
             ftm: g.stats.FTM ?? 0,
             fta: g.stats.FTA ?? 0,
+            // MLB stats (unused for NBA)
+            h: 0, hr: 0, rbi: 0, r: 0, sb: 0, tb: 0, k: 0,
+            // NFL stats (unused for NBA)
+            passYd: 0, passTd: 0, rushYd: 0, rushTd: 0, recYd: 0, rec: 0, recTd: 0,
           }))
 
           const opponent = todayGames.get(player.team)

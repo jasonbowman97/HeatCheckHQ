@@ -1,4 +1,6 @@
 import { generateSEO, StructuredData, generateWebPageSchema, generateFAQSchema, generateDatasetSchema } from "@/lib/seo"
+import { getUserTier } from "@/lib/get-user-tier"
+import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
   title: "NRFI Predictions Today - No Run First Inning Picks & Stats | HeatCheck HQ",
@@ -48,17 +50,19 @@ const datasetSchema = generateDatasetSchema({
   keywords: ["NRFI", "no run first inning", "MLB first inning stats"],
 })
 
-export default function NRFILayout({
+export default async function NRFILayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const userTier = await getUserTier()
+
   return (
-    <>
+    <UserTierProvider tier={userTier}>
       <StructuredData data={generateFAQSchema(faqData)} />
       <StructuredData data={webPageSchema} />
       <StructuredData data={datasetSchema} />
       {children}
-    </>
+    </UserTierProvider>
   )
 }

@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 const NAV_LINKS = [
   { href: "/nfl/matchup", label: "Matchup" },
   { href: "/nfl/defense-vs-position", label: "Def vs Pos" },
-  { href: "/nfl/trends", label: "Trends" },
+  { href: "/nfl/streaks", label: "Streak Tracker" },
 ]
 
 export function NFLHeader() {

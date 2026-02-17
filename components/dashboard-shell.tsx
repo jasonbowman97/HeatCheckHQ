@@ -62,24 +62,24 @@ const SPORT_CONFIG: Record<string, { nav: NavLink[]; subtitle: string; otherSpor
     nav: MLB_NAV,
     subtitle: "MLB",
     otherSports: [
-      { href: "/nba", label: "NBA" },
-      { href: "/nfl", label: "NFL" },
+      { href: "/nba/first-basket", label: "NBA" },
+      { href: "/nfl/defense-vs-position", label: "NFL" },
     ],
   },
   nba: {
     nav: NBA_NAV,
     subtitle: "NBA",
     otherSports: [
-      { href: "/mlb", label: "MLB" },
-      { href: "/nfl", label: "NFL" },
+      { href: "/mlb/nrfi", label: "MLB" },
+      { href: "/nfl/defense-vs-position", label: "NFL" },
     ],
   },
   nfl: {
     nav: NFL_NAV,
     subtitle: "NFL",
     otherSports: [
-      { href: "/mlb", label: "MLB" },
-      { href: "/nba", label: "NBA" },
+      { href: "/mlb/nrfi", label: "MLB" },
+      { href: "/nba/first-basket", label: "NBA" },
     ],
   },
 }
@@ -159,16 +159,16 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
     <div className="min-h-screen bg-background">
       {/* ── Header ── */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="mx-auto max-w-[1440px] flex items-center justify-between px-6 py-4">
+        <div className="mx-auto max-w-[1440px] flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <Logo className="h-5 w-5" />
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary/10">
+                <Logo className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
-                <p className="text-xs text-muted-foreground">{headerSubtitle}</p>
+                <h1 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">{headerSubtitle}</p>
               </div>
             </Link>
           </div>
@@ -281,7 +281,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
       </header>
 
       {/* ── Breadcrumbs ── */}
-      <div className="mx-auto max-w-[1440px] px-6 pt-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 pt-3 sm:pt-4">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>

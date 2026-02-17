@@ -71,7 +71,7 @@ export default function PitchingStatsPage() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1440px] px-6 py-8 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-4 sm:gap-6">
         {selectedPitcher ? (
           <PitcherArsenal pitcher={selectedPitcher} onBack={() => setSelectedPitcher(null)} />
         ) : (

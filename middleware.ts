@@ -57,15 +57,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/nba/defense-vs-position') ||
     pathname.startsWith('/nba/head-to-head') ||
-    pathname.startsWith('/nba/trends') ||
+    pathname.startsWith('/nba/streaks') ||
     pathname.startsWith('/nba/first-basket') ||
     pathname.startsWith('/nfl/defense-vs-position') ||
-    pathname.startsWith('/nfl/trends') ||
+    pathname.startsWith('/nfl/streaks') ||
     pathname.startsWith('/nfl/matchup') ||
     pathname.startsWith('/mlb/hitting-stats') ||
     pathname.startsWith('/mlb/pitching-stats') ||
     pathname.startsWith('/mlb/hot-hitters') ||
-    pathname.startsWith('/mlb/trends')
+    pathname.startsWith('/mlb/streaks')
 
   let supabaseResponse = NextResponse.next({ request })
 

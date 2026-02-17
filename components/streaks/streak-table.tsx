@@ -1,7 +1,7 @@
 "use client"
 
 import { hitRateColorClass, type FilteredPlayerRow } from "@/lib/streak-filter"
-import type { WindowSize } from "@/lib/streak-types"
+import { getTeamLogoUrl, type WindowSize, type SportKey } from "@/lib/streak-types"
 
 interface StreakTableProps {
   rows: FilteredPlayerRow[]
@@ -9,6 +9,7 @@ interface StreakTableProps {
   statLabel: string
   window: WindowSize
   startRank?: number
+  sport?: SportKey
 }
 
 export function StreakTable({
@@ -17,6 +18,7 @@ export function StreakTable({
   statLabel,
   window,
   startRank = 1,
+  sport = "nba",
 }: StreakTableProps) {
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -71,7 +73,7 @@ export function StreakTable({
                     <div className="flex items-center gap-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://a.espncdn.com/i/teamlogos/nba/500/${row.player.team.toLowerCase()}.png`}
+                        src={getTeamLogoUrl(sport, row.player.team)}
                         alt={row.player.team}
                         width={22}
                         height={22}

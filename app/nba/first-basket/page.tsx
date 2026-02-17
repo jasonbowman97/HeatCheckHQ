@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock } from "lucide-react"
+import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock, Users } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -30,6 +30,38 @@ const ESPN_TO_BP: Record<string, string> = {
 }
 function toBP(espn: string): string {
   return ESPN_TO_BP[espn] ?? espn
+}
+
+/** NBA.com → BettingPros team abbreviation mapping (for lineup data) */
+const NBA_TO_BP: Record<string, string> = {
+  NOP: "NOR", UTA: "UTH", PHX: "PHO",
+}
+function nbaToBP(nba: string): string {
+  return NBA_TO_BP[nba] ?? nba
+}
+
+/** Check if a BettingPros player matches a starter from the lineup data */
+function buildStarterSet(starters: Record<string, string[]>): Set<string> {
+  const set = new Set<string>()
+  for (const [nbaTeam, names] of Object.entries(starters)) {
+    const bpTeam = nbaToBP(nbaTeam)
+    for (const name of names) {
+      // Exact match key: "LeBron James|LAL"
+      set.add(`${name}|${bpTeam}`)
+      // Fallback: last name only + team (handles "Nic" vs "Nicolas" etc.)
+      const lastName = name.split(" ").pop()?.toLowerCase() ?? ""
+      if (lastName) set.add(`~${lastName}|${bpTeam}`)
+    }
+  }
+  return set
+}
+
+function isStarter(player: BPFirstBasketPlayer, starterSet: Set<string>): boolean {
+  // Try exact name + team match first
+  if (starterSet.has(`${player.name}|${player.team}`)) return true
+  // Fallback: last name + team
+  const lastName = player.name.split(" ").pop()?.toLowerCase() ?? ""
+  return starterSet.has(`~${lastName}|${player.team}`)
 }
 
 interface GameInfo {
@@ -68,6 +100,7 @@ export default function NBAFirstBasketPage() {
   const [date, setDate] = useState(new Date())
   const [gameFilter, setGameFilter] = useState("all")
   const [minGames, setMinGames] = useState(0)
+  const [startersOnly, setStartersOnly] = useState(false)
   const [sortColumn, setSortColumn] = useState("firstBasketPct")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
@@ -85,6 +118,12 @@ export default function NBAFirstBasketPage() {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
+
+  const { data: lineupsData } = useSWR<{ starters: Record<string, string[]> }>(
+    "/api/nba/lineups",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
+  )
 
   const hasError = scheduleError || fbError
 
@@ -113,13 +152,21 @@ export default function NBAFirstBasketPage() {
     return map
   }, [games])
 
-  // Filter first basket players to today's teams + minimum games started
+  // Build starter name set from lineup data
+  const starterSet = useMemo(() => {
+    if (!lineupsData?.starters) return new Set<string>()
+    return buildStarterSet(lineupsData.starters)
+  }, [lineupsData])
+
+  // Filter first basket players to today's teams + minimum games started + optional starters filter
   const filteredPlayers = useMemo(() => {
     if (!fbData?.players?.length) return []
     return fbData.players.filter((p) =>
-      todayTeams.has(p.team) && p.gamesStarted >= minGames
+      todayTeams.has(p.team) &&
+      p.gamesStarted >= minGames &&
+      (!startersOnly || isStarter(p, starterSet))
     )
-  }, [fbData, todayTeams, minGames])
+  }, [fbData, todayTeams, minGames, startersOnly, starterSet])
 
   // Build team tipoff lookup
   const teamTipoffs = useMemo(() => {
@@ -162,11 +209,11 @@ export default function NBAFirstBasketPage() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Page heading */}
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-foreground">NBA First Basket Picks Today</h1>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">NBA First Basket Picks Today</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {hasLiveStats && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -185,11 +232,11 @@ export default function NBAFirstBasketPage() {
         </div>
 
         {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
 
           {/* Game + Min GP filters — locked for anonymous users */}
-          <div className="relative flex flex-wrap items-center gap-4">
+          <div className="relative flex flex-wrap items-center gap-3 sm:gap-4">
             {isAnonymous && (
               <div className="absolute inset-0 z-10 flex items-center justify-end pr-2">
                 <Link
@@ -201,10 +248,10 @@ export default function NBAFirstBasketPage() {
                 </Link>
               </div>
             )}
-            <div className={isAnonymous ? "pointer-events-none opacity-40 flex flex-wrap items-center gap-4" : "flex flex-wrap items-center gap-4"}>
+            <div className={isAnonymous ? "pointer-events-none opacity-40 flex flex-wrap items-center gap-3 sm:gap-4" : "flex flex-wrap items-center gap-3 sm:gap-4"}>
               <div className="flex items-center gap-2">
                 <Select value={gameFilter} onValueChange={setGameFilter}>
-                  <SelectTrigger className="w-[180px] h-9 bg-card border-border text-sm">
+                  <SelectTrigger className="w-[160px] sm:w-[180px] h-9 bg-card border-border text-sm">
                     <SelectValue placeholder="All Matchups" />
                   </SelectTrigger>
                   <SelectContent>
@@ -219,7 +266,7 @@ export default function NBAFirstBasketPage() {
               </div>
 
               {/* Min games started filter */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min GP</span>
                 <div className="flex rounded-lg border border-border overflow-hidden">
                   {([0, 10, 20, 30] as const).map((threshold) => (
@@ -227,7 +274,7 @@ export default function NBAFirstBasketPage() {
                       key={threshold}
                       type="button"
                       onClick={() => setMinGames(threshold)}
-                      className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
+                      className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
                         minGames === threshold
                           ? "bg-primary text-primary-foreground"
                           : "bg-card text-muted-foreground hover:text-foreground"
@@ -238,6 +285,20 @@ export default function NBAFirstBasketPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Projected starters filter */}
+              <button
+                type="button"
+                onClick={() => setStartersOnly((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold rounded-lg border transition-colors ${
+                  startersOnly
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground hover:text-foreground border-border"
+                }`}
+              >
+                <Users className="h-3 w-3" />
+                Starters Only
+              </button>
             </div>
           </div>
         </div>
@@ -349,14 +410,14 @@ export default function NBAFirstBasketPage() {
         )}
         {/* Pro upsell for free users */}
         {userTier === "free" && (
-          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <Zap className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Go Pro for unlimited data, all filters & zero gates</p>
-                <p className="text-xs text-muted-foreground">Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo</p>
+                <p className="text-xs text-muted-foreground">Full access to every dashboard — $12/mo</p>
               </div>
             </div>
             <Link

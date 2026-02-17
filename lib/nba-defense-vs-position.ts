@@ -9,7 +9,7 @@
 import { fetchNBAScoreboard } from "@/lib/espn/client"
 import { scrapeDvpData, BP_DVP_POSITIONS } from "@/lib/bettingpros-scraper"
 import type { BPDvpPosition, BPDvpTeamData, BPDvpPositionStats } from "@/lib/bettingpros-scraper"
-import { fetchTodayLineups, getStarterAtPosition } from "@/lib/nba-lineups"
+import { fetchTodayLineups, getStarterAtPosition, fetchRecentPositionMap, getPlayerAtPosition } from "@/lib/nba-lineups"
 
 /* ── Types ── */
 
@@ -138,10 +138,11 @@ export async function getPositionRankings(
 
 export async function getTodayMatchupInsights(date?: string): Promise<TodayMatchup[]> {
   try {
-    const [teams, scoreboardRaw, lineupGames] = await Promise.all([
+    const [teams, scoreboardRaw, lineupGames, positionMap] = await Promise.all([
       getDvpData(),
       fetchNBAScoreboard(date),
       fetchTodayLineups(date),
+      fetchRecentPositionMap(),
     ])
 
     const events = (scoreboardRaw.events ?? []) as Array<Record<string, unknown>>
@@ -159,6 +160,21 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
       const list = rankingsMap[key] ?? []
       const idx = list.findIndex((r) => r.teamAbbr === bpAbbr)
       return { rank: idx + 1, avgAllowed: list[idx]?.value ?? 0 }
+    }
+
+    /**
+     * Find the player at a given position for a team.
+     * Priority: today's lineup (most accurate) → recent historical lineup (fallback).
+     */
+    function findPlayer(espnAbbr: string, pos: Position): string {
+      const nbaAbbr = espnAbbrToNBA(espnAbbr)
+      // Try today's lineup first
+      const todayStarter = getStarterAtPosition(lineupGames, nbaAbbr, pos)
+      if (todayStarter) return todayStarter.playerName
+      // Fall back to recent position map
+      const recentPlayer = getPlayerAtPosition(positionMap, nbaAbbr, pos)
+      if (recentPlayer) return recentPlayer.playerName
+      return ""
     }
 
     const matchups: TodayMatchup[] = []
@@ -185,16 +201,11 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
 
       const insights: MatchupInsight[] = []
 
-      // NBA.com abbreviations for lineup lookups
-      const homeNBA = espnAbbrToNBA(homeEspnAbbr)
-      const awayNBA = espnAbbrToNBA(awayEspnAbbr)
-
       for (const pos of POSITIONS) {
         for (const cat of STAT_CATEGORIES) {
           // Away team's defense vs this position → show home team's starter
           const awayRankInfo = getTeamRank(awayBP, pos, cat.key)
           if (awayRankInfo.rank <= 5) {
-            const starter = getStarterAtPosition(lineupGames, homeNBA, pos)
             insights.push({
               teamAbbr: awayEspnAbbr,
               statCategory: cat.label,
@@ -202,14 +213,13 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
               rank: awayRankInfo.rank,
               rankLabel: rankLabel(awayRankInfo.rank),
               avgAllowed: awayRankInfo.avgAllowed,
-              playerName: starter?.playerName ?? "",
+              playerName: findPlayer(homeEspnAbbr, pos),
             })
           }
 
           // Home team's defense vs this position → show away team's starter
           const homeRankInfo = getTeamRank(homeBP, pos, cat.key)
           if (homeRankInfo.rank <= 5) {
-            const starter = getStarterAtPosition(lineupGames, awayNBA, pos)
             insights.push({
               teamAbbr: homeEspnAbbr,
               statCategory: cat.label,
@@ -217,7 +227,7 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
               rank: homeRankInfo.rank,
               rankLabel: rankLabel(homeRankInfo.rank),
               avgAllowed: homeRankInfo.avgAllowed,
-              playerName: starter?.playerName ?? "",
+              playerName: findPlayer(awayEspnAbbr, pos),
             })
           }
         }

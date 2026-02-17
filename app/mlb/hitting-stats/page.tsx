@@ -192,7 +192,7 @@ export default function Page() {
 
   return (
     <DashboardShell>
-      <main className="mx-auto max-w-[1600px] px-6 py-6">
+      <main className="mx-auto max-w-[1600px] px-4 sm:px-6 py-4 sm:py-6">
         {/* Date navigator */}
         <div className="flex items-center gap-3 mb-6">
           <Calendar className="h-4 w-4 text-muted-foreground" />

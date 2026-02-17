@@ -127,6 +127,15 @@ export function fetchNBAGameSummary(eventId: string) {
   )
 }
 
+/* ═══ NFL Endpoints ═══ */
+
+export function fetchNFLScoreboard(date?: string) {
+  const dateParam = date ?? todayESPN()
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/football/nfl/scoreboard?dates=${dateParam}`
+  )
+}
+
 /* ── Helpers ── */
 function todayESPN(): string {
   const d = new Date()

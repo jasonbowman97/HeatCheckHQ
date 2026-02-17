@@ -31,8 +31,10 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session
       const userId = session.metadata?.supabase_user_id
       const subscriptionId = session.subscription as string
+      const isGuestCheckout = session.metadata?.source === "guest_checkout"
 
       if (userId && subscriptionId) {
+        // ── Authenticated user checkout ──
         // Upgrade to paid Pro — clear trial_expires_at so getUserTier
         // treats this as a real paid subscription, not a trial
         const { error } = await supabase
@@ -52,6 +54,9 @@ export async function POST(request: Request) {
 
         // Track affiliate conversion if this user was referred
         await trackAffiliateConversion(userId)
+      } else if (isGuestCheckout && subscriptionId) {
+        // ── Guest checkout — create Supabase account ──
+        await handleGuestCheckout(session, subscriptionId)
       }
       break
     }
@@ -98,6 +103,119 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+/**
+ * Handle guest checkout: create a Supabase user account from the Stripe customer
+ * email, create a profile, and upgrade to Pro. Sends a password reset email so
+ * the user can set their password and log in.
+ */
+async function handleGuestCheckout(
+  session: Stripe.Checkout.Session,
+  subscriptionId: string
+) {
+  try {
+    // Get customer email from Stripe
+    const customerId = session.customer as string
+    const customer = await stripe.customers.retrieve(customerId)
+
+    if (customer.deleted) {
+      console.error("[Guest Checkout] Customer was deleted:", customerId)
+      return
+    }
+
+    const email = customer.email
+    if (!email) {
+      console.error("[Guest Checkout] No email on Stripe customer:", customerId)
+      return
+    }
+
+    console.log(`[Guest Checkout] Processing for ${email}`)
+
+    // Check if a Supabase user with this email already exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers()
+    const existingUser = existingUsers?.users?.find(
+      (u) => u.email?.toLowerCase() === email.toLowerCase()
+    )
+
+    if (existingUser) {
+      // User exists — just link Stripe and upgrade to Pro
+      console.log(`[Guest Checkout] Existing user found: ${existingUser.id}`)
+
+      await supabase
+        .from("profiles")
+        .upsert({
+          id: existingUser.id,
+          email,
+          subscription_tier: "pro",
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          trial_expires_at: null,
+        })
+
+      await trackAffiliateConversion(existingUser.id)
+      return
+    }
+
+    // Create a new Supabase user (auto-confirmed, no email verification needed)
+    const tempPassword = crypto.randomUUID()
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true, // Auto-confirm — they already verified email with Stripe
+    })
+
+    if (createError || !newUser.user) {
+      console.error("[Guest Checkout] Failed to create Supabase user:", createError)
+      return
+    }
+
+    console.log(`[Guest Checkout] Created Supabase user: ${newUser.user.id}`)
+
+    // Create profile with Pro tier
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .upsert({
+        id: newUser.user.id,
+        email,
+        subscription_tier: "pro",
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        trial_expires_at: null,
+      })
+
+    if (profileError) {
+      console.error("[Guest Checkout] Failed to create profile:", profileError)
+      return
+    }
+
+    // Update Stripe customer with Supabase user ID for future webhook lookups
+    await stripe.customers.update(customerId, {
+      metadata: { supabase_user_id: newUser.user.id },
+    })
+
+    // Send password reset email so the user can set their password
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.io"
+    await supabase.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+      options: {
+        redirectTo: `${baseUrl}/auth/callback?next=/account`,
+      },
+    })
+
+    // Also send a proper recovery email the user can click
+    // This uses Supabase's built-in email template
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${baseUrl}/auth/callback?next=/account`,
+    })
+
+    console.log(`[Guest Checkout] Pro activated + password reset email sent for ${email}`)
+
+    await trackAffiliateConversion(newUser.user.id)
+  } catch (error) {
+    console.error("[Guest Checkout] Error:", error)
+  }
 }
 
 /**

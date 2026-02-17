@@ -21,11 +21,14 @@ import {
   type SortOption,
 } from "@/lib/streak-filter"
 import {
-  STAT_CONFIGS,
+  SPORT_STAT_CONFIGS,
+  SPORT_LABELS,
+  getTeamLogoUrl,
   WINDOW_OPTIONS,
   type EnrichedPlayer,
   type GameStatKey,
   type WindowSize,
+  type SportKey,
 } from "@/lib/streak-types"
 
 /** Number of rows visible to anonymous users */
@@ -35,18 +38,22 @@ type ViewMode = "table" | "cards"
 
 interface StreaksDashboardProps {
   players: EnrichedPlayer[]
+  sport?: SportKey
 }
 
-export function StreaksDashboard({ players }: StreaksDashboardProps) {
+export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardProps) {
   const userTier = useUserTier()
   const isAnonymous = userTier === "anonymous"
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const statConfigs = SPORT_STAT_CONFIGS[sport]
+  const sportLabel = SPORT_LABELS[sport]
+
   // Read initial state from URL params, fall back to defaults
-  const initialStat = STAT_CONFIGS.find(
+  const initialStat = statConfigs.find(
     (c) => c.key === searchParams.get("stat")
-  ) ?? STAT_CONFIGS[0]
+  ) ?? statConfigs[0]
 
   const initialThreshold = Number(searchParams.get("threshold")) || initialStat.defaultThreshold
   const initialWindow = (Number(searchParams.get("window")) || initialStat.defaultWindow) as WindowSize
@@ -67,9 +74,9 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
       params.set("stat", stat)
       params.set("threshold", String(thresh))
       params.set("window", String(win))
-      router.replace(`/nba/streaks?${params.toString()}`, { scroll: false })
+      router.replace(`/${sport}/streaks?${params.toString()}`, { scroll: false })
     },
-    [router]
+    [router, sport]
   )
 
   // Derive unique teams
@@ -127,7 +134,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
       <div>
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-foreground">
-            NBA Streak Tracker
+            {sportLabel} Streak Tracker
           </h2>
           {players.length > 0 && (
             <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
@@ -145,7 +152,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Stat chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {STAT_CONFIGS.map((config) => (
+          {statConfigs.map((config) => (
             <button
               key={config.key}
               type="button"
@@ -305,8 +312,8 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
         viewMode === "table" ? (
           isAnonymous && rows.length > PREVIEW_ROWS ? (
             <SignupGate
-              headline="See all player streaks — free"
-              description="Unlock the full consistency sheet with every NBA rotation player. Free forever, no credit card."
+              headline={`See all ${sportLabel} player streaks — free`}
+              description={`Unlock the full consistency sheet with every ${sportLabel} rotation player. Free forever, no credit card.`}
               countLabel={`${rows.length} players found`}
               preview={
                 <StreakTable
@@ -314,6 +321,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
                   threshold={threshold}
                   statLabel={activeStat.shortLabel}
                   window={window}
+                  sport={sport}
                 />
               }
               gated={
@@ -323,6 +331,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
                   statLabel={activeStat.shortLabel}
                   window={window}
                   startRank={PREVIEW_ROWS + 1}
+                  sport={sport}
                 />
               }
             />
@@ -332,20 +341,22 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
               threshold={threshold}
               statLabel={activeStat.shortLabel}
               window={window}
+              sport={sport}
             />
           )
         ) : (
           /* Card view */
           isAnonymous && rows.length > PREVIEW_ROWS ? (
             <SignupGate
-              headline="See all player streaks — free"
-              description="Unlock the full consistency sheet. Free forever, no credit card."
+              headline={`See all ${sportLabel} player streaks — free`}
+              description={`Unlock the full consistency sheet. Free forever, no credit card.`}
               countLabel={`${rows.length} players found`}
               preview={
                 <StreakCardGrid
                   rows={rows.slice(0, PREVIEW_ROWS)}
                   threshold={threshold}
                   statLabel={activeStat.shortLabel}
+                  sport={sport}
                 />
               }
               gated={
@@ -353,6 +364,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
                   rows={rows.slice(PREVIEW_ROWS)}
                   threshold={threshold}
                   statLabel={activeStat.shortLabel}
+                  sport={sport}
                 />
               }
             />
@@ -361,6 +373,7 @@ export function StreaksDashboard({ players }: StreaksDashboardProps) {
               rows={rows}
               threshold={threshold}
               statLabel={activeStat.shortLabel}
+              sport={sport}
             />
           )
         )
@@ -399,10 +412,12 @@ function StreakCardGrid({
   rows,
   threshold,
   statLabel,
+  sport = "nba",
 }: {
   rows: FilteredPlayerRow[]
   threshold: number
   statLabel: string
+  sport?: SportKey
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -418,7 +433,7 @@ function StreakCardGrid({
               <div className="flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://a.espncdn.com/i/teamlogos/nba/500/${row.player.team.toLowerCase()}.png`}
+                  src={getTeamLogoUrl(sport, row.player.team)}
                   alt={row.player.team}
                   width={24}
                   height={24}

@@ -1,5 +1,6 @@
 import { getUserTier } from "@/lib/get-user-tier"
 import { getRouteAccess } from "@/lib/access-control"
+import { UserTierProvider } from "@/components/user-tier-provider"
 import { Paywall } from "@/components/paywall"
 
 interface ProtectedPageProps {
@@ -12,12 +13,18 @@ export async function ProtectedPage({ pathname, children }: ProtectedPageProps) 
   const routeAccess = getRouteAccess(pathname)
 
   if (!routeAccess || routeAccess.tier === "public") {
-    return <>{children}</>
+    return (
+      <UserTierProvider tier={userTier}>
+        {children}
+      </UserTierProvider>
+    )
   }
 
   return (
-    <Paywall requiredTier={routeAccess.tier} userTier={userTier}>
-      {children}
-    </Paywall>
+    <UserTierProvider tier={userTier}>
+      <Paywall requiredTier={routeAccess.tier} userTier={userTier}>
+        {children}
+      </Paywall>
+    </UserTierProvider>
   )
 }

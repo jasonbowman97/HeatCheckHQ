@@ -8,11 +8,11 @@ import type { EnrichedPlayer } from "@/lib/streak-types"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-export default function NBAStreaksPage() {
+export default function MLBStreaksPage() {
   const { data, isLoading, error, mutate } = useSWR<{
     players: EnrichedPlayer[]
     updatedAt: string
-  }>("/api/nba/streaks", fetcher, {
+  }>("/api/mlb/streaks", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 300_000,
   })
@@ -29,7 +29,7 @@ export default function NBAStreaksPage() {
               Failed to load streak data
             </p>
             <p className="text-xs text-muted-foreground">
-              Something went wrong fetching NBA player stats. Try again.
+              Something went wrong fetching MLB player stats. Try again.
             </p>
             <button
               onClick={() => mutate()}
@@ -43,11 +43,11 @@ export default function NBAStreaksPage() {
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Loading player game logs for all NBA rotation players...
+              Loading player game logs for all MLB batters and pitchers...
             </p>
           </div>
         ) : (
-          <StreaksDashboard players={players} />
+          <StreaksDashboard players={players} sport="mlb" />
         )}
       </main>
     </DashboardShell>

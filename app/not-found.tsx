@@ -36,7 +36,7 @@ export default function NotFound() {
           {[
             { href: "/nba/first-basket", label: "NBA" },
             { href: "/mlb/nrfi", label: "MLB" },
-            { href: "/nfl/trends", label: "NFL" },
+            { href: "/nfl/defense-vs-position", label: "NFL" },
           ].map((sport) => (
             <Link
               key={sport.href}
