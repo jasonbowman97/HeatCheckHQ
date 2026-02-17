@@ -43,26 +43,26 @@ const features = [
 export function FeaturesSection() {
   return (
     <section id="features" className="py-16 md:py-24 border-t border-border">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <FadeIn>
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               Features
             </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
               Built for the way serious bettors research
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
               Every filter, heatmap, and trend alert is designed to surface
               actionable edges faster — across MLB, NBA, and NFL.
             </p>
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <FadeIn key={feature.title} delay={0.1 + index * 0.05}>
-              <div className="group flex flex-col gap-4 rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/30 h-full">
+              <div className="group flex flex-col gap-3 sm:gap-4 rounded-xl border border-border bg-card p-4 sm:p-6 transition-colors hover:border-primary/30 h-full">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <feature.icon className="h-5 w-5" />
               </div>

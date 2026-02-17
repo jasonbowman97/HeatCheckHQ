@@ -78,7 +78,7 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
             <Logo className="h-5 w-5" />
@@ -158,7 +158,7 @@ export function Navbar() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="border-t border-border bg-background px-6 py-6 md:hidden">
+        <div className="border-t border-border bg-background px-4 sm:px-6 py-5 sm:py-6 md:hidden">
           <div className="flex flex-col gap-4">
             <a href="#dashboards" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Dashboards</a>
             <a href="#features" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Features</a>

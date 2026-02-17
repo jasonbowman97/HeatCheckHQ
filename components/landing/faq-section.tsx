@@ -42,13 +42,13 @@ export function FaqSection() {
 
   return (
     <section id="faq" className="py-16 md:py-24 border-t border-border">
-      <div className="mx-auto max-w-3xl px-6">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <FadeIn>
-          <div className="text-center mb-12">
+          <div className="text-center mb-10 sm:mb-12">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               FAQ
             </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
               Common questions
             </h2>
           </div>

@@ -100,7 +100,7 @@ export default function NBAFirstBasketPage() {
   const [date, setDate] = useState(new Date())
   const [gameFilter, setGameFilter] = useState("all")
   const [minGames, setMinGames] = useState(0)
-  const [startersOnly, setStartersOnly] = useState(false)
+  const [startersOnly, setStartersOnly] = useState(true)
   const [sortColumn, setSortColumn] = useState("firstBasketPct")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 

@@ -62,16 +62,16 @@ const plans = [
 export function PricingSection() {
   return (
     <section id="pricing" className="py-16 md:py-24 border-t border-border">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <FadeIn>
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               Pricing
             </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
               Start free. Go Pro when you want the full edge.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
               Get instant access to every dashboard free — no credit card required.
               Upgrade to Pro for unlimited data, all filters unlocked, and zero gates.
             </p>
@@ -81,11 +81,11 @@ export function PricingSection() {
           </div>
         </FadeIn>
 
-        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
           {plans.map((plan, index) => (
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
-                className={`relative flex flex-col rounded-xl border p-8 h-full ${
+                className={`relative flex flex-col rounded-xl border p-5 sm:p-8 h-full ${
                   plan.popular || (plan as Record<string, unknown>).savings
                     ? "border-primary bg-card shadow-lg shadow-primary/5"
                     : "border-border bg-card"
@@ -102,20 +102,20 @@ export function PricingSection() {
                 </div>
               ) : null}
 
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-foreground">{plan.price}</span>
                   <span className="text-sm text-muted-foreground">{plan.period}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
               </div>
 
-              <div className="mb-8 flex flex-col gap-3">
+              <div className="mb-6 sm:mb-8 flex flex-col gap-2.5 sm:gap-3">
                 {plan.highlights.map((item) => (
                   <div
                     key={item.text}
-                    className={`flex items-start gap-3 text-sm ${item.included ? "text-foreground" : "text-muted-foreground/50"}`}
+                    className={`flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm ${item.included ? "text-foreground" : "text-muted-foreground/50"}`}
                   >
                     {item.included ? (
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -148,7 +148,7 @@ export function PricingSection() {
 
         {/* Trust badges */}
         <FadeIn delay={0.4}>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+          <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5" />
               <span>No credit card for Free plan</span>

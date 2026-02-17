@@ -3,8 +3,8 @@ import { Logo } from "@/components/logo"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/50 py-12">
-      <div className="mx-auto max-w-7xl px-6">
+    <footer className="border-t border-border bg-card/50 py-10 sm:py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">

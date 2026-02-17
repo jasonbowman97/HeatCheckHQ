@@ -28,10 +28,10 @@ const supportOptions = [
 export function SupportSection() {
   return (
     <section id="support" className="py-16 md:py-24 border-t border-border">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <FadeIn>
-          <div className="mx-auto max-w-2xl text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          <div className="mx-auto max-w-2xl text-center mb-10 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Need help?
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -40,10 +40,10 @@ export function SupportSection() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3">
           {supportOptions.map((option, i) => (
             <FadeIn key={option.title} delay={i * 0.1}>
-              <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 text-center transition-colors hover:border-primary/30">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 rounded-xl border border-border bg-card p-5 sm:p-8 text-center transition-colors hover:border-primary/30">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                   <option.icon className="h-6 w-6 text-primary" />
                 </div>
