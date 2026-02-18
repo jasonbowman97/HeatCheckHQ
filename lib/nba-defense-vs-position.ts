@@ -66,7 +66,7 @@ function espnAbbrToBP(espnAbbr: string): string {
 /* ESPN → NBA.com team abbreviation mapping */
 const ESPN_TO_NBA: Record<string, string> = {
   GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
-  WSH: "WAS", UTAH: "UTA",
+  WSH: "WAS", UTAH: "UTA", PHX: "PHX",
 }
 
 function espnAbbrToNBA(espnAbbr: string): string {
@@ -174,6 +174,7 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
       // Fall back to recent position map
       const recentPlayer = getPlayerAtPosition(positionMap, nbaAbbr, pos)
       if (recentPlayer) return recentPlayer.playerName
+      console.warn(`[NBA DvP] No player found: ESPN="${espnAbbr}" → NBA="${nbaAbbr}" pos=${pos} (lineupGames=${lineupGames.length}, positionMap teams=${positionMap.size})`)
       return ""
     }
 

@@ -165,7 +165,7 @@ export async function fetchRecentPositionMap(): Promise<PositionMap> {
   }
 
   const map: PositionMap = new Map()
-  const DAYS_TO_CHECK = 7
+  const DAYS_TO_CHECK = 14  // extended to cover All-Star break gap
 
   // Fetch most recent day first → oldest last. Most recent data wins (set first).
   for (let daysAgo = 0; daysAgo < DAYS_TO_CHECK; daysAgo++) {
