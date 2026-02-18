@@ -237,8 +237,9 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
       // Sort: most notable first (lowest rank number = worst defense at that position)
       insights.sort((a, b) => a.rank - b.rank)
 
-      const awayLogos = (awayTeam.logos ?? []) as Array<Record<string, unknown>>
-      const homeLogos = (homeTeam.logos ?? []) as Array<Record<string, unknown>>
+      // ESPN scoreboard uses `team.logo` (string), not `team.logos` (array)
+      const awayLogo = typeof awayTeam.logo === "string" ? awayTeam.logo : ((awayTeam.logos as Array<Record<string, unknown>>)?.[0]?.href as string ?? "")
+      const homeLogo = typeof homeTeam.logo === "string" ? homeTeam.logo : ((homeTeam.logos as Array<Record<string, unknown>>)?.[0]?.href as string ?? "")
 
       matchups.push({
         eventId: event.id as string,
@@ -247,13 +248,13 @@ export async function getTodayMatchupInsights(date?: string): Promise<TodayMatch
           id: awayTeam.id as string,
           abbr: awayEspnAbbr,
           name: awayTeam.displayName as string,
-          logo: (awayLogos[0]?.href as string) ?? "",
+          logo: awayLogo,
         },
         homeTeam: {
           id: homeTeam.id as string,
           abbr: homeEspnAbbr,
           name: homeTeam.displayName as string,
-          logo: (homeLogos[0]?.href as string) ?? "",
+          logo: homeLogo,
         },
         insights,
       })
