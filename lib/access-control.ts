@@ -28,13 +28,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
 
   // Pro subscription required — core features
-  { pattern: "/edge-lab", tier: "pro", label: "Edge Lab" },
   { pattern: "/situation-room", tier: "pro", label: "Situation Room" },
-  { pattern: "/bet-builder", tier: "pro", label: "60-Second Bet Builder" },
-  { pattern: "/what-if", tier: "pro", label: "What-If Simulator" },
-  { pattern: "/matchup-xray", tier: "pro", label: "Matchup X-Ray" },
-  { pattern: "/graveyard", tier: "pro", label: "The Graveyard" },
-  { pattern: "/correlations", tier: "pro", label: "Correlation Matrix" },
 
   // Pro subscription required — existing dashboards
   { pattern: "/nba/streaks", tier: "pro", label: "Streak Tracker" },

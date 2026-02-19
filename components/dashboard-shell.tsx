@@ -5,16 +5,8 @@ import { usePathname } from "next/navigation"
 import {
   Menu,
   SearchCheck,
-  FlaskConical,
   Radio,
-  Gauge,
-  Swords,
-  GitBranch,
-  Zap,
-  Dices,
   Bell,
-  Skull,
-  BookOpen,
   ChevronRight,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
@@ -119,30 +111,18 @@ const TOOL_NAV: ToolCategory[] = [
     label: "Analyze",
     links: [
       { href: "/check", label: "Check My Prop", tier: "free", icon: SearchCheck, description: "Validate any prop bet" },
-      { href: "/edge-lab", label: "Edge Lab", tier: "pro", icon: FlaskConical, description: "Custom filters & strategy builder" },
-      { href: "/convergence-dashboard", label: "Convergence", tier: "pro", icon: Gauge, description: "Cross-sport signal overview" },
-      { href: "/correlations", label: "Correlations", tier: "pro", icon: GitBranch, description: "Prop correlation matrix" },
     ],
   },
   {
     label: "Game Day",
     links: [
       { href: "/situation-room", label: "Situation Room", tier: "pro", icon: Radio, description: "Live game-day command center" },
-      { href: "/matchup-xray", label: "Matchup X-Ray", tier: "pro", icon: Swords, description: "Deep matchup analysis" },
-    ],
-  },
-  {
-    label: "Build",
-    links: [
-      { href: "/bet-builder", label: "Bet Builder", tier: "pro", icon: Zap, description: "60-second parlay builder" },
-      { href: "/what-if", label: "What-If", tier: "pro", icon: Dices, description: "Scenario simulator" },
     ],
   },
   {
     label: "Track",
     links: [
       { href: "/criteria", label: "Alerts", tier: "pro", icon: Bell, description: "Research-based alerts" },
-      { href: "/graveyard", label: "Graveyard", tier: "pro", icon: Skull, description: "Bad beat autopsy" },
     ],
   },
 ]
@@ -168,16 +148,8 @@ const PAGE_NAMES: Record<string, string> = {
   streaks: "Streak Tracker",
   // Tool pages
   check: "Check My Prop",
-  "edge-lab": "Edge Lab",
   "situation-room": "Situation Room",
-  "convergence-dashboard": "Convergence",
-  "matchup-xray": "Matchup X-Ray",
-  correlations: "Correlations",
-  "bet-builder": "Bet Builder",
-  "what-if": "What-If",
   criteria: "Alerts",
-  graveyard: "Graveyard",
-  narratives: "Narratives",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
@@ -202,9 +174,8 @@ const NAV_INACTIVE_CLASS = "text-xs font-medium text-muted-foreground hover:text
 function QuickAccessBar({ pathname }: { pathname: string }) {
   const quickLinks = [
     { href: "/check", label: "Check", icon: SearchCheck },
-    { href: "/convergence-dashboard", label: "Convergence", icon: Gauge },
     { href: "/situation-room", label: "Situation Room", icon: Radio },
-    { href: "/bet-builder", label: "Builder", icon: Zap },
+    { href: "/criteria", label: "Alerts", icon: Bell },
   ]
 
   return (
