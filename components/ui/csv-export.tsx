@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react"
 import { useUserTier } from "@/components/user-tier-provider"
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 
 interface CsvExportProps {
@@ -12,6 +13,7 @@ interface CsvExportProps {
 
 export function CsvExport({ data, filename, columns }: CsvExportProps) {
   const userTier = useUserTier()
+  const pathname = usePathname()
   const isPro = userTier === "pro"
 
   function handleExport() {
@@ -44,7 +46,7 @@ export function CsvExport({ data, filename, columns }: CsvExportProps) {
   if (!isPro) {
     return (
       <Link
-        href="/checkout"
+        href={`/checkout${pathname ? `?return=${encodeURIComponent(pathname)}` : ""}`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
       >
         <Download className="h-3 w-3" />

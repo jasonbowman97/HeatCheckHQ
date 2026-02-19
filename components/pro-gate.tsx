@@ -7,6 +7,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Lock, Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUserTier } from "@/components/user-tier-provider"
@@ -33,6 +34,7 @@ export function ProGate({
   minHeight = "120px",
 }: ProGateProps) {
   const tier = useUserTier()
+  const pathname = usePathname()
 
   // Pro users see content directly — no gate
   if (tier === "pro") {
@@ -40,6 +42,7 @@ export function ProGate({
   }
 
   const isAnonymous = tier === "anonymous"
+  const checkoutHref = `/checkout${pathname ? `?return=${encodeURIComponent(pathname)}` : ""}`
 
   return (
     <div className="relative" style={{ minHeight }}>
@@ -73,7 +76,7 @@ export function ProGate({
             className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
             asChild
           >
-            <Link href={isAnonymous ? "/checkout" : "/checkout"}>
+            <Link href={checkoutHref}>
               <Sparkles className="h-3.5 w-3.5" />
               {isAnonymous ? "Get Pro" : "Upgrade to Pro"}
               <ArrowRight className="h-3.5 w-3.5" />

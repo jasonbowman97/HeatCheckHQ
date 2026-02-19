@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Zap, ArrowRight } from "lucide-react"
 import { useUserTier } from "@/components/user-tier-provider"
 
@@ -16,8 +17,11 @@ export function ProUpsellBanner({
   description = "Full, unfiltered access to every dashboard across MLB, NBA, and NFL — $12/mo",
 }: ProUpsellBannerProps) {
   const userTier = useUserTier()
+  const pathname = usePathname()
 
   if (userTier !== "free") return null
+
+  const checkoutHref = `/checkout${pathname ? `?return=${encodeURIComponent(pathname)}` : ""}`
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
@@ -31,7 +35,7 @@ export function ProUpsellBanner({
         </div>
       </div>
       <Link
-        href="/checkout"
+        href={checkoutHref}
         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
       >
         Go Pro

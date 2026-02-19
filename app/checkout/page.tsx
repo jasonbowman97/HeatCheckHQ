@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
   EmbeddedCheckoutProvider,
@@ -17,6 +18,9 @@ const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 export default function CheckoutPage() {
+  const searchParams = useSearchParams()
+  const returnPath = searchParams.get("return") || ""
+
   const [error, setError] = useState<string | null>(null)
   const [selectedPlan, setSelectedPlan] = useState("pro-monthly")
   const [checkoutStarted, setCheckoutStarted] = useState(false)
@@ -28,7 +32,7 @@ export default function CheckoutPage() {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId: selectedPlan }),
+      body: JSON.stringify({ planId: selectedPlan, returnPath }),
     })
     const data = await res.json()
 
@@ -39,7 +43,7 @@ export default function CheckoutPage() {
     }
 
     return data.clientSecret
-  }, [selectedPlan])
+  }, [selectedPlan, returnPath])
 
   // Check authentication on mount — but don't redirect if not authed
   useEffect(() => {

@@ -2,12 +2,26 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { CheckCircle2, Mail } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 
+/** Validate the return path is a safe internal route */
+function getSafeReturnPath(raw: string | null): string {
+  if (!raw) return "/situation-room"
+  // Only allow relative paths starting with /
+  if (!raw.startsWith("/")) return "/situation-room"
+  // Block protocol-relative URLs and external redirects
+  if (raw.startsWith("//")) return "/situation-room"
+  return raw
+}
+
 export default function CheckoutReturnPage() {
+  const searchParams = useSearchParams()
+  const returnTo = getSafeReturnPath(searchParams.get("return"))
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -65,7 +79,9 @@ export default function CheckoutReturnPage() {
           className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
           asChild
         >
-          <Link href="/mlb">Explore dashboards</Link>
+          <Link href={returnTo}>
+            {returnTo === "/situation-room" ? "Open Situation Room" : "Continue to dashboard"}
+          </Link>
         </Button>
 
         {isGuest && (

@@ -22,7 +22,7 @@ export async function ProtectedPage({ pathname, children }: ProtectedPageProps) 
 
   return (
     <UserTierProvider tier={userTier}>
-      <Paywall requiredTier={routeAccess.tier} userTier={userTier}>
+      <Paywall requiredTier={routeAccess.tier} userTier={userTier} pathname={pathname}>
         {children}
       </Paywall>
     </UserTierProvider>

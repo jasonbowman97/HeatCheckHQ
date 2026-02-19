@@ -7,10 +7,12 @@ import { TrackEvent } from "@/components/track-event"
 interface PaywallProps {
   requiredTier: AccessTier
   userTier: "anonymous" | "free" | "pro"
+  /** Current route pathname — used to build the ?return= param for checkout */
+  pathname?: string
   children: React.ReactNode
 }
 
-export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
+export function Paywall({ requiredTier, userTier, pathname, children }: PaywallProps) {
   const hasAccess =
     requiredTier === "public" ||
     (requiredTier === "free" && (userTier === "free" || userTier === "pro")) ||
@@ -27,6 +29,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
   const isAnonymous = userTier === "anonymous"
   const isProPage = requiredTier === "pro"
   const isFreePage = requiredTier === "free"
+  const checkoutHref = `/checkout${pathname ? `?return=${encodeURIComponent(pathname)}` : ""}`
 
   return (
     <div className="relative">
@@ -87,7 +90,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                   asChild
                 >
-                  <Link href="/checkout">
+                  <Link href={checkoutHref}>
                     Subscribe to Pro
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -136,7 +139,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                   asChild
                 >
-                  <Link href="/checkout">
+                  <Link href={checkoutHref}>
                     Upgrade to Pro
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

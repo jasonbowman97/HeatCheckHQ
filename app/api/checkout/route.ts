@@ -7,10 +7,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const planId = body.planId || "pro-monthly"
+    const returnPath = body.returnPath || ""
     const product = PRODUCTS.find((p) => p.id === planId) ?? PRODUCTS[0]
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://heatcheckhq.io"
-    const returnUrl = `${baseUrl}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
+    const returnParams = new URLSearchParams({ session_id: "{CHECKOUT_SESSION_ID}" })
+    if (returnPath) returnParams.set("return", returnPath)
+    const returnUrl = `${baseUrl}/checkout/return?${returnParams.toString()}`
 
     // Check if user is authenticated
     const supabase = await createClient()
