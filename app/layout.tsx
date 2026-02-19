@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { generateSEO } from '@/lib/seo'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/google-analytics'
+import { PostHogProvider } from '@/components/posthog-provider'
 
 import './globals.css'
 
@@ -49,6 +50,7 @@ export default function RootLayout({
         {children}
         <Analytics />
         <GoogleAnalytics />
+        <PostHogProvider />
       </body>
     </html>
   )

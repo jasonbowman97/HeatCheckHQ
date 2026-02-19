@@ -46,6 +46,7 @@ const nextConfig = {
       'lucide-react',
       'framer-motion',
       'recharts',
+      'posthog-js',
       '@radix-ui/react-accordion',
       '@radix-ui/react-alert-dialog',
       '@radix-ui/react-dialog',

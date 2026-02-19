@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@supabase/supabase-js"
 import type Stripe from "stripe"
+import { sendProUpgradeEmail, sendWelcomeEmail } from "@/lib/email"
 
 // Use service role key for webhook (no user session)
 const supabase = createClient(
@@ -50,6 +51,15 @@ export async function POST(request: Request) {
         if (error) {
           console.error("[Stripe Webhook] Failed to upgrade user:", userId, error)
           return NextResponse.json({ error: "DB write failed" }, { status: 500 })
+        }
+
+        // Send Pro upgrade email (non-blocking)
+        const customer = await stripe.customers.retrieve(session.customer as string)
+        if (!("deleted" in customer && customer.deleted) && customer.email) {
+          const plan = session.metadata?.plan || "Pro"
+          sendProUpgradeEmail(customer.email, plan).catch((err) =>
+            console.error("[Stripe Webhook] Upgrade email failed:", err)
+          )
         }
 
         // Track affiliate conversion if this user was referred
@@ -211,6 +221,11 @@ async function handleGuestCheckout(
     })
 
     console.log(`[Guest Checkout] Pro activated + password reset email sent for ${email}`)
+
+    // Send welcome email via Resend (non-blocking)
+    sendWelcomeEmail(email).catch((err) =>
+      console.error("[Guest Checkout] Welcome email failed:", err)
+    )
 
     await trackAffiliateConversion(newUser.user.id)
   } catch (error) {

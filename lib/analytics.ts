@@ -6,11 +6,28 @@ declare global {
   }
 }
 
+/**
+ * Track an event to both GA4 and PostHog.
+ * PostHog is lazy-imported to avoid bundling it server-side.
+ */
 export function trackEvent(eventName: string, params?: EventParams) {
+  if (typeof window === "undefined") return
+
   // GA4
-  if (typeof window !== "undefined" && window.gtag) {
+  if (window.gtag) {
     window.gtag("event", eventName, params)
   }
+
+  // PostHog — dynamic import to keep it client-only
+  import("posthog-js")
+    .then(({ default: posthog }) => {
+      if (posthog.__loaded) {
+        posthog.capture(eventName, params)
+      }
+    })
+    .catch(() => {
+      // PostHog not available — that's fine
+    })
 }
 
 // Pre-defined events for the conversion funnel
@@ -35,4 +52,13 @@ export const analytics = {
 
   ctaClicked: (location: string, text: string) =>
     trackEvent("cta_clicked", { location, text }),
+
+  trialActivated: () =>
+    trackEvent("trial_activated", { trial_days: 7 }),
+
+  propSaved: (sport: string, stat: string) =>
+    trackEvent("prop_saved", { sport, stat }),
+
+  propUnsaved: (sport: string, stat: string) =>
+    trackEvent("prop_unsaved", { sport, stat }),
 }

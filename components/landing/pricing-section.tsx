@@ -8,10 +8,11 @@ const plans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "9 dashboards across MLB, NBA & NFL — no credit card, no trial.",
+    description: "9 dashboards across MLB, NBA & NFL — plus a 7-day Pro trial, no credit card needed.",
     cta: "Create free account",
     ctaVariant: "outline" as const,
     highlights: [
+      { text: "7-day Pro trial — every feature unlocked free", included: true },
       { text: "First Basket picks with live tipoff data", included: true },
       { text: "NRFI matchups & stadium weather impact", included: true },
       { text: "Head-to-Head player comparisons", included: true },

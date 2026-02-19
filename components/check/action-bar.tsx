@@ -6,10 +6,12 @@
 
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { Share2, Bookmark, RotateCcw, Check, Link2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PropCheckResult } from "@/types/check-prop"
+import { saveProp, unsaveProp, checkIfSaved } from "@/lib/saved-props"
+import { analytics } from "@/lib/analytics"
 
 interface ActionBarProps {
   result: PropCheckResult
@@ -19,8 +21,24 @@ interface ActionBarProps {
 export function ActionBar({ result, onRecheck }: ActionBarProps) {
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const { player, statLabel, line, verdict, heatRing, stat, game } = result
+
+  // Check if this prop is already saved on mount
+  useEffect(() => {
+    const gameDate = game.date
+      ? new Date(game.date).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+
+    checkIfSaved(player.name, stat, line, gameDate).then((id) => {
+      if (id) {
+        setSaved(true)
+        setSavedId(id)
+      }
+    })
+  }, [player.name, stat, line, game.date])
 
   // Build share URL params for the public share page
   const shareUrl = useMemo(() => {
@@ -77,10 +95,34 @@ export function ActionBar({ result, onRecheck }: ActionBarProps) {
     }
   }, [player.name, statLabel, line, verdict.label, shareUrl, handleCopyLink])
 
-  const handleSave = useCallback(() => {
-    setSaved(s => !s)
-    // TODO: Persist to Supabase user_saved_props table
-  }, [])
+  const handleSave = useCallback(async () => {
+    if (saving) return
+    setSaving(true)
+
+    try {
+      if (saved && savedId) {
+        // Unsave
+        const success = await unsaveProp(savedId)
+        if (success) {
+          setSaved(false)
+          setSavedId(null)
+          analytics.propUnsaved(player.sport, stat)
+        }
+      } else {
+        // Save
+        const id = await saveProp(result)
+        if (id) {
+          setSaved(true)
+          setSavedId(id)
+          analytics.propSaved(player.sport, stat)
+        }
+      }
+    } catch {
+      // Silently fail — UI stays in sync
+    } finally {
+      setSaving(false)
+    }
+  }, [saved, savedId, saving, result, player.sport, stat])
 
   // Share image download URL
   const shareImageUrl = useMemo(() => {
