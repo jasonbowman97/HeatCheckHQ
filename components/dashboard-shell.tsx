@@ -28,6 +28,7 @@ import {
 import { useState, useEffect } from "react"
 import { OnboardingTooltip } from "@/components/onboarding-tooltip"
 import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
+import { hydrateOnboardingState } from "@/lib/onboarding"
 import { useUserTier } from "@/components/user-tier-provider"
 import { analytics } from "@/lib/analytics"
 
@@ -241,9 +242,15 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
   const userTier = useUserTier()
 
   useEffect(() => {
-    if (userTier !== "anonymous" && !isOnboarded()) {
-      const timer = setTimeout(() => setShowWelcome(true), 500)
-      return () => clearTimeout(timer)
+    if (userTier !== "anonymous") {
+      // Hydrate onboarding state from Supabase (cross-device persistence)
+      // then check if the user needs onboarding
+      hydrateOnboardingState().then((alreadyOnboarded) => {
+        if (!alreadyOnboarded && !isOnboarded()) {
+          const timer = setTimeout(() => setShowWelcome(true), 500)
+          return () => clearTimeout(timer)
+        }
+      })
     }
   }, [userTier])
 

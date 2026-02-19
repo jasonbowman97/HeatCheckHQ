@@ -9,19 +9,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { trackEvent, analytics } from "@/lib/analytics"
+import { isOnboarded, setOnboarded } from "@/lib/onboarding"
 
-const ONBOARDED_KEY = "hchq-onboarded"
-
-export function isOnboarded(): boolean {
-  if (typeof window === "undefined") return true
-  return localStorage.getItem(ONBOARDED_KEY) === "true"
-}
-
-function setOnboarded() {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(ONBOARDED_KEY, "true")
-  }
-}
+// Re-export for backward compatibility (DashboardShell imports from here)
+export { isOnboarded }
 
 const SPORTS = [
   {
@@ -77,6 +68,8 @@ export function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
   const router = useRouter()
 
   function handleSportSelect(sport: (typeof SPORTS)[number]) {
+    // setOnboarded is now async (writes to Supabase) but we don't await it
+    // to keep the UI snappy — localStorage is written synchronously inside
     setOnboarded()
     trackEvent("onboarding_completed", { sport: sport.key })
     analytics.trialActivated()

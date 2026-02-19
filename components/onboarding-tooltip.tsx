@@ -2,9 +2,42 @@
 
 import { useState, useEffect } from "react"
 import { X, Lightbulb } from "lucide-react"
+import { getDismissedTips, dismissTip } from "@/lib/onboarding"
 
 /** Page-specific tips shown to first-time visitors */
 const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
+  "/check": {
+    title: "Check My Prop",
+    tips: [
+      "Enter any player, stat, and line to get a 7-factor convergence analysis.",
+      "The Heat Ring shows recent game-by-game performance against your line.",
+      "Pro users unlock Spectrum Overlays and Similar Situations for deeper analysis.",
+    ],
+  },
+  "/situation-room": {
+    title: "Situation Room",
+    tips: [
+      "Your live game-day command center — all prop-relevant updates in one place.",
+      "Track line movements, injury reports, and convergence shifts in real-time.",
+      "Top prop alerts surface the highest-conviction plays across today's games.",
+    ],
+  },
+  "/alerts": {
+    title: "Alerts",
+    tips: [
+      "Set custom research criteria to define what makes a great prop for you.",
+      "When a prop matches your criteria, you'll get an alert so you never miss it.",
+      "Pro users get unlimited criteria with performance tracking.",
+    ],
+  },
+  "/criteria": {
+    title: "Alerts",
+    tips: [
+      "Set custom research criteria to define what makes a great prop for you.",
+      "When a prop matches your criteria, you'll get an alert so you never miss it.",
+      "Pro users get unlimited criteria with performance tracking.",
+    ],
+  },
   "/mlb/hot-hitters": {
     title: "Hot Hitters Dashboard",
     tips: [
@@ -109,26 +142,14 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
       "Adjust the game window to see short-term hot streaks or season-long consistency.",
     ],
   },
-}
-
-const STORAGE_KEY = "hchq-onboarding-dismissed"
-
-function getDismissed(): Set<string> {
-  if (typeof window === "undefined") return new Set()
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? new Set(JSON.parse(raw)) : new Set()
-  } catch {
-    return new Set()
-  }
-}
-
-function setDismissed(pages: Set<string>) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...pages]))
-  } catch {
-    // localStorage may be unavailable
-  }
+  "/mlb/due-for-hr": {
+    title: "Due for a Home Run",
+    tips: [
+      "Tracks how long each batter has gone without a home run relative to their season pace.",
+      "Higher 'overdue' scores mean the player is further behind their typical HR frequency.",
+      "Best used alongside matchup data — overdue + soft pitching = prime HR spot.",
+    ],
+  },
 }
 
 export function OnboardingTooltip({ pathname }: { pathname: string }) {
@@ -136,7 +157,7 @@ export function OnboardingTooltip({ pathname }: { pathname: string }) {
   const [dismissed, setDismissedState] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const d = getDismissed()
+    const d = getDismissedTips()
     setDismissedState(d)
     // Show if this page hasn't been dismissed
     if (!d.has(pathname) && PAGE_TIPS[pathname]) {
@@ -151,10 +172,9 @@ export function OnboardingTooltip({ pathname }: { pathname: string }) {
 
   const handleDismiss = () => {
     setVisible(false)
-    const updated = new Set(dismissed)
-    updated.add(pathname)
-    setDismissedState(updated)
-    setDismissed(updated)
+    // dismissTip is async (writes to Supabase) but we don't await —
+    // localStorage is written synchronously inside for instant UX
+    dismissTip(pathname).then(setDismissedState)
   }
 
   return (
