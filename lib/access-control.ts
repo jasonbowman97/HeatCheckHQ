@@ -2,8 +2,8 @@
  * Access tiers for HeatCheck HQ dashboards:
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
- * "free"    — Free account required (NBA DVP, NFL DVP, H2H)
- * "pro"     — Paid subscription (Streak Trackers, Hot Hitters, Hitter vs Pitcher, Pitching Stats, NFL Matchup)
+ * "free"    — Free account required (All NBA dashboards, Check My Prop, MLB Due for HR, NFL DVP)
+ * "pro"     — Paid subscription (Situation Room, Alerts, MLB Streaks/Hot Hitters/Hitting/Pitching, NFL Matchup/Streaks)
  */
 
 export type AccessTier = "public" | "free" | "pro"
@@ -26,12 +26,14 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/defense-vs-position", tier: "free", label: "Defense vs Position" },
   { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },
   { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
+  { pattern: "/nba/streaks", tier: "free", label: "NBA Streak Tracker" },
 
   // Pro subscription required — core features
   { pattern: "/situation-room", tier: "pro", label: "Situation Room" },
+  { pattern: "/alerts", tier: "pro", label: "Alerts" },
+  { pattern: "/criteria", tier: "pro", label: "Alerts" },
 
   // Pro subscription required — existing dashboards
-  { pattern: "/nba/streaks", tier: "pro", label: "Streak Tracker" },
   { pattern: "/mlb/streaks", tier: "pro", label: "MLB Streak Tracker" },
   { pattern: "/nfl/streaks", tier: "pro", label: "NFL Streak Tracker" },
   { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },

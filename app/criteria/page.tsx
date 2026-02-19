@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function CriteriaPage() {
   return (
-    <ProtectedPage pathname="/check">
+    <ProtectedPage pathname="/criteria">
       <AppShell subtitle="Research-based alerts">
         <div className="mx-auto max-w-3xl px-4 py-6">
           <CriteriaManager />

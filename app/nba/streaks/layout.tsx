@@ -1,5 +1,6 @@
-import { ProtectedPage } from "@/components/protected-page"
 import { generateSEO } from "@/lib/seo"
+import { getUserTier } from "@/lib/get-user-tier"
+import { UserTierProvider } from "@/components/user-tier-provider"
 
 export const metadata = generateSEO({
   title: "NBA Streak Tracker - Custom Threshold Filters | HeatCheck HQ",
@@ -16,10 +17,16 @@ export const metadata = generateSEO({
   ],
 })
 
-export default function NBAStreaksLayout({
+export default async function NBAStreaksLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <ProtectedPage pathname="/nba/streaks">{children}</ProtectedPage>
+  const userTier = await getUserTier()
+
+  return (
+    <UserTierProvider tier={userTier}>
+      {children}
+    </UserTierProvider>
+  )
 }
