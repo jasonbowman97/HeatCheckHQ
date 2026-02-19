@@ -21,7 +21,8 @@ export default function EdgeLabPage() {
       // For now, the backtest engine runs client-side as a demo
       // In production, this would POST to the server with the filter
       // and receive BacktestResult
-      console.log("Running backtest for filter:", filter)
+      // TODO: Wire to /api/filters/backtest endpoint
+      void filter
     } catch (error) {
       console.error("Backtest failed:", error)
     } finally {
@@ -32,7 +33,7 @@ export default function EdgeLabPage() {
   const handleSaveFilter = async (filter: Partial<CustomFilter>) => {
     try {
       // TODO: Wire to /api/filters CRUD endpoint
-      console.log("Saving filter:", filter)
+      void filter
     } catch (error) {
       console.error("Save failed:", error)
     }

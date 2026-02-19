@@ -140,8 +140,6 @@ async function handleGuestCheckout(
       return
     }
 
-    console.log(`[Guest Checkout] Processing for ${email}`)
-
     // Check if a Supabase user with this email already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers()
     const existingUser = existingUsers?.users?.find(
@@ -150,8 +148,6 @@ async function handleGuestCheckout(
 
     if (existingUser) {
       // User exists — just link Stripe and upgrade to Pro
-      console.log(`[Guest Checkout] Existing user found: ${existingUser.id}`)
-
       await supabase
         .from("profiles")
         .upsert({
@@ -179,8 +175,6 @@ async function handleGuestCheckout(
       console.error("[Guest Checkout] Failed to create Supabase user:", createError)
       return
     }
-
-    console.log(`[Guest Checkout] Created Supabase user: ${newUser.user.id}`)
 
     // Create profile with Pro tier
     const { error: profileError } = await supabase
@@ -220,8 +214,6 @@ async function handleGuestCheckout(
       redirectTo: `${baseUrl}/auth/callback?next=/account`,
     })
 
-    console.log(`[Guest Checkout] Pro activated + password reset email sent for ${email}`)
-
     // Send welcome email via Resend (non-blocking)
     sendWelcomeEmail(email).catch((err) =>
       console.error("[Guest Checkout] Welcome email failed:", err)
@@ -252,7 +244,7 @@ async function trackAffiliateConversion(userId: string) {
         .update({ converted_at: new Date().toISOString() })
         .eq("id", referral.id)
 
-      console.log(`[Affiliate] Conversion tracked for user ${userId}, referral ${referral.id}`)
+      // Conversion tracked successfully
     }
   } catch {
     // Non-critical — don't fail the webhook

@@ -4,6 +4,7 @@ import { generateSEO } from '@/lib/seo'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/google-analytics'
 import { PostHogProvider } from '@/components/posthog-provider'
+import { Toaster } from 'sonner'
 
 import './globals.css'
 
@@ -48,6 +49,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        <Toaster theme="dark" richColors closeButton />
         <Analytics />
         <GoogleAnalytics />
         <PostHogProvider />

@@ -47,6 +47,7 @@ interface NavLink {
   href: string
   label: string
   tier: Tier
+  ariaLabel?: string
 }
 
 interface ToolNavLink extends NavLink {
@@ -60,22 +61,22 @@ const MLB_NAV: NavLink[] = [
   { href: "/mlb/hot-hitters", label: "Hot Hitters", tier: "pro" },
   { href: "/mlb/hitting-stats", label: "Hitter vs Pitcher", tier: "pro" },
   { href: "/mlb/pitching-stats", label: "Pitching Stats", tier: "pro" },
-  { href: "/mlb/nrfi", label: "NRFI", tier: "free" },
+  { href: "/mlb/nrfi", label: "NRFI", tier: "free", ariaLabel: "No Run First Inning" },
   { href: "/mlb/weather", label: "Weather", tier: "free" },
-  { href: "/mlb/due-for-hr", label: "Due for HR", tier: "free" },
+  { href: "/mlb/due-for-hr", label: "Due for HR", tier: "free", ariaLabel: "Due for Home Run" },
   { href: "/mlb/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
 const NBA_NAV: NavLink[] = [
   { href: "/nba/first-basket", label: "First Basket", tier: "free" },
-  { href: "/nba/head-to-head", label: "H2H", tier: "free" },
-  { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free" },
+  { href: "/nba/head-to-head", label: "H2H", tier: "free", ariaLabel: "Head to Head" },
+  { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free", ariaLabel: "Defense vs Position" },
   { href: "/nba/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
 const NFL_NAV: NavLink[] = [
   { href: "/nfl/matchup", label: "Matchup", tier: "pro" },
-  { href: "/nfl/defense-vs-position", label: "Def vs Pos", tier: "free" },
+  { href: "/nfl/defense-vs-position", label: "Def vs Pos", tier: "free", ariaLabel: "Defense vs Position" },
   { href: "/nfl/streaks", label: "Streak Tracker", tier: "pro" },
 ]
 
@@ -335,11 +336,11 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                 {sportConfig.nav.map((link) => {
                   const isActive = pathname === link.href
                   return isActive ? (
-                    <span key={link.href} className={NAV_ACTIVE_CLASS}>
+                    <span key={link.href} className={NAV_ACTIVE_CLASS} aria-label={link.ariaLabel}>
                       {link.label}
                     </span>
                   ) : (
-                    <Link key={link.href} href={link.href} className={NAV_INACTIVE_CLASS}>
+                    <Link key={link.href} href={link.href} className={NAV_INACTIVE_CLASS} aria-label={link.ariaLabel}>
                       {link.label}
                     </Link>
                   )
@@ -449,6 +450,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                               key={link.href}
                               href={link.href}
                               onClick={() => setMobileOpen(false)}
+                              aria-label={link.ariaLabel}
                               className={`flex items-center rounded-md px-3 py-2 text-sm transition-colors ${
                                 isActive
                                   ? "text-primary bg-primary/10 font-medium"
@@ -528,7 +530,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
       <OnboardingTooltip pathname={pathname} />
 
       {/* ── Page content ── */}
-      {children}
+      <div id="main-content">{children}</div>
     </div>
   )
 }

@@ -56,8 +56,6 @@ export async function POST() {
       return NextResponse.json({ error: "Failed to activate trial" }, { status: 500 })
     }
 
-    console.log(`[Trial] 7-day Pro trial activated for ${user.email}`)
-
     // Send welcome email (non-blocking — don't fail the trial if email fails)
     if (user.email) {
       sendWelcomeEmail(user.email, user.user_metadata?.full_name).catch((err) =>

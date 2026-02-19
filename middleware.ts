@@ -130,11 +130,11 @@ export async function middleware(request: NextRequest) {
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://*.i.posthog.com https://browser.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com",
+    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.i.posthog.com https://*.ingest.us.sentry.io https://*.sentry.io",
     "frame-src 'self' https://vercel.live https://js.stripe.com https://*.supabase.co",
     "media-src 'self'",
     "object-src 'none'",
@@ -170,10 +170,18 @@ export async function middleware(request: NextRequest) {
   // Remove server header
   headers.delete('X-Powered-By')
 
-  // CORS headers for API routes
+  // CORS headers for API routes — restrict to production domain
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    headers.set('Access-Control-Allow-Origin', '*')
-    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    const origin = request.headers.get('origin') || ''
+    const allowedOrigins = [
+      'https://heatcheckhq.io',
+      'https://www.heatcheckhq.io',
+    ]
+    // Also allow Vercel preview deployments
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      headers.set('Access-Control-Allow-Origin', origin)
+    }
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   }
 

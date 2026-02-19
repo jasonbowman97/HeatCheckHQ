@@ -16,7 +16,7 @@ export default function LandingPage() {
       <StructuredData data={generateWebAppSchema()} />
       <div className="min-h-screen bg-background">
         <Navbar />
-        <main>
+        <main id="main-content">
           <HeroSection />
           <SportsSection />
           <FeaturesSection />

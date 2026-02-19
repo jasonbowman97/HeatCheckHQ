@@ -28,7 +28,6 @@ export async function sendWelcomeEmail(to: string, name?: string) {
       return { success: false, error }
     }
 
-    console.log(`[Email] Welcome email sent to ${to}, id: ${data?.id}`)
     return { success: true, id: data?.id }
   } catch (err) {
     console.error("[Email] Welcome email error:", err)
@@ -51,7 +50,6 @@ export async function sendProUpgradeEmail(to: string, plan: string) {
       return { success: false, error }
     }
 
-    console.log(`[Email] Pro upgrade email sent to ${to}, id: ${data?.id}`)
     return { success: true, id: data?.id }
   } catch (err) {
     console.error("[Email] Pro upgrade email error:", err)
