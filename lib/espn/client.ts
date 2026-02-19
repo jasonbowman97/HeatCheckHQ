@@ -136,6 +136,30 @@ export function fetchNFLScoreboard(date?: string) {
   )
 }
 
+export function fetchNFLTeams() {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/football/nfl/teams`
+  )
+}
+
+export function fetchNFLTeamRoster(teamId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/football/nfl/teams/${teamId}/roster`
+  )
+}
+
+export function fetchNFLAthleteGameLog(athleteId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${WEB_BASE}/football/nfl/athletes/${athleteId}/gamelog`
+  )
+}
+
+export function fetchNFLGameSummary(eventId: string) {
+  return espnFetch<Record<string, unknown>>(
+    `${SITE_BASE}/football/nfl/summary?event=${eventId}`
+  )
+}
+
 /* ── Helpers ── */
 function todayESPN(): string {
   const d = new Date()

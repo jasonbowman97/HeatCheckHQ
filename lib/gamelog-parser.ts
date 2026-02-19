@@ -8,6 +8,7 @@ import type { GameLog, Sport } from '@/types/shared'
 import {
   fetchNBAAthleteGameLog,
   fetchAthleteGameLog,
+  fetchNFLAthleteGameLog,
 } from './espn/client'
 
 // ── Public API ──
@@ -21,6 +22,8 @@ export async function fetchAndParseGameLogs(
       return parseNBAGameLogs(playerId)
     case 'mlb':
       return parseMLBGameLogs(playerId)
+    case 'nfl':
+      return parseNFLGameLogs(playerId)
     default:
       return []
   }
@@ -135,6 +138,80 @@ async function parseMLBGameLogs(playerId: string): Promise<GameLog[]> {
         opponentDefRank: 0,
         isBackToBack: false,
         restDays: 1,
+        markers: [],
+      })
+    }
+  }
+
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  enrichRestDays(entries)
+
+  return entries
+}
+
+// ── NFL Parser ──
+
+async function parseNFLGameLogs(playerId: string): Promise<GameLog[]> {
+  const raw = await fetchNFLAthleteGameLog(playerId) as any
+
+  const labels = (raw.labels ?? []) as string[]
+  const eventMeta = (raw.events ?? {}) as Record<string, any>
+
+  const seasonTypes = raw.seasonTypes as any[] | undefined
+  if (!seasonTypes?.length) return []
+
+  const entries: GameLog[] = []
+  const regularSeason = seasonTypes.find(
+    (st: any) => (st.displayName as string)?.includes('Regular')
+  ) ?? seasonTypes[0]
+  const categories = (regularSeason?.categories ?? []) as any[]
+
+  for (const cat of categories) {
+    const events = (cat.events ?? []) as any[]
+    for (const evt of events) {
+      const eventId = evt.eventId as string
+      const statsArr = (evt.stats ?? []) as Array<string | number>
+
+      const stats: Record<string, number> = {}
+      labels.forEach((label, i) => {
+        const val = String(statsArr[i] ?? '')
+        // NFL stats: C/ATT format for passing
+        if (val.includes('/') && !val.startsWith('/')) {
+          const [made, attempted] = val.split('/').map(Number)
+          if (label === 'C/ATT') {
+            stats.completions = made || 0
+            stats.passAtt = attempted || 0
+          }
+          stats[label] = made || 0
+        } else {
+          stats[label] = Number(val) || 0
+        }
+      })
+
+      // Map ESPN labels to our stat keys
+      const mapped: Record<string, number> = { ...stats }
+      if (stats['YDS'] !== undefined) mapped.passYd = stats['YDS']
+      if (stats['TD'] !== undefined) mapped.passTd = stats['TD']
+      if (stats['RUSH YDS'] !== undefined) mapped.rushYd = stats['RUSH YDS']
+      if (stats['RUSH TD'] !== undefined) mapped.rushTd = stats['RUSH TD']
+      if (stats['REC'] !== undefined) mapped.rec = stats['REC']
+      if (stats['REC YDS'] !== undefined) mapped.recYd = stats['REC YDS']
+      if (stats['REC TD'] !== undefined) mapped.recTd = stats['REC TD']
+      if (stats['INT'] !== undefined) mapped.interceptions = stats['INT']
+
+      const meta = eventMeta[eventId]
+      const opponent = (meta?.opponent as any)?.abbreviation as string ?? ''
+      const date = (meta?.gameDate as string) ?? ''
+      const isHome = (meta?.homeAway as string) === 'home'
+
+      entries.push({
+        date,
+        opponent,
+        isHome,
+        stats: mapped,
+        opponentDefRank: 0,
+        isBackToBack: false,
+        restDays: 7, // NFL is weekly
         markers: [],
       })
     }

@@ -10,7 +10,6 @@ import {
   Gauge,
   Swords,
   GitBranch,
-  Users,
   Zap,
   Dices,
   Bell,
@@ -135,7 +134,6 @@ const TOOL_NAV: ToolCategory[] = [
     links: [
       { href: "/bet-builder", label: "Bet Builder", tier: "pro", icon: Zap, description: "60-second parlay builder" },
       { href: "/what-if", label: "What-If", tier: "pro", icon: Dices, description: "Scenario simulator" },
-      { href: "/bet-board", label: "Bet Board", tier: "pro", icon: Users, description: "Collaborative boards" },
     ],
   },
   {
@@ -175,7 +173,6 @@ const PAGE_NAMES: Record<string, string> = {
   correlations: "Correlations",
   "bet-builder": "Bet Builder",
   "what-if": "What-If",
-  "bet-board": "Bet Board",
   criteria: "Alerts",
   graveyard: "Graveyard",
   narratives: "Narratives",

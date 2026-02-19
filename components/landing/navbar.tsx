@@ -13,7 +13,6 @@ import {
   Gauge,
   Swords,
   GitBranch,
-  Users,
   Zap,
   Dices,
   Bell,
@@ -78,7 +77,6 @@ const toolLinks = [
     pages: [
       { name: "Bet Builder", href: "/bet-builder", tier: "pro" as Tier, icon: Zap, desc: "60-second parlay builder" },
       { name: "What-If", href: "/what-if", tier: "pro" as Tier, icon: Dices, desc: "Scenario simulator" },
-      { name: "Bet Board", href: "/bet-board", tier: "pro" as Tier, icon: Users, desc: "Collaborative boards" },
       { name: "Alerts", href: "/criteria", tier: "pro" as Tier, icon: Bell, desc: "Research-based alerts" },
       { name: "Graveyard", href: "/graveyard", tier: "pro" as Tier, icon: Skull, desc: "Bad beat autopsy" },
     ],

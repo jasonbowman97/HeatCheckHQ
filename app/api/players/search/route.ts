@@ -8,9 +8,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { PlayerSearchResult, Sport } from '@/types/shared'
 import { searchPlayers } from '@/lib/player-service'
 import { getNBAScoreboard } from '@/lib/nba-api'
-import { fetchMLBScoreboard } from '@/lib/espn/client'
+import { fetchMLBScoreboard, fetchNFLScoreboard } from '@/lib/espn/client'
 
-export const revalidate = 3600 // 1 hour — player index changes rarely
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -88,6 +88,26 @@ async function getTodayTeams(sport?: Sport | null): Promise<Map<string, TeamGame
 
     if (!sport || sport === 'mlb') {
       const raw = await fetchMLBScoreboard()
+      const events = ((raw as any).events ?? []) as any[]
+      for (const evt of events) {
+        const comp = evt.competitions?.[0]
+        const away = comp?.competitors?.find((c: any) => c.homeAway === 'away')
+        const home = comp?.competitors?.find((c: any) => c.homeAway === 'home')
+        if (away?.team && home?.team) {
+          map.set(home.team.abbreviation, {
+            opponent: `vs ${away.team.abbreviation}`,
+            gameTime: evt.date ?? '',
+          })
+          map.set(away.team.abbreviation, {
+            opponent: `@ ${home.team.abbreviation}`,
+            gameTime: evt.date ?? '',
+          })
+        }
+      }
+    }
+
+    if (!sport || sport === 'nfl') {
+      const raw = await fetchNFLScoreboard()
       const events = ((raw as any).events ?? []) as any[]
       for (const evt of events) {
         const comp = evt.competitions?.[0]

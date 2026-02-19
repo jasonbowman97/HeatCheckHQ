@@ -35,7 +35,6 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/matchup-xray", tier: "pro", label: "Matchup X-Ray" },
   { pattern: "/graveyard", tier: "pro", label: "The Graveyard" },
   { pattern: "/correlations", tier: "pro", label: "Correlation Matrix" },
-  { pattern: "/bet-board", tier: "pro", label: "Bet Board" },
 
   // Pro subscription required — existing dashboards
   { pattern: "/nba/streaks", tier: "pro", label: "Streak Tracker" },

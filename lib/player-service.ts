@@ -10,6 +10,8 @@ import {
   fetchNBATeamRoster,
   fetchMLBTeams,
   fetchMLBTeamRoster,
+  fetchNFLTeams,
+  fetchNFLTeamRoster,
 } from './espn/client'
 import { getNBAScoreboard } from './nba-api'
 
@@ -27,6 +29,7 @@ interface PlayerIndexEntry {
 
 let nbaIndex: { entries: PlayerIndexEntry[]; timestamp: number } | null = null
 let mlbIndex: { entries: PlayerIndexEntry[]; timestamp: number } | null = null
+let nflIndex: { entries: PlayerIndexEntry[]; timestamp: number } | null = null
 const INDEX_TTL = 6 * 60 * 60 * 1000 // 6 hours
 
 // ── Index builders ──
@@ -138,6 +141,59 @@ async function buildMLBIndex(): Promise<PlayerIndexEntry[]> {
   return entries
 }
 
+async function buildNFLIndex(): Promise<PlayerIndexEntry[]> {
+  if (nflIndex && Date.now() - nflIndex.timestamp < INDEX_TTL) {
+    return nflIndex.entries
+  }
+
+  const teamsRaw = await fetchNFLTeams()
+  const teams = ((teamsRaw as any).sports?.[0]?.leagues?.[0]?.teams ?? []) as any[]
+
+  const entries: PlayerIndexEntry[] = []
+
+  const BATCH = 8
+  for (let i = 0; i < teams.length; i += BATCH) {
+    const batch = teams.slice(i, i + BATCH)
+    const rosters = await Promise.all(
+      batch.map(async (t: any) => {
+        try {
+          const roster = await fetchNFLTeamRoster(t.team.id)
+          return { team: t.team, roster }
+        } catch {
+          return { team: t.team, roster: null }
+        }
+      })
+    )
+
+    for (const { team, roster } of rosters) {
+      if (!roster) continue
+      const athletes = (roster as any).athletes ?? []
+      for (const group of athletes) {
+        const items = group.items ?? []
+        for (const athlete of items) {
+          entries.push({
+            id: athlete.id ?? '',
+            name: athlete.displayName ?? athlete.fullName ?? '',
+            nameLower: (athlete.displayName ?? athlete.fullName ?? '').toLowerCase(),
+            team: {
+              id: team.id,
+              abbrev: team.abbreviation ?? '',
+              name: team.displayName ?? '',
+              logo: team.logos?.[0]?.href ?? '',
+            },
+            position: athlete.position?.abbreviation ?? '',
+            headshotUrl: athlete.headshot?.href ?? '',
+            sport: 'nfl',
+          })
+        }
+      }
+    }
+  }
+
+  nflIndex = { entries, timestamp: Date.now() }
+  return entries
+}
+
 // ── Search ──
 
 export async function searchPlayers(
@@ -156,6 +212,9 @@ export async function searchPlayers(
   }
   if (!sport || sport === 'mlb') {
     try { indices.push(...await buildMLBIndex()) } catch { /* skip */ }
+  }
+  if (!sport || sport === 'nfl') {
+    try { indices.push(...await buildNFLIndex()) } catch { /* skip */ }
   }
 
   // Fuzzy matching: starts-with gets priority, then includes
@@ -183,10 +242,12 @@ export async function resolvePlayerById(
   sport?: Sport,
 ): Promise<Player | null> {
   // Try each sport's index
-  const sports: Sport[] = sport ? [sport] : ['nba', 'mlb']
+  const sports: Sport[] = sport ? [sport] : ['nba', 'mlb', 'nfl']
 
   for (const s of sports) {
-    const index = s === 'nba' ? await buildNBAIndex() : await buildMLBIndex()
+    const index = s === 'nba' ? await buildNBAIndex()
+      : s === 'mlb' ? await buildMLBIndex()
+      : await buildNFLIndex()
     const entry = index.find(e => e.id === playerId)
     if (entry) return toPlayer(entry)
   }
