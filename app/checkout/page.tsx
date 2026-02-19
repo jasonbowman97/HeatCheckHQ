@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useEffect } from "react"
+import { Suspense, useCallback, useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
@@ -18,6 +18,23 @@ const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading checkout...</p>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
+  )
+}
+
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const returnPath = searchParams.get("return") || ""
 
