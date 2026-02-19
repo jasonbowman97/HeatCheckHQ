@@ -8,15 +8,8 @@ import {
   ChevronDown,
   ChevronRight,
   SearchCheck,
-  FlaskConical,
   Radio,
-  Gauge,
-  Swords,
-  GitBranch,
-  Zap,
-  Dices,
   Bell,
-  Skull,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { AuthButtons, MobileAuthButtons } from "@/components/auth-buttons"
@@ -60,25 +53,18 @@ const toolLinks = [
     category: "Analyze",
     pages: [
       { name: "Check My Prop", href: "/check", tier: "free" as Tier, icon: SearchCheck, desc: "Validate any prop bet" },
-      { name: "Edge Lab", href: "/edge-lab", tier: "pro" as Tier, icon: FlaskConical, desc: "Custom filters & strategies" },
-      { name: "Convergence", href: "/convergence-dashboard", tier: "pro" as Tier, icon: Gauge, desc: "Cross-sport signals" },
-      { name: "Correlations", href: "/correlations", tier: "pro" as Tier, icon: GitBranch, desc: "Prop correlation matrix" },
     ],
   },
   {
     category: "Game Day",
     pages: [
       { name: "Situation Room", href: "/situation-room", tier: "pro" as Tier, icon: Radio, desc: "Live command center" },
-      { name: "Matchup X-Ray", href: "/matchup-xray", tier: "pro" as Tier, icon: Swords, desc: "Deep matchup analysis" },
     ],
   },
   {
-    category: "Build & Track",
+    category: "Track",
     pages: [
-      { name: "Bet Builder", href: "/bet-builder", tier: "pro" as Tier, icon: Zap, desc: "60-second parlay builder" },
-      { name: "What-If", href: "/what-if", tier: "pro" as Tier, icon: Dices, desc: "Scenario simulator" },
       { name: "Alerts", href: "/criteria", tier: "pro" as Tier, icon: Bell, desc: "Research-based alerts" },
-      { name: "Graveyard", href: "/graveyard", tier: "pro" as Tier, icon: Skull, desc: "Bad beat autopsy" },
     ],
   },
 ]
