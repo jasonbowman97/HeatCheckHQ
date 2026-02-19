@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { CheckCircle2, Mail } from "lucide-react"
+import { CheckCircle2, Loader2, Mail } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -19,6 +19,23 @@ function getSafeReturnPath(raw: string | null): string {
 }
 
 export default function CheckoutReturnPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutReturnContent />
+    </Suspense>
+  )
+}
+
+function CheckoutReturnContent() {
   const searchParams = useSearchParams()
   const returnTo = getSafeReturnPath(searchParams.get("return"))
 
