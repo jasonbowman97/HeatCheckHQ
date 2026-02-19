@@ -1,7 +1,10 @@
+"use client"
+
 import Link from "next/link"
 import { Check, X, Shield, CreditCard, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
+import { analytics } from "@/lib/analytics"
 
 const plans = [
   {
@@ -139,7 +142,7 @@ export function PricingSection() {
                   size="lg"
                   asChild
                 >
-                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"}>{plan.cta}</Link>
+                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"} onClick={() => analytics.ctaClicked("pricing", plan.cta)}>{plan.cta}</Link>
                 </Button>
               </div>
               </div>

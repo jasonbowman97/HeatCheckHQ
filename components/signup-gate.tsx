@@ -16,6 +16,8 @@ interface SignupGateProps {
   countLabel?: string
   /** Optional teaser line shown above the CTA, e.g. "Top pick: ??? — 78% first basket rate" */
   teaser?: string
+  /** Dashboard name for analytics tracking */
+  dashboard?: string
 }
 
 export function SignupGate({
@@ -25,10 +27,11 @@ export function SignupGate({
   description = "Join thousands of sports bettors using HeatCheck HQ. Takes 10 seconds — no credit card required.",
   countLabel,
   teaser,
+  dashboard,
 }: SignupGateProps) {
   return (
     <>
-      <TrackEvent event="signup_gate_hit" />
+      <TrackEvent event="signup_gate_hit" params={dashboard ? { dashboard } : undefined} />
       {/* Visible preview content */}
       {preview}
 

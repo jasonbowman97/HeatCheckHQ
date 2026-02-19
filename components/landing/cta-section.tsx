@@ -20,7 +20,7 @@ export function CtaSection() {
                 Join for free in 30 seconds. No credit card required. Get instant
                 access to heatmaps, streaks, and matchup tools across all three sports.
               </p>
-              <AuthCta />
+              <AuthCta location="bottom_cta" />
             </div>
           </div>
         </FadeIn>

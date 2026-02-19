@@ -63,7 +63,7 @@ export function HeroSection() {
 
           <FadeIn delay={0.4}>
             <div className="mt-8 sm:mt-10 flex flex-col items-center gap-4 sm:flex-row">
-              <AuthCta />
+              <AuthCta location="hero" />
               <Button size="lg" variant="outline" className="bg-transparent h-12 px-8 text-base border-border text-foreground hover:bg-secondary" asChild>
                 <Link href="#pricing">View pricing</Link>
               </Button>

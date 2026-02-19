@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { trackEvent } from "@/lib/analytics"
+import { trackEvent, analytics } from "@/lib/analytics"
 
 const ONBOARDED_KEY = "hchq-onboarded"
 
@@ -79,6 +79,7 @@ export function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
   function handleSportSelect(sport: (typeof SPORTS)[number]) {
     setOnboarded()
     trackEvent("onboarding_completed", { sport: sport.key })
+    analytics.trialActivated()
     onOpenChange(false)
     router.push(sport.href)
   }
@@ -86,6 +87,7 @@ export function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
   function handleSkip() {
     setOnboarded()
     trackEvent("onboarding_skipped", {})
+    analytics.trialActivated()
     onOpenChange(false)
   }
 

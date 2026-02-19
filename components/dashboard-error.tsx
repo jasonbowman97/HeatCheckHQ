@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
+import * as Sentry from "@sentry/nextjs"
 
 export function DashboardError({
   error,
@@ -15,6 +16,7 @@ export function DashboardError({
   backLabel?: string
 }) {
   useEffect(() => {
+    Sentry.captureException(error)
     if (process.env.NODE_ENV === "development") {
       console.error("[Dashboard Error]", error)
     }

@@ -1,5 +1,6 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-16-v17
 const nextConfig = {
   async redirects() {
     return [
@@ -61,4 +62,15 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  // Suppress source map upload warnings when SENTRY_AUTH_TOKEN is not set
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  // Upload source maps for better stack traces (requires SENTRY_AUTH_TOKEN)
+  widenClientFileUpload: true,
+  // Disable Sentry telemetry
+  telemetry: false,
+  // Don't add Sentry to middleware (it has its own edge config)
+  disableLogger: true,
+  // Tree-shake Sentry debug code in production
+  hideSourceMaps: true,
+})
