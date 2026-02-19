@@ -25,25 +25,29 @@ interface SituationRoomInput {
   updates?: LiveUpdate[]
 }
 
-export function buildSituationRoom(input: SituationRoomInput): SituationRoomState {
+export function buildSituationRoom(input: SituationRoomInput): SituationRoomState & { convergenceHighlights: ConvergenceHighlight[] } {
   const { sport, date, games, playerProps = [], alerts = [], updates = [] } = input
 
-  // Group props by game
-  const gameProps = new Map<string, SituationRoomProp[]>()
-  for (const prop of playerProps) {
-    // In production, we'd match props to games via team/game ID
-    // For now, we'll aggregate
-  }
+  const situationGames: SituationRoomGame[] = games.map(game => {
+    const gamePlayerProps = playerProps
+      .filter(p => p.team === game.homeTeam.abbrev || p.team === game.awayTeam.abbrev)
+      .sort((a, b) => b.convergenceScore - a.convergenceScore)
 
-  const situationGames: SituationRoomGame[] = games.map(game => ({
-    game,
-    topProps: playerProps.filter(p =>
-      p.team === game.homeTeam.abbrev || p.team === game.awayTeam.abbrev
-    ).sort((a, b) => b.convergenceScore - a.convergenceScore).slice(0, 5),
-    lineMovements: [],
-    injuryUpdates: [],
-    convergenceHighlights: [],
-  }))
+    return {
+      game,
+      topProps: gamePlayerProps.slice(0, 5),
+      lineMovements: [],
+      injuryUpdates: [],
+      convergenceHighlights: gamePlayerProps.slice(0, 5).map(p => ({
+        playerId: p.playerId,
+        playerName: p.playerName,
+        stat: p.stat,
+        line: p.line,
+        convergenceScore: p.convergenceScore,
+        direction: p.direction,
+      })),
+    }
+  })
 
   // Top prop alerts (highest convergence across all games)
   const topPropAlerts = playerProps
@@ -60,6 +64,19 @@ export function buildSituationRoom(input: SituationRoomInput): SituationRoomStat
       relatedPlayerId: prop.playerId,
     }))
 
+  // Top-level convergence highlights for the convergence dashboard
+  const allHighlights: ConvergenceHighlight[] = playerProps
+    .sort((a, b) => b.convergenceScore - a.convergenceScore)
+    .slice(0, 30)
+    .map(p => ({
+      playerId: p.playerId,
+      playerName: p.playerName,
+      stat: p.stat,
+      line: p.line,
+      convergenceScore: p.convergenceScore,
+      direction: p.direction,
+    }))
+
   return {
     sport,
     date,
@@ -67,6 +84,7 @@ export function buildSituationRoom(input: SituationRoomInput): SituationRoomStat
     topPropAlerts: [...topPropAlerts, ...alerts].slice(0, 20),
     liveUpdates: updates,
     weatherAlerts: [],
+    convergenceHighlights: allHighlights,
   }
 }
 

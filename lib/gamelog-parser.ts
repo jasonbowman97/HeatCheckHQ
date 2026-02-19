@@ -66,6 +66,25 @@ async function parseNBAGameLogs(playerId: string): Promise<GameLog[]> {
         }
       })
 
+      // Map ESPN labels → internal stat keys (must match statLabels in design-tokens.ts)
+      const mapped: Record<string, number> = { ...stats }
+      if (stats['PTS'] !== undefined) mapped.points = stats['PTS']
+      if (stats['REB'] !== undefined) mapped.rebounds = stats['REB']
+      if (stats['AST'] !== undefined) mapped.assists = stats['AST']
+      if (stats['3PM'] !== undefined) mapped.threes = stats['3PM']
+      if (stats['STL'] !== undefined) mapped.steals = stats['STL']
+      if (stats['BLK'] !== undefined) mapped.blocks = stats['BLK']
+      if (stats['TO'] !== undefined) mapped.turnovers = stats['TO']
+      if (stats['MIN'] !== undefined) mapped.minutes = stats['MIN']
+      // Combo stats
+      mapped.pts_reb_ast = (stats['PTS'] ?? 0) + (stats['REB'] ?? 0) + (stats['AST'] ?? 0)
+      mapped.pts_reb = (stats['PTS'] ?? 0) + (stats['REB'] ?? 0)
+      mapped.pts_ast = (stats['PTS'] ?? 0) + (stats['AST'] ?? 0)
+      mapped.reb_ast = (stats['REB'] ?? 0) + (stats['AST'] ?? 0)
+      // Double-double: 1 if at least 2 of PTS/REB/AST/STL/BLK ≥ 10
+      const ddCats = [stats['PTS'] ?? 0, stats['REB'] ?? 0, stats['AST'] ?? 0, stats['STL'] ?? 0, stats['BLK'] ?? 0]
+      mapped.double_double = ddCats.filter(v => v >= 10).length >= 2 ? 1 : 0
+
       const meta = eventMeta[eventId]
       const eventNote = (meta?.eventNote as string) ?? ''
       if (eventNote.includes('All-Star')) continue
@@ -78,7 +97,7 @@ async function parseNBAGameLogs(playerId: string): Promise<GameLog[]> {
         date,
         opponent,
         isHome,
-        stats,
+        stats: mapped,
         opponentDefRank: 0, // Will be enriched later
         isBackToBack: false,
         restDays: 1,
@@ -125,6 +144,21 @@ async function parseMLBGameLogs(playerId: string): Promise<GameLog[]> {
         stats[label] = Number(val) || 0
       })
 
+      // Map ESPN labels → internal stat keys (must match statLabels in design-tokens.ts)
+      const mapped: Record<string, number> = { ...stats }
+      if (stats['H'] !== undefined) mapped.hits = stats['H']
+      if (stats['HR'] !== undefined) mapped.home_runs = stats['HR']
+      if (stats['RBI'] !== undefined) mapped.rbis = stats['RBI']
+      if (stats['R'] !== undefined) mapped.runs = stats['R']
+      if (stats['SB'] !== undefined) mapped.stolen_bases = stats['SB']
+      if (stats['TB'] !== undefined) mapped.total_bases = stats['TB']
+      if (stats['K'] !== undefined) mapped.strikeouts_pitcher = stats['K']
+      if (stats['BB'] !== undefined) mapped.walks_pitcher = stats['BB']
+      if (stats['ER'] !== undefined) mapped.earned_runs = stats['ER']
+      if (stats['HA'] !== undefined) mapped.hits_allowed = stats['HA']
+      if (stats['IP'] !== undefined) mapped.innings_pitched = stats['IP']
+      if (stats['OUTS'] !== undefined) mapped.outs_recorded = stats['OUTS']
+
       const meta = eventMeta[eventId]
       const opponent = (meta?.opponent as any)?.abbreviation as string ?? ''
       const date = (meta?.gameDate as string) ?? ''
@@ -134,7 +168,7 @@ async function parseMLBGameLogs(playerId: string): Promise<GameLog[]> {
         date,
         opponent,
         isHome,
-        stats,
+        stats: mapped,
         opponentDefRank: 0,
         isBackToBack: false,
         restDays: 1,
@@ -188,16 +222,22 @@ async function parseNFLGameLogs(playerId: string): Promise<GameLog[]> {
         }
       })
 
-      // Map ESPN labels to our stat keys
+      // Map ESPN labels → internal stat keys (must match statLabels in design-tokens.ts)
       const mapped: Record<string, number> = { ...stats }
-      if (stats['YDS'] !== undefined) mapped.passYd = stats['YDS']
-      if (stats['TD'] !== undefined) mapped.passTd = stats['TD']
-      if (stats['RUSH YDS'] !== undefined) mapped.rushYd = stats['RUSH YDS']
-      if (stats['RUSH TD'] !== undefined) mapped.rushTd = stats['RUSH TD']
-      if (stats['REC'] !== undefined) mapped.rec = stats['REC']
-      if (stats['REC YDS'] !== undefined) mapped.recYd = stats['REC YDS']
-      if (stats['REC TD'] !== undefined) mapped.recTd = stats['REC TD']
+      if (stats['YDS'] !== undefined) mapped.passing_yards = stats['YDS']
+      if (stats['TD'] !== undefined) mapped.passing_tds = stats['TD']
+      if (stats['RUSH YDS'] !== undefined) mapped.rushing_yards = stats['RUSH YDS']
+      if (stats['RUSH TD'] !== undefined) mapped.rushing_tds = stats['RUSH TD']
+      if (stats['REC'] !== undefined) mapped.receptions = stats['REC']
+      if (stats['REC YDS'] !== undefined) mapped.receiving_yards = stats['REC YDS']
+      if (stats['REC TD'] !== undefined) mapped.receiving_tds = stats['REC TD']
       if (stats['INT'] !== undefined) mapped.interceptions = stats['INT']
+      if (stats['completions'] !== undefined) mapped.completions = stats['completions']
+      // Fantasy points approximation
+      mapped.fantasy_points = ((stats['YDS'] ?? 0) * 0.04) + ((stats['TD'] ?? 0) * 4) +
+        ((stats['RUSH YDS'] ?? 0) * 0.1) + ((stats['RUSH TD'] ?? 0) * 6) +
+        ((stats['REC'] ?? 0) * 1) + ((stats['REC YDS'] ?? 0) * 0.1) + ((stats['REC TD'] ?? 0) * 6) -
+        ((stats['INT'] ?? 0) * 2)
 
       const meta = eventMeta[eventId]
       const opponent = (meta?.opponent as any)?.abbreviation as string ?? ''

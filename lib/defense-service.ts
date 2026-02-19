@@ -10,12 +10,17 @@ import { getPositionRankings, type Position, type StatCategory } from './nba-def
 // ── NBA stat → DVP stat mapping ──
 
 const NBA_STAT_TO_DVP: Record<string, StatCategory> = {
-  PTS: 'PTS',
-  REB: 'REB',
-  AST: 'AST',
-  '3PM': '3PM',
-  STL: 'STL',
-  BLK: 'BLK',
+  points: 'PTS',
+  rebounds: 'REB',
+  assists: 'AST',
+  threes: '3PM',
+  steals: 'STL',
+  blocks: 'BLK',
+  // Combo stats map to the dominant component for DVP lookup
+  pts_reb_ast: 'PTS',
+  pts_reb: 'PTS',
+  pts_ast: 'PTS',
+  reb_ast: 'REB',
 }
 
 // ── NBA position normalization ──

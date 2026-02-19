@@ -24,8 +24,8 @@ export async function GET(
   const { searchParams } = new URL(req.url)
   const sport = (searchParams.get('sport') ?? 'nba') as Sport
 
-  // Stat to correlate — default varies by sport
-  const defaultStat = sport === 'nba' ? 'PTS' : sport === 'mlb' ? 'H' : 'passYd'
+  // Stat to correlate — default varies by sport (use internal stat keys)
+  const defaultStat = sport === 'nba' ? 'points' : sport === 'mlb' ? 'hits' : 'passing_yards'
   const stat = searchParams.get('stat') ?? defaultStat
 
   try {

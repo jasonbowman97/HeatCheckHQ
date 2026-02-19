@@ -63,8 +63,10 @@ async function buildNBAIndex(): Promise<PlayerIndexEntry[]> {
       if (!roster) continue
       const athletes = (roster as any).athletes ?? []
       for (const group of athletes) {
-        const items = group.items ?? []
+        // NBA returns flat athletes; MLB/NFL return groups with .items
+        const items: any[] = group.items ?? [group]
         for (const athlete of items) {
+          if (!athlete.id && !athlete.displayName) continue
           entries.push({
             id: athlete.id ?? '',
             name: athlete.displayName ?? athlete.fullName ?? '',
@@ -258,10 +260,12 @@ export async function resolvePlayerById(
 // ── Helpers ──
 
 function toPlayer(entry: PlayerIndexEntry): Player {
+  // Keys must match statLabels in design-tokens.ts and the mapped keys
+  // produced by gamelog-parser.ts so the convergence engine can look them up
   const sportStatMap: Record<Sport, string[]> = {
-    nba: ['PTS', 'REB', 'AST', '3PM', 'STL', 'BLK'],
-    mlb: ['H', 'HR', 'RBI', 'R', 'SB', 'TB', 'K'],
-    nfl: ['passYd', 'passTd', 'rushYd', 'rushTd', 'recYd', 'rec'],
+    nba: ['points', 'rebounds', 'assists', 'threes', 'steals', 'blocks'],
+    mlb: ['hits', 'home_runs', 'rbis', 'runs', 'stolen_bases', 'total_bases', 'strikeouts_pitcher'],
+    nfl: ['passing_yards', 'passing_tds', 'rushing_yards', 'rushing_tds', 'receiving_yards', 'receptions'],
   }
 
   return {

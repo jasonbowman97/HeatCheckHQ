@@ -9,11 +9,24 @@ import { getNBAScoreboard, type NBAScheduleGame } from '@/lib/nba-api'
 import { fetchMLBScoreboard, fetchNFLScoreboard } from '@/lib/espn/client'
 import { getAllGameWeather } from '@/lib/weather-api'
 import { buildSituationRoom } from '@/lib/situation-room-service'
+import { searchPlayers } from '@/lib/player-service'
+import { fetchAndParseGameLogs } from '@/lib/gamelog-parser'
+import { evaluate as evaluateConvergence } from '@/lib/convergence-engine'
+import { resolveDefenseRanking } from '@/lib/defense-service'
+import { statLabels } from '@/lib/design-tokens'
+import { mean } from '@/lib/math-utils'
 import { cacheHeader, CACHE } from '@/lib/cache'
-import type { Sport, Game } from '@/types/shared'
+import type { Sport, Game, Player, SeasonStats } from '@/types/shared'
 import type { SituationRoomProp, WeatherAlert } from '@/types/innovation-playbook'
 
 export const dynamic = 'force-dynamic'
+
+// Primary stats to evaluate per sport (top 3 for speed)
+const PRIMARY_STATS: Record<Sport, string[]> = {
+  nba: ['points', 'rebounds', 'assists'],
+  mlb: ['hits', 'home_runs', 'strikeouts_pitcher'],
+  nfl: ['passing_yards', 'rushing_yards', 'receiving_yards'],
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -24,11 +37,15 @@ export async function GET(req: NextRequest) {
     // Fetch today's games for the sport
     const games = await fetchGames(sport, date)
 
-    // Build the situation room state
+    // Generate convergence props for players in today's games
+    const playerProps = await generateGameProps(games, sport)
+
+    // Build the situation room state with real props
     const state = buildSituationRoom({
       sport,
       date: date ?? new Date().toISOString().slice(0, 10),
       games,
+      playerProps,
     })
 
     // Enrich with weather data for MLB
@@ -70,6 +87,110 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// ── Prop Generation ──
+
+async function generateGameProps(games: Game[], sport: Sport): Promise<SituationRoomProp[]> {
+  if (games.length === 0) return []
+
+  const allProps: SituationRoomProp[] = []
+  const stats = PRIMARY_STATS[sport] ?? []
+  const PLAYERS_PER_TEAM = 3
+
+  // Process games in batches of 3 to avoid overwhelming ESPN
+  const GAME_BATCH = 3
+  for (let gi = 0; gi < games.length; gi += GAME_BATCH) {
+    const gameBatch = games.slice(gi, gi + GAME_BATCH)
+
+    await Promise.all(gameBatch.map(async (game) => {
+      try {
+        // Get top players from each team
+        const [homePlayers, awayPlayers] = await Promise.all([
+          searchPlayers(game.homeTeam.abbrev, sport, PLAYERS_PER_TEAM).catch(() => []),
+          searchPlayers(game.awayTeam.abbrev, sport, PLAYERS_PER_TEAM).catch(() => []),
+        ])
+
+        const gamePlayers = [...homePlayers, ...awayPlayers]
+
+        // Process players in parallel
+        const playerResults = await Promise.allSettled(
+          gamePlayers.map(async (player) => {
+            try {
+              const gameLogs = await fetchAndParseGameLogs(player.id, sport)
+              if (gameLogs.length < 5) return []
+
+              const props: SituationRoomProp[] = []
+
+              for (const stat of stats) {
+                const values = gameLogs.map(g => g.stats[stat] ?? 0)
+                const avg = values.length > 0 ? mean(values) : 0
+                if (avg === 0) continue
+
+                // Use season avg as the "line" for convergence evaluation
+                const line = Math.round(avg * 2) / 2 // Round to nearest 0.5
+
+                const seasonStats: SeasonStats = {
+                  playerId: player.id,
+                  sport,
+                  stat,
+                  average: avg,
+                  gamesPlayed: gameLogs.length,
+                  total: values.reduce((a, b) => a + b, 0),
+                  high: Math.max(...values),
+                  low: Math.min(...values),
+                }
+
+                const defenseRanking = await resolveDefenseRanking(player, game, stat)
+
+                const result = evaluateConvergence(
+                  player, game, gameLogs, seasonStats, defenseRanking, stat, line,
+                )
+
+                const direction = result.overCount >= result.underCount ? 'over' : 'under'
+                const convergenceScore = Math.max(result.overCount, result.underCount)
+
+                // Only include meaningful convergence (4+/7)
+                if (convergenceScore >= 4) {
+                  const topFactors = result.factors
+                    .filter(f => f.signal === direction)
+                    .sort((a, b) => b.strength - a.strength)
+                    .slice(0, 3)
+                    .map(f => f.name)
+
+                  props.push({
+                    playerId: player.id,
+                    playerName: player.name,
+                    team: player.team.abbrev,
+                    stat,
+                    line,
+                    convergenceScore,
+                    direction: direction as 'over' | 'under',
+                    confidence: convergenceScore / 7,
+                    topFactors,
+                  })
+                }
+              }
+
+              return props
+            } catch {
+              return []
+            }
+          })
+        )
+
+        for (const result of playerResults) {
+          if (result.status === 'fulfilled') {
+            allProps.push(...result.value)
+          }
+        }
+      } catch {
+        // Skip game on error
+      }
+    }))
+  }
+
+  return allProps.sort((a, b) => b.convergenceScore - a.convergenceScore)
 }
 
 // ── Game Fetchers ──
