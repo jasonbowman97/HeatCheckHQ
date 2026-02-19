@@ -9,10 +9,7 @@ const nextConfig = {
     ]
   },
   typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
+    ignoreBuildErrors: false,
   },
   images: {
     // Enable image optimization for production
