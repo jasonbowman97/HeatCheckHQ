@@ -84,10 +84,10 @@ function CheckMyPropContent() {
   return (
     <DashboardShell subtitle="Validate any prop bet">
     <div className="pb-20 sm:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Check My Prop</h1>
+          <h1 className="text-lg sm:text-xl font-semibold text-foreground">Check My Prop</h1>
           <p className="text-sm text-muted-foreground mt-1">
             7-factor convergence analysis for any player prop
           </p>
