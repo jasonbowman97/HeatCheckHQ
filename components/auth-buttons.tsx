@@ -46,14 +46,16 @@ export function AuthButtons() {
         >
           <Link href="/account">Account</Link>
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground"
-          asChild
-        >
-          <a href="/auth/signout">Sign out</a>
-        </Button>
+        <form action="/auth/signout" method="POST">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Sign out
+          </Button>
+        </form>
       </div>
     )
   }
@@ -113,14 +115,16 @@ export function MobileAuthButtons() {
         >
           <Link href="/account">Account</Link>
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="justify-start text-muted-foreground"
-          asChild
-        >
-          <a href="/auth/signout">Sign out</a>
-        </Button>
+        <form action="/auth/signout" method="POST">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="justify-start text-muted-foreground w-full"
+          >
+            Sign out
+          </Button>
+        </form>
       </div>
     )
   }

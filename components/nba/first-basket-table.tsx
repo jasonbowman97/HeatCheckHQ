@@ -1,5 +1,7 @@
 "use client"
 
+import { useMemo } from "react"
+import Image from "next/image"
 import {
   Table,
   TableBody,
@@ -8,9 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { ArrowUpDown, Loader2 } from "lucide-react"
 import { getHeatmapClass } from "@/lib/nba-first-basket-data"
+import { HeatmapLegend } from "@/components/ui/heatmap-legend"
+import { InfoTooltip } from "@/components/ui/info-tooltip"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
-import { useMemo } from "react"
 
 interface FirstBasketTableProps {
   players: BPFirstBasketPlayer[]
@@ -20,13 +24,22 @@ interface FirstBasketTableProps {
   sortDirection: "asc" | "desc"
   onSort: (column: string) => void
   isLive: boolean
+  /** Map from team abbreviation → { opponent, isHome } */
+  matchupMap: Record<string, { opponent: string; isHome: boolean }>
+  /** Limit visible rows (for preview gating) */
+  maxRows?: number
+  /** Skip the first N rows (for showing the blurred "rest" behind the gate) */
+  skipRows?: number
 }
 
-interface RowData {
+export interface RowData {
   id: string
   name: string
+  image: string
   team: string
   position: string
+  opponent: string
+  isHome: boolean
   gamesStarted: number
   tipWinPct: number
   firstShotPct: number
@@ -43,6 +56,79 @@ function getRankSuffix(rank: number): string {
   return `${rank}th`
 }
 
+function SortHeader({ field, label, activeField, activeDir, onSort }: {
+  field: string
+  label: string
+  activeField: string
+  activeDir: "asc" | "desc"
+  onSort: (f: string) => void
+}) {
+  const active = field === activeField
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(field)}
+      className={`inline-flex items-center gap-1 transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+    >
+      {label}
+      <ArrowUpDown className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`} />
+      {active && <span className="text-[10px]">{activeDir === "desc" ? "\u25BC" : "\u25B2"}</span>}
+    </button>
+  )
+}
+
+export function buildRows(
+  players: BPFirstBasketPlayer[],
+  teamTipoffs: Record<string, BPTeamTipoff>,
+  matchupMap: Record<string, { opponent: string; isHome: boolean }>,
+  gameFilter: string,
+): RowData[] {
+  let filtered = players
+
+  if (gameFilter !== "all") {
+    const gameTeams = gameFilter.split("-")
+    if (gameTeams.length === 2) {
+      filtered = players.filter(
+        (p) => p.team === gameTeams[0] || p.team === gameTeams[1]
+      )
+    }
+  }
+
+  return filtered
+    .filter((p) => p.gamesStarted > 0)
+    .map((p) => {
+      const teamTip = teamTipoffs[p.team]
+      const tipWinPct = teamTip && teamTip.teamGames > 0
+        ? Math.round((teamTip.tipoffWins / teamTip.teamGames) * 1000) / 10
+        : 0
+      const firstShotPct = p.gamesStarted > 0
+        ? Math.round((p.firstShots / p.gamesStarted) * 1000) / 10
+        : 0
+      const firstBasketPct = p.gamesStarted > 0
+        ? Math.round((p.firstBaskets / p.gamesStarted) * 1000) / 10
+        : 0
+
+      const mu = matchupMap[p.team]
+
+      return {
+        id: p.id,
+        name: p.name,
+        image: p.image || "",
+        team: p.team,
+        position: p.position,
+        opponent: mu?.opponent ?? "",
+        isHome: mu?.isHome ?? false,
+        gamesStarted: p.gamesStarted,
+        tipWinPct,
+        firstShotPct,
+        firstBaskets: p.firstBaskets,
+        firstBasketPct,
+        teamRank: p.teamRank,
+        teamFirstBaskets: teamTip?.firstBaskets ?? 0,
+      }
+    })
+}
+
 export function FirstBasketTable({
   players,
   teamTipoffs,
@@ -51,56 +137,22 @@ export function FirstBasketTable({
   sortDirection,
   onSort,
   isLive,
+  matchupMap,
+  maxRows,
+  skipRows,
 }: FirstBasketTableProps) {
   const rows = useMemo(() => {
-    let filtered = players
-
-    if (gameFilter !== "all") {
-      const gameTeams = gameFilter.split("-")
-      if (gameTeams.length === 2) {
-        filtered = players.filter(
-          (p) => p.team === gameTeams[0] || p.team === gameTeams[1]
-        )
-      }
-    }
-
-    const mapped: RowData[] = filtered
-      .filter((p) => p.gamesStarted > 0)
-      .map((p) => {
-        const teamTip = teamTipoffs[p.team]
-        const tipWinPct = teamTip && teamTip.teamGames > 0
-          ? Math.round((teamTip.tipoffWins / teamTip.teamGames) * 1000) / 10
-          : 0
-        const firstShotPct = p.gamesStarted > 0
-          ? Math.round((p.firstShots / p.gamesStarted) * 1000) / 10
-          : 0
-        const firstBasketPct = p.gamesStarted > 0
-          ? Math.round((p.firstBaskets / p.gamesStarted) * 1000) / 10
-          : 0
-
-        return {
-          id: p.id,
-          name: p.name,
-          team: p.team,
-          position: p.position,
-          gamesStarted: p.gamesStarted,
-          tipWinPct,
-          firstShotPct,
-          firstBaskets: p.firstBaskets,
-          firstBasketPct,
-          teamRank: p.teamRank,
-          teamFirstBaskets: teamTip?.firstBaskets ?? 0,
-        }
-      })
-
-    mapped.sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[sortColumn] as number ?? 0
-      const bVal = (b as Record<string, unknown>)[sortColumn] as number ?? 0
+    const built = buildRows(players, teamTipoffs, matchupMap, gameFilter)
+    built.sort((a, b) => {
+      const aVal = (a as unknown as Record<string, number>)[sortColumn] ?? 0
+      const bVal = (b as unknown as Record<string, number>)[sortColumn] ?? 0
       return sortDirection === "asc" ? aVal - bVal : bVal - aVal
     })
-
-    return mapped
-  }, [players, teamTipoffs, gameFilter, sortColumn, sortDirection])
+    // Apply row slicing for gated preview
+    if (skipRows) return built.slice(skipRows)
+    if (maxRows !== undefined) return built.slice(0, maxRows)
+    return built
+  }, [players, teamTipoffs, gameFilter, sortColumn, sortDirection, matchupMap, maxRows, skipRows])
 
   const bounds = useMemo(() => {
     if (rows.length === 0) return { tipWinPct: { min: 0, max: 100 }, firstShotPct: { min: 0, max: 30 }, firstBasketPct: { min: 0, max: 30 } }
@@ -114,123 +166,162 @@ export function FirstBasketTable({
     }
   }, [rows])
 
-  const columns = [
-    { key: "player", label: "Player", sortable: false },
-    { key: "gamesStarted", label: "Gms Started", sortable: true },
-    { key: "tipWinPct", label: "Tip Win %", sortable: true },
-    { key: "firstShotPct", label: "1st Shot %", sortable: true },
-    { key: "firstBaskets", label: "1st Baskets", sortable: true },
-    { key: "firstBasketPct", label: "1st Basket %", sortable: true },
-    { key: "teamRank", label: "Team Rank", sortable: true },
-    { key: "teamFirstBaskets", label: "Team 1st Baskets", sortable: true },
-  ]
-
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {!isLive && rows.length === 0 && (
-        <div className="py-12 text-center text-sm text-muted-foreground">
-          Loading first basket data...
+        <div className="py-12 text-center flex flex-col items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading first basket data...</p>
+        </div>
+      )}
+      {/* Heatmap legend */}
+      {rows.length > 0 && (
+        <div className="px-4 pt-3 pb-1 flex justify-end">
+          <HeatmapLegend />
         </div>
       )}
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
+            {/* Group header */}
+            <TableRow className="border-b-2 border-border hover:bg-transparent">
+              <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2" colSpan={3}>
+                Player
+              </TableHead>
+              <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={3}>
+                Season Stats
+              </TableHead>
+              <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={2}>
+                Team
+              </TableHead>
+            </TableRow>
             <TableRow className="border-b border-border hover:bg-transparent">
-              {columns.map((col) => (
-                <TableHead
-                  key={col.key}
-                  className={`text-xs font-semibold uppercase tracking-wider text-muted-foreground ${
-                    col.key === "player" ? "text-left" : "text-center"
-                  } ${col.sortable ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""}`}
-                  onClick={() => col.sortable && onSort(col.key)}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    {col.label}
-                    {col.sortable && sortColumn === col.key && (
-                      <span className="text-primary text-[10px]">
-                        {sortDirection === "desc" ? "\u25BC" : "\u25B2"}
-                      </span>
-                    )}
-                  </span>
-                </TableHead>
-              ))}
+              <TableHead className="py-3 pl-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[220px]">
+                Player
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px]">
+                <SortHeader field="gamesStarted" label="GP" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px]">
+                <SortHeader field="tipWinPct" label="Tip %" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="How often this player's team wins the opening tipoff" />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[80px] border-l border-border">
+                <SortHeader field="firstShotPct" label="1st Shot" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="Percentage of games where this player takes the first shot attempt" />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px]">
+                <SortHeader field="firstBaskets" label="Made" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[90px]">
+                <SortHeader field="firstBasketPct" label="1st Bkt %" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="First Basket percentage — how often this player scores the first basket" />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[70px] border-l border-border">
+                <SortHeader field="teamRank" label="Rank" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+                <InfoTooltip content="Player's rank on their team for first baskets scored" />
+              </TableHead>
+              <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center pr-4 w-[60px]">
+                <SortHeader field="teamFirstBaskets" label="Total" activeField={sortColumn} activeDir={sortDirection} onSort={onSort} />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="border-b border-border/50 hover:bg-secondary/50 transition-colors"
-              >
-                <TableCell className="py-3.5">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-foreground">{row.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {row.team} - {row.position}
+            {rows.map((row) => {
+              return (
+                <TableRow
+                  key={row.id}
+                  className={`border-b border-border/50 hover:bg-secondary/30 transition-colors${row.gamesStarted < 10 ? " opacity-60" : ""}`}
+                >
+                  {/* Player cell with headshot + opponent */}
+                  <TableCell className="py-3 pl-4">
+                    <div className="flex items-center gap-3">
+                      {row.image ? (
+                        <Image
+                          src={row.image}
+                          alt={row.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full bg-secondary shrink-0 h-9 w-9"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-secondary shrink-0" />
+                      )}
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-sm font-semibold text-foreground truncate">{row.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-muted-foreground">{row.team} · {row.position}</span>
+                          {row.opponent && (
+                            <span className={`text-[10px] font-medium ${row.isHome ? "text-emerald-400" : "text-blue-400"}`}>
+                              {row.isHome ? "vs" : "@"} {row.opponent}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <span className="text-sm text-foreground font-mono tabular-nums">{row.gamesStarted}</span>
+                    {row.gamesStarted < 10 && (
+                      <span className="text-[9px] text-muted-foreground/50 ml-1">(low sample)</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                        row.tipWinPct, bounds.tipWinPct.min, bounds.tipWinPct.max
+                      )}`}
+                    >
+                      {row.tipWinPct.toFixed(1)}%
                     </span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span className="text-sm text-foreground font-mono">{row.gamesStarted}</span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${getHeatmapClass(
-                      row.tipWinPct,
-                      bounds.tipWinPct.min,
-                      bounds.tipWinPct.max
-                    )}`}
-                  >
-                    {row.tipWinPct.toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${getHeatmapClass(
-                      row.firstShotPct,
-                      bounds.firstShotPct.min,
-                      bounds.firstShotPct.max
-                    )}`}
-                  >
-                    {row.firstShotPct.toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span className="text-sm text-foreground font-mono">{row.firstBaskets}</span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${getHeatmapClass(
-                      row.firstBasketPct,
-                      bounds.firstBasketPct.min,
-                      bounds.firstBasketPct.max
-                    )}`}
-                  >
-                    {row.firstBasketPct.toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold ${
-                      row.teamRank === 1
-                        ? "bg-primary/15 text-primary"
-                        : row.teamRank === 2
-                          ? "bg-amber-500/15 text-amber-400"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {getRankSuffix(row.teamRank)}
-                  </span>
-                </TableCell>
-                <TableCell className="py-3.5 text-center">
-                  <span className="text-sm text-muted-foreground font-mono">{row.teamFirstBaskets}</span>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="py-3 text-center border-l border-border/50">
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                        row.firstShotPct, bounds.firstShotPct.min, bounds.firstShotPct.max
+                      )}`}
+                    >
+                      {row.firstShotPct.toFixed(1)}%
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <span className="text-sm text-foreground font-mono tabular-nums">{row.firstBaskets}</span>
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                        row.firstBasketPct, bounds.firstBasketPct.min, bounds.firstBasketPct.max
+                      )}`}
+                    >
+                      {row.firstBasketPct.toFixed(1)}%
+                    </span>
+                  </TableCell>
+                  {/* Team context */}
+                  <TableCell className="py-3 text-center border-l border-border/50">
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold ${
+                        row.teamRank === 1
+                          ? "bg-primary/15 text-primary"
+                          : row.teamRank === 2
+                            ? "bg-amber-500/15 text-amber-400"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {getRankSuffix(row.teamRank)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 text-center pr-4">
+                    <span className="text-sm text-muted-foreground font-mono tabular-nums">{row.teamFirstBaskets}</span>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
             {rows.length === 0 && isLive && (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
-                  No players found for this matchup filter.
+                <TableCell colSpan={8} className="py-12 text-center">
+                  <p className="text-sm font-medium text-foreground">No players found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Try selecting a different matchup or &quot;All Matchups&quot; filter.</p>
                 </TableCell>
               </TableRow>
             )}

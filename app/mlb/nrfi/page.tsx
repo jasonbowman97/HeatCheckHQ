@@ -3,70 +3,42 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { BarChart3, ChevronLeft, ChevronRight, Calendar, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Loader2, Lock, AlertCircle, RefreshCw, ArrowUpDown } from "lucide-react"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { NrfiTable } from "@/components/mlb/nrfi-table"
-import { nrfiPitchers } from "@/lib/nrfi-data"
-import type { NrfiPitcher } from "@/lib/nrfi-data"
-
-interface APIGame {
-  gamePk: number
-  gameDate: string
-  status: string
-  away: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
-  home: { id: number; name: string; abbreviation: string; probablePitcher: { id: number; fullName: string; hand?: "L" | "R" } | null }
-  venue: string
-  weather: { condition: string; temp: string; wind: string } | null
-}
-
-function transformToNrfi(games: APIGame[]): NrfiPitcher[] {
-  const rows: NrfiPitcher[] = []
-  for (const g of games) {
-    const time = new Date(g.gameDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
-    if (g.away.probablePitcher) {
-      rows.push({
-        id: `live-${g.away.probablePitcher.id}`,
-        time,
-        team: g.away.abbreviation,
-        player: g.away.probablePitcher.fullName,
-        hand: g.away.probablePitcher.hand ?? "R",
-        record: "--",
-        nrfiPct: 0,
-        streak: 0,
-        hrsAllowed: 0,
-        opponent: g.home.abbreviation,
-        opponentRecord: "--",
-        opponentNrfiStreak: 0,
-        opponentNrfiRank: 0,
-      })
-    }
-    if (g.home.probablePitcher) {
-      rows.push({
-        id: `live-${g.home.probablePitcher.id}`,
-        time,
-        team: g.home.abbreviation,
-        player: g.home.probablePitcher.fullName,
-        hand: g.home.probablePitcher.hand ?? "R",
-        record: "--",
-        nrfiPct: 0,
-        streak: 0,
-        hrsAllowed: 0,
-        opponent: g.away.abbreviation,
-        opponentRecord: "--",
-        opponentNrfiStreak: 0,
-        opponentNrfiRank: 0,
-      })
-    }
-  }
-  return rows
-}
+import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
+import { ProUpsellBanner } from "@/components/pro-upsell-banner"
+import type { NrfiGame } from "@/lib/nrfi-data"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 type HandFilter = "All" | "RHP" | "LHP"
+type NrfiSort = "time" | "nrfiPct" | "streak"
+
+const SORT_OPTIONS: { value: NrfiSort; label: string }[] = [
+  { value: "time", label: "Game Time" },
+  { value: "nrfiPct", label: "NRFI %" },
+  { value: "streak", label: "Streak" },
+]
+
+function avgPitcherStat(game: NrfiGame, key: "nrfiPct" | "streak"): number {
+  const vals: number[] = []
+  if (game.away.pitcher) vals.push(game.away.pitcher[key])
+  if (game.home.pitcher) vals.push(game.home.pitcher[key])
+  return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+}
+
+const PREVIEW_GAMES = 3
 
 export default function NrfiPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
   const [handFilter, setHandFilter] = useState<HandFilter>("All")
+  const [sortBy, setSortBy] = useState<NrfiSort>("time")
   const [dateOffset, setDateOffset] = useState(0)
 
   // Date navigation
@@ -82,92 +54,48 @@ export default function NrfiPage() {
     day: "numeric",
   })
 
-  const { data, isLoading } = useSWR<{ games: APIGame[]; date: string }>(`/api/mlb/schedule?date=${dateParam}`, fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 43200000,
-  })
+  const { data, isLoading, error, mutate } = useSWR<{ games: NrfiGame[]; date: string; updatedAt?: string }>(
+    `/api/mlb/nrfi?date=${dateParam}`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 43200000 }
+  )
 
-  const liveNrfi = useMemo(() => {
-    const games = data?.games ?? []
-    return games.length > 0 ? transformToNrfi(games) : []
-  }, [data])
-  const isLive = liveNrfi.length > 0
+  const games = data?.games ?? []
+  const isLive = games.length > 0 && !isLoading
 
-  // Use live probable pitchers when available, static as fallback
-  const basePitchers = isLive ? liveNrfi : nrfiPitchers
-
-  // Filter by pitcher hand
-  const filteredData = useMemo(() => {
-    if (handFilter === "All") return basePitchers
+  // Filter games by pitcher hand
+  const filteredGames = useMemo(() => {
+    if (handFilter === "All") return games
     const hand = handFilter === "RHP" ? "R" : "L"
-    return basePitchers.filter((p) => p.hand === hand)
-  }, [handFilter, basePitchers])
+    // Keep games where at least one pitcher matches the hand filter
+    return games.filter((g) =>
+      (g.away.pitcher?.hand === hand) || (g.home.pitcher?.hand === hand)
+    )
+  }, [handFilter, games])
+
+  // Sort filtered games
+  const sortedGames = useMemo(() => {
+    if (sortBy === "time") return filteredGames
+    return [...filteredGames].sort((a, b) => {
+      if (sortBy === "nrfiPct") return avgPitcherStat(b, "nrfiPct") - avgPitcherStat(a, "nrfiPct")
+      return avgPitcherStat(b, "streak") - avgPitcherStat(a, "streak")
+    })
+  }, [filteredGames, sortBy])
+
+  // Count pitchers with NRFI data
+  const pitcherCount = games.reduce((n, g) => {
+    if (g.away.pitcher) n++
+    if (g.home.pitcher) n++
+    return n
+  }, 0)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <span className="text-sm font-bold tracking-tight">HeatCheck HQ</span>
-            </Link>
-            <span className="text-muted-foreground/40">|</span>
-            <span className="text-xs font-medium text-primary">MLB</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* MLB sub-nav */}
-            <Link
-              href="/mlb/hitting-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Hitting Stats
-            </Link>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-              NRFI
-            </span>
-            <Link
-              href="/mlb/pitching-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Pitching Stats
-            </Link>
-            <Link
-              href="/mlb/weather"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Weather
-            </Link>
-            <Link
-              href="/mlb/trends"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              Trends
-            </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link
-              href="/nba/first-basket"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              NBA
-            </Link>
-            <Link
-              href="/nfl/matchup"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              NFL
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+    <DashboardShell>
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Title */}
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground text-balance">No Run First Inning</h1>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">No Run First Inning</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
@@ -177,13 +105,14 @@ export default function NrfiPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             {isLive
-              ? `${liveNrfi.length} probable pitchers for today's slate. NRFI stats show season totals.`
-              : "Probable pitchers and their NRFI track records for today's slate."}
+              ? `${games.length} games, ${pitcherCount} probable starters with NRFI records.`
+              : "Matchup pairs with pitcher NRFI records and streaks."}
           </p>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
         {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           {/* Date navigator */}
           <div className="flex items-center rounded-lg border border-border overflow-hidden bg-card">
             <button
@@ -208,24 +137,54 @@ export default function NrfiPage() {
             </button>
           </div>
 
-          {/* Pitcher hand filter */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pitcher</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(["All", "RHP", "LHP"] as const).map((hand) => (
-                <button
-                  key={hand}
-                  onClick={() => setHandFilter(hand)}
-                  className={`px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                    handFilter === hand
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:text-foreground"
-                  }`}
+          {/* Pitcher hand filter — locked for anonymous users */}
+          <div className="relative">
+            {isAnonymous && (
+              <div className="absolute inset-0 z-10 flex items-center justify-end pr-2">
+                <Link
+                  href="/auth/sign-up"
+                  className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
                 >
-                  {hand}
-                </button>
-              ))}
+                  <Lock className="h-3 w-3" />
+                  Sign up to filter
+                </Link>
+              </div>
+            )}
+            <div className={`flex items-center gap-3 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pitcher</span>
+              <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Filter by pitcher hand">
+                {(["All", "RHP", "LHP"] as const).map((hand) => (
+                  <button
+                    key={hand}
+                    onClick={() => setHandFilter(hand)}
+                    aria-pressed={handFilter === hand}
+                    aria-label={`Filter by ${hand === "All" ? "all pitchers" : hand}`}
+                    className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
+                      handFilter === hand
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {hand}
+                  </button>
+                ))}
+              </div>
             </div>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as NrfiSort)}
+              aria-label="Sort games by"
+              className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Reset to today */}
@@ -241,9 +200,44 @@ export default function NrfiPage() {
           )}
         </div>
 
-        {/* Data table */}
-        <NrfiTable data={filteredData} />
+        {/* Loading state */}
+        {isLoading && <TableSkeleton rows={6} columns={5} />}
+
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load NRFI data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try again.</p>
+            <button
+              onClick={() => mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Data */}
+        {!isLoading && !error && (
+          <>
+            {isAnonymous && sortedGames.length > PREVIEW_GAMES ? (
+              <SignupGate
+                headline="See all NRFI matchups — free"
+                description="Unlock every pitcher matchup, NRFI streaks, and game probabilities. Free forever, no credit card."
+                countLabel={`${sortedGames.length} games today — updated with probable starters`}
+                preview={<NrfiTable games={sortedGames.slice(0, PREVIEW_GAMES)} />}
+                gated={<NrfiTable games={sortedGames.slice(PREVIEW_GAMES)} />}
+              />
+            ) : (
+              <NrfiTable games={sortedGames} />
+            )}
+          </>
+        )}
+
+        {userTier === "free" && <ProUpsellBanner />}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

@@ -179,7 +179,7 @@ upgrade-insecure-requests
 
 ```bash
 # Base URL (required for SEO)
-NEXT_PUBLIC_BASE_URL=https://heatcheckhq.com
+NEXT_PUBLIC_BASE_URL=https://heatcheckhq.io
 
 # Optional: Standalone build
 BUILD_STANDALONE=true
@@ -340,16 +340,16 @@ BUILD_STANDALONE=true
 ## 📞 SUPPORT & CONTACTS
 
 **Security Issues:**
-Report to: security@heatcheckhq.com
+Report to: admin@heatcheckhq.io
 
 **Privacy Inquiries:**
-Contact: privacy@heatcheckhq.com
+Contact: admin@heatcheckhq.io
 
 **Legal Questions:**
-Contact: legal@heatcheckhq.com
+Contact: admin@heatcheckhq.io
 
 **Technical Support:**
-Contact: support@heatcheckhq.com
+Contact: admin@heatcheckhq.io
 
 ---
 

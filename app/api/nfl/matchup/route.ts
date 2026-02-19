@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getNFLScoreboard, buildLiveMatchup } from "@/lib/nfl-api"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +13,9 @@ export async function GET(request: Request) {
     const games = await getNFLScoreboard()
 
     if (!games.length) {
-      return NextResponse.json({ matchup: null, games: [] })
+      const res = NextResponse.json({ matchup: null, games: [] })
+      res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+      return res
     }
 
     // If a specific game is requested, build that matchup
@@ -22,7 +25,7 @@ export async function GET(request: Request) {
 
     const matchup = await buildLiveMatchup(targetGame)
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       matchup,
       games: games.map((g) => ({
         id: g.id,
@@ -38,6 +41,8 @@ export async function GET(request: Request) {
         odds: g.odds,
       })),
     })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+    return res
   } catch (e) {
     console.error("[NFL Matchup API]", e)
     return NextResponse.json({ matchup: null, games: [] }, { status: 500 })

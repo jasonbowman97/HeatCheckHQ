@@ -1,39 +1,20 @@
 /* ──────────────────────────────────────────────────
    NBA Defense vs Position
-   Computes how many points/rebounds/assists each NBA
-   team allows to each position (PG, SG, SF, PF, C)
-   by scanning box scores from completed games.
+   Uses BettingPros pre-computed DVP data for accurate
+   5-position rankings (PG/SG/SF/PF/C).
+   ESPN scoreboard for today's game schedule.
+   NBA.com lineups for starter names + positions.
    ────────────────────────────────────────────────── */
 
-import {
-  fetchNBAScoreboard,
-  fetchNBATeams,
-  fetchNBAGameSummary,
-  fetchNBATeamRoster,
-} from "@/lib/espn/client"
+import { fetchNBAScoreboard } from "@/lib/espn/client"
+import { scrapeDvpData, BP_DVP_POSITIONS } from "@/lib/bettingpros-scraper"
+import type { BPDvpPosition, BPDvpTeamData, BPDvpPositionStats } from "@/lib/bettingpros-scraper"
+import { fetchTodayLineups, getStarterAtPosition, fetchRecentPositionMap, getPlayerAtPosition } from "@/lib/nba-lineups"
 
 /* ── Types ── */
 
-export type Position = "PG" | "SG" | "SF" | "PF" | "C"
-export type StatCategory = "PTS" | "REB" | "AST" | "STL" | "BLK" | "3PM"
-
-export interface PositionStatLine {
-  pts: number
-  reb: number
-  ast: number
-  stl: number
-  blk: number
-  threepm: number
-  gamesCount: number
-}
-
-export interface TeamDefenseByPosition {
-  teamId: string
-  teamAbbr: string
-  teamName: string
-  /** stats allowed per position, averaged per game */
-  byPosition: Record<Position, PositionStatLine>
-}
+export type Position = BPDvpPosition  // "PG" | "SG" | "SF" | "PF" | "C"
+export type StatCategory = "PTS" | "REB" | "AST" | "3PM" | "STL" | "BLK"
 
 export interface TodayMatchup {
   eventId: string
@@ -44,45 +25,55 @@ export interface TodayMatchup {
 }
 
 export interface MatchupInsight {
-  teamAbbr: string       // the defending team
+  teamAbbr: string       // the defending team (ESPN abbreviation)
   statCategory: string   // e.g. "Points"
   position: Position
   rank: number           // 1 = allows the most
   rankLabel: string      // "THE MOST", "2nd most", etc.
-  playerName: string     // opposing player at that position
-  playerPosition: Position
-  timeframe: "Season" | "Last 7"
+  avgAllowed: number
+  playerName: string     // starter at this position on the opposing team
+}
+
+export interface PositionRankingRow {
+  rank: number
+  teamAbbr: string
   avgAllowed: number
 }
 
-export interface RosterPlayer {
-  id: string
-  name: string
-  position: Position
-  headshot?: string
-}
-
 /* ── Constants ── */
-const POSITIONS: Position[] = ["PG", "SG", "SF", "PF", "C"]
 
-const STAT_CATEGORIES: { key: StatCategory; label: string; field: string }[] = [
-  { key: "PTS", label: "Points", field: "pts" },
-  { key: "REB", label: "Rebounds", field: "reb" },
-  { key: "AST", label: "Assists", field: "ast" },
-  { key: "3PM", label: "3-Pointers Made", field: "threepm" },
+export const POSITIONS: Position[] = [...BP_DVP_POSITIONS]
+
+const STAT_CATEGORIES: { key: StatCategory; label: string; bpField: keyof BPDvpPositionStats }[] = [
+  { key: "PTS", label: "Points", bpField: "points" },
+  { key: "REB", label: "Rebounds", bpField: "rebounds" },
+  { key: "AST", label: "Assists", bpField: "assists" },
+  { key: "3PM", label: "3-Pointers Made", bpField: "three_points_made" },
+  { key: "STL", label: "Steals", bpField: "steals" },
+  { key: "BLK", label: "Blocks", bpField: "blocks" },
 ]
 
-/* ── Helpers ── */
-
-function normalizePosition(pos: string): Position | null {
-  const p = pos?.toUpperCase()
-  if (p === "PG" || p === "G") return "PG"
-  if (p === "SG") return "SG"
-  if (p === "SF" || p === "F") return "SF"
-  if (p === "PF") return "PF"
-  if (p === "C") return "C"
-  return null
+/* ESPN → BettingPros team abbreviation mapping */
+const ESPN_TO_BP: Record<string, string> = {
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOR",
+  WSH: "WAS", PHX: "PHO", UTAH: "UTH",
 }
+
+function espnAbbrToBP(espnAbbr: string): string {
+  return ESPN_TO_BP[espnAbbr] ?? espnAbbr
+}
+
+/* ESPN → NBA.com team abbreviation mapping */
+const ESPN_TO_NBA: Record<string, string> = {
+  GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP",
+  WSH: "WAS", UTAH: "UTA", PHX: "PHX",
+}
+
+function espnAbbrToNBA(espnAbbr: string): string {
+  return ESPN_TO_NBA[espnAbbr] ?? espnAbbr
+}
+
+/* ── Helpers ── */
 
 function rankLabel(rank: number): string {
   if (rank === 1) return "THE MOST"
@@ -93,319 +84,100 @@ function rankLabel(rank: number): string {
   return `${rank}th most`
 }
 
-/* ── Parse box score to extract per-position stats ── */
+/* ── In-memory cache ── */
 
-interface BoxScorePlayerStat {
-  playerName: string
-  position: Position
-  pts: number
-  reb: number
-  ast: number
-  stl: number
-  blk: number
-  threepm: number
-  teamId: string
-}
-
-function parseBoxScorePlayers(summary: Record<string, unknown>): {
-  teams: Array<{ teamId: string; abbr: string }>
-  players: BoxScorePlayerStat[]
-} {
-  const boxscore = summary.boxscore as Record<string, unknown> | undefined
-  if (!boxscore) return { teams: [], players: [] }
-
-  const teamsData = (boxscore.teams ?? []) as Array<Record<string, unknown>>
-  const teams = teamsData.map((t) => {
-    const team = t.team as Record<string, unknown>
-    return {
-      teamId: team.id as string,
-      abbr: team.abbreviation as string,
-    }
-  })
-
-  const playersData = (boxscore.players ?? []) as Array<Record<string, unknown>>
-  const players: BoxScorePlayerStat[] = []
-
-  for (const teamBlock of playersData) {
-    const teamInfo = teamBlock.team as Record<string, unknown>
-    const teamId = teamInfo.id as string
-    const statistics = (teamBlock.statistics ?? []) as Array<Record<string, unknown>>
-
-    for (const statGroup of statistics) {
-      const labels = (statGroup.labels ?? []) as string[]
-      const athletes = (statGroup.athletes ?? []) as Array<Record<string, unknown>>
-
-      // Find column indices
-      const minIdx = labels.indexOf("MIN")
-      const ptsIdx = labels.indexOf("PTS")
-      const rebIdx = labels.indexOf("REB")
-      const astIdx = labels.indexOf("AST")
-      const stlIdx = labels.indexOf("STL")
-      const blkIdx = labels.indexOf("BLK")
-      const threePmIdx = labels.indexOf("3PM")
-
-      if (ptsIdx === -1) continue
-
-      for (const athlete of athletes) {
-        const athleteInfo = athlete.athlete as Record<string, unknown>
-        const pos = (athleteInfo.position as Record<string, unknown>)?.abbreviation as string
-        const normalizedPos = normalizePosition(pos)
-        if (!normalizedPos) continue
-
-        const stats = (athlete.stats ?? []) as string[]
-        // Skip players who didn't play (0 or no minutes)
-        if (minIdx >= 0 && (stats[minIdx] === "0" || stats[minIdx] === "--" || !stats[minIdx])) continue
-
-        const pts = ptsIdx >= 0 ? parseFloat(stats[ptsIdx]) || 0 : 0
-        const reb = rebIdx >= 0 ? parseFloat(stats[rebIdx]) || 0 : 0
-        const ast = astIdx >= 0 ? parseFloat(stats[astIdx]) || 0 : 0
-        const stl = stlIdx >= 0 ? parseFloat(stats[stlIdx]) || 0 : 0
-        const blk = blkIdx >= 0 ? parseFloat(stats[blkIdx]) || 0 : 0
-        const threepm = threePmIdx >= 0 ? parseFloat(stats[threePmIdx]) || 0 : 0
-
-        players.push({
-          playerName: athleteInfo.displayName as string,
-          position: normalizedPos,
-          pts, reb, ast, stl, blk, threepm,
-          teamId,
-        })
-      }
-    }
-  }
-
-  return { teams, players }
-}
-
-/* ── Build league-wide defense vs position rankings ── */
-
-// In-memory cache
-let cachedRankings: {
-  data: TeamDefenseByPosition[]
-  timestamp: number
-} | null = null
-
+let cachedDvp: { data: BPDvpTeamData[]; timestamp: number } | null = null
 const CACHE_DURATION_MS = 4 * 60 * 60 * 1000 // 4 hours
 
-export async function getLeagueDefenseVsPosition(): Promise<TeamDefenseByPosition[]> {
-  // Return cache if fresh
-  if (cachedRankings && Date.now() - cachedRankings.timestamp < CACHE_DURATION_MS) {
-    return cachedRankings.data
+async function getDvpData(): Promise<BPDvpTeamData[]> {
+  if (cachedDvp && Date.now() - cachedDvp.timestamp < CACHE_DURATION_MS) {
+    return cachedDvp.data
   }
-
-  try {
-    // 1. Get all NBA teams
-    const teamsRaw = await fetchNBATeams()
-    const sports = (teamsRaw as Record<string, unknown[]>).sports ?? []
-    const allTeams: { id: string; abbr: string; name: string }[] = []
-
-    for (const sport of sports as Array<Record<string, unknown>>) {
-      const leagues = (sport.leagues ?? []) as Array<Record<string, unknown>>
-      for (const league of leagues) {
-        const teams = (league.teams ?? []) as Array<Record<string, unknown>>
-        for (const teamEntry of teams) {
-          const team = teamEntry.team as Record<string, unknown>
-          allTeams.push({
-            id: team.id as string,
-            abbr: (team.abbreviation as string) ?? "",
-            name: (team.displayName as string) ?? "",
-          })
-        }
-      }
-    }
-
-    // 2. Fetch recent scoreboard dates to get completed game IDs
-    //    We'll sample games from the last ~14 days
-    const gameIds = new Set<string>()
-    const now = new Date()
-
-    const datePromises: Promise<Record<string, unknown>>[] = []
-    for (let daysBack = 1; daysBack <= 14; daysBack++) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - daysBack)
-      const yyyy = d.getFullYear()
-      const mm = String(d.getMonth() + 1).padStart(2, "0")
-      const dd = String(d.getDate()).padStart(2, "0")
-      datePromises.push(fetchNBAScoreboard(`${yyyy}${mm}${dd}`))
-    }
-
-    const scoreboards = await Promise.all(datePromises)
-
-    for (const sb of scoreboards) {
-      const events = (sb.events ?? []) as Array<Record<string, unknown>>
-      for (const event of events) {
-        const status = event.status as Record<string, unknown>
-        const statusType = status?.type as Record<string, unknown>
-        if (statusType?.completed) {
-          gameIds.add(event.id as string)
-        }
-      }
-    }
-
-    // 3. Fetch box scores in batches (limit to most recent ~80 games for speed)
-    const gameIdArray = Array.from(gameIds).slice(0, 80)
-
-    // Initialize accumulator: for each team, track stats allowed TO each position
-    const teamAccum: Record<string, {
-      teamId: string
-      teamAbbr: string
-      teamName: string
-      byPosition: Record<Position, { pts: number; reb: number; ast: number; stl: number; blk: number; threepm: number; games: Set<string> }>
-    }> = {}
-
-    for (const team of allTeams) {
-      teamAccum[team.id] = {
-        teamId: team.id,
-        teamAbbr: team.abbr,
-        teamName: team.name,
-        byPosition: {} as Record<Position, { pts: number; reb: number; ast: number; stl: number; blk: number; threepm: number; games: Set<string> }>,
-      }
-      for (const pos of POSITIONS) {
-        teamAccum[team.id].byPosition[pos] = { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, threepm: 0, games: new Set() }
-      }
-    }
-
-    // Batch fetch box scores (10 at a time)
-    const BATCH_SIZE = 10
-    for (let i = 0; i < gameIdArray.length; i += BATCH_SIZE) {
-      const batch = gameIdArray.slice(i, i + BATCH_SIZE)
-      const summaries = await Promise.all(
-        batch.map((id) => fetchNBAGameSummary(id).catch(() => null))
-      )
-
-      for (let j = 0; j < summaries.length; j++) {
-        const summary = summaries[j]
-        if (!summary) continue
-
-        const { teams, players } = parseBoxScorePlayers(summary)
-        if (teams.length !== 2) continue
-
-        const gameId = batch[j]
-
-        // For each player, the OPPOSING team "allowed" these stats to this position
-        for (const player of players) {
-          const opposingTeam = teams.find((t) => t.teamId !== player.teamId)
-          if (!opposingTeam || !teamAccum[opposingTeam.teamId]) continue
-
-          const accum = teamAccum[opposingTeam.teamId].byPosition[player.position]
-          if (!accum) continue
-
-          accum.pts += player.pts
-          accum.reb += player.reb
-          accum.ast += player.ast
-          accum.stl += player.stl
-          accum.blk += player.blk
-          accum.threepm += player.threepm
-          accum.games.add(gameId)
-        }
-      }
-    }
-
-    // 4. Average out the stats per game
-    const results: TeamDefenseByPosition[] = allTeams.map((team) => {
-      const accum = teamAccum[team.id]
-      const byPosition = {} as Record<Position, PositionStatLine>
-
-      for (const pos of POSITIONS) {
-        const p = accum.byPosition[pos]
-        const gamesCount = p.games.size || 1
-        byPosition[pos] = {
-          pts: Math.round((p.pts / gamesCount) * 10) / 10,
-          reb: Math.round((p.reb / gamesCount) * 10) / 10,
-          ast: Math.round((p.ast / gamesCount) * 10) / 10,
-          stl: Math.round((p.stl / gamesCount) * 10) / 10,
-          blk: Math.round((p.blk / gamesCount) * 10) / 10,
-          threepm: Math.round((p.threepm / gamesCount) * 10) / 10,
-          gamesCount,
-        }
-      }
-
-      return {
-        teamId: team.id,
-        teamAbbr: team.abbr,
-        teamName: team.name,
-        byPosition,
-      }
-    })
-
-    cachedRankings = { data: results, timestamp: Date.now() }
-    return results
-
-  } catch (err) {
-    console.error("[NBA DvP] Failed to compute defense vs position:", err)
-    return cachedRankings?.data ?? []
-  }
+  const result = await scrapeDvpData()
+  cachedDvp = { data: result.teams, timestamp: Date.now() }
+  return result.teams
 }
 
-/* ── Get team roster (for mapping today's players) ── */
+/* ── Rankings ── */
 
-export async function getTeamRoster(teamId: string): Promise<RosterPlayer[]> {
-  try {
-    const raw = await fetchNBATeamRoster(teamId)
-    const athletes = (raw.athletes ?? []) as Array<Record<string, unknown>>
-    const players: RosterPlayer[] = []
+/** Pre-compute rankings for all stat+position combos (1 = allows the most) */
+function buildRankingsMap(teams: BPDvpTeamData[]) {
+  const map: Record<string, Array<{ teamAbbr: string; value: number }>> = {}
 
-    for (const group of athletes) {
-      const items = (group.items ?? []) as Array<Record<string, unknown>>
-      for (const item of items) {
-        const pos = (item.position as Record<string, unknown>)?.abbreviation as string ?? ""
-        const normalizedPos = normalizePosition(pos)
-        if (!normalizedPos) continue
-
-        players.push({
-          id: item.id as string,
-          name: (item.displayName as string) ?? (item.fullName as string) ?? "",
-          position: normalizedPos,
-          headshot: (item.headshot as Record<string, unknown>)?.href as string | undefined,
-        })
-      }
+  for (const pos of POSITIONS) {
+    for (const cat of STAT_CATEGORIES) {
+      const key = `${pos}_${cat.key}`
+      const sorted = teams
+        .map((t) => ({ teamAbbr: t.teamAbbr, value: t.byPosition[pos]?.[cat.bpField] ?? 0 }))
+        .sort((a, b) => b.value - a.value) // most allowed first
+      map[key] = sorted
     }
-    return players
-  } catch {
-    return []
   }
+
+  return map
 }
 
-/* ── Build today's matchup insights ── */
+export async function getPositionRankings(
+  position: Position,
+  stat: StatCategory
+): Promise<PositionRankingRow[]> {
+  const teams = await getDvpData()
+  const bpField = STAT_CATEGORIES.find((c) => c.key === stat)?.bpField ?? "points"
 
-export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
+  return teams
+    .map((t) => ({
+      rank: 0,
+      teamAbbr: t.teamAbbr,
+      avgAllowed: t.byPosition[position]?.[bpField] ?? 0,
+    }))
+    .sort((a, b) => b.avgAllowed - a.avgAllowed) // most allowed = rank 1
+    .map((row, i) => ({ ...row, rank: i + 1 }))
+}
+
+/* ── Today's matchup insights ── */
+
+export async function getTodayMatchupInsights(date?: string): Promise<TodayMatchup[]> {
   try {
-    // Fetch rankings and today's scoreboard in parallel
-    const [rankings, scoreboardRaw] = await Promise.all([
-      getLeagueDefenseVsPosition(),
-      fetchNBAScoreboard(),
+    const [teams, scoreboardRaw, lineupGames, positionMap] = await Promise.all([
+      getDvpData(),
+      fetchNBAScoreboard(date),
+      fetchTodayLineups(date),
+      fetchRecentPositionMap(),
     ])
 
     const events = (scoreboardRaw.events ?? []) as Array<Record<string, unknown>>
-    if (events.length === 0 || rankings.length === 0) {
-      return []
-    }
+    if (events.length === 0 || teams.length === 0) return []
 
-    // Rank teams for each stat+position combo (1 = allows most)
-    type RankEntry = { teamId: string; teamAbbr: string; avgAllowed: number }
-    const rankingsMap: Record<string, RankEntry[]> = {}
+    // Build lookup: BettingPros team abbr → team data
+    const teamLookup = new Map<string, BPDvpTeamData>()
+    for (const t of teams) teamLookup.set(t.teamAbbr, t)
 
-    for (const pos of POSITIONS) {
-      for (const cat of STAT_CATEGORIES) {
-        const key = `${pos}_${cat.key}`
-        const sorted = [...rankings]
-          .map((r) => ({
-            teamId: r.teamId,
-            teamAbbr: r.teamAbbr,
-            avgAllowed: r.byPosition[pos]?.[cat.field as keyof PositionStatLine] as number ?? 0,
-          }))
-          .sort((a, b) => b.avgAllowed - a.avgAllowed) // most allowed first
-        rankingsMap[key] = sorted
-      }
-    }
+    // Pre-compute rankings
+    const rankingsMap = buildRankingsMap(teams)
 
-    function getTeamRank(teamId: string, pos: Position, cat: StatCategory): { rank: number; avgAllowed: number } {
-      const key = `${pos}_${cat}`
+    function getTeamRank(bpAbbr: string, pos: Position, catKey: StatCategory): { rank: number; avgAllowed: number } {
+      const key = `${pos}_${catKey}`
       const list = rankingsMap[key] ?? []
-      const idx = list.findIndex((r) => r.teamId === teamId)
-      return { rank: idx + 1, avgAllowed: list[idx]?.avgAllowed ?? 0 }
+      const idx = list.findIndex((r) => r.teamAbbr === bpAbbr)
+      return { rank: idx + 1, avgAllowed: list[idx]?.value ?? 0 }
     }
 
-    // Process each game
+    /**
+     * Find the player at a given position for a team.
+     * Priority: today's lineup (most accurate) → recent historical lineup (fallback).
+     */
+    function findPlayer(espnAbbr: string, pos: Position): string {
+      const nbaAbbr = espnAbbrToNBA(espnAbbr)
+      // Try today's lineup first
+      const todayStarter = getStarterAtPosition(lineupGames, nbaAbbr, pos)
+      if (todayStarter) return todayStarter.playerName
+      // Fall back to recent position map
+      const recentPlayer = getPlayerAtPosition(positionMap, nbaAbbr, pos)
+      if (recentPlayer) return recentPlayer.playerName
+      console.warn(`[NBA DvP] No player found: ESPN="${espnAbbr}" → NBA="${nbaAbbr}" pos=${pos} (lineupGames=${lineupGames.length}, positionMap teams=${positionMap.size})`)
+      return ""
+    }
+
     const matchups: TodayMatchup[] = []
 
     for (const event of events) {
@@ -423,119 +195,74 @@ export async function getTodayMatchupInsights(): Promise<TodayMatchup[]> {
       const awayTeam = away.team as Record<string, unknown>
       const homeTeam = home.team as Record<string, unknown>
 
-      const awayId = awayTeam.id as string
-      const homeId = homeTeam.id as string
-
-      // Fetch rosters for both teams
-      const [awayRoster, homeRoster] = await Promise.all([
-        getTeamRoster(awayId),
-        getTeamRoster(homeId),
-      ])
+      const awayEspnAbbr = awayTeam.abbreviation as string
+      const homeEspnAbbr = homeTeam.abbreviation as string
+      const awayBP = espnAbbrToBP(awayEspnAbbr)
+      const homeBP = espnAbbrToBP(homeEspnAbbr)
 
       const insights: MatchupInsight[] = []
 
-      // For each team, check what they allow and find opposing player
       for (const pos of POSITIONS) {
         for (const cat of STAT_CATEGORIES) {
-          // Away team's defense vs this position -> find home player at this position
-          const awayRankInfo = getTeamRank(awayId, pos, cat.key)
+          // Away team's defense vs this position → show home team's starter
+          const awayRankInfo = getTeamRank(awayBP, pos, cat.key)
           if (awayRankInfo.rank <= 5) {
-            const homePlayer = homeRoster.find((p) => p.position === pos)
-            if (homePlayer) {
-              insights.push({
-                teamAbbr: awayTeam.abbreviation as string,
-                statCategory: cat.label,
-                position: pos,
-                rank: awayRankInfo.rank,
-                rankLabel: rankLabel(awayRankInfo.rank),
-                playerName: homePlayer.name,
-                playerPosition: homePlayer.position,
-                timeframe: "Season",
-                avgAllowed: awayRankInfo.avgAllowed,
-              })
-            }
+            insights.push({
+              teamAbbr: awayEspnAbbr,
+              statCategory: cat.label,
+              position: pos,
+              rank: awayRankInfo.rank,
+              rankLabel: rankLabel(awayRankInfo.rank),
+              avgAllowed: awayRankInfo.avgAllowed,
+              playerName: findPlayer(homeEspnAbbr, pos),
+            })
           }
 
-          // Home team's defense vs this position -> find away player at this position
-          const homeRankInfo = getTeamRank(homeId, pos, cat.key)
+          // Home team's defense vs this position → show away team's starter
+          const homeRankInfo = getTeamRank(homeBP, pos, cat.key)
           if (homeRankInfo.rank <= 5) {
-            const awayPlayer = awayRoster.find((p) => p.position === pos)
-            if (awayPlayer) {
-              insights.push({
-                teamAbbr: homeTeam.abbreviation as string,
-                statCategory: cat.label,
-                position: pos,
-                rank: homeRankInfo.rank,
-                rankLabel: rankLabel(homeRankInfo.rank),
-                playerName: awayPlayer.name,
-                playerPosition: awayPlayer.position,
-                timeframe: "Season",
-                avgAllowed: homeRankInfo.avgAllowed,
-              })
-            }
+            insights.push({
+              teamAbbr: homeEspnAbbr,
+              statCategory: cat.label,
+              position: pos,
+              rank: homeRankInfo.rank,
+              rankLabel: rankLabel(homeRankInfo.rank),
+              avgAllowed: homeRankInfo.avgAllowed,
+              playerName: findPlayer(awayEspnAbbr, pos),
+            })
           }
         }
       }
 
-      // Sort insights: most notable first (lowest rank = most allowed)
+      // Sort: most notable first (lowest rank number = worst defense at that position)
       insights.sort((a, b) => a.rank - b.rank)
 
-      const awayLogos = (awayTeam.logos ?? []) as Array<Record<string, unknown>>
-      const homeLogos = (homeTeam.logos ?? []) as Array<Record<string, unknown>>
+      // ESPN scoreboard uses `team.logo` (string), not `team.logos` (array)
+      const awayLogo = typeof awayTeam.logo === "string" ? awayTeam.logo : ((awayTeam.logos as Array<Record<string, unknown>>)?.[0]?.href as string ?? "")
+      const homeLogo = typeof homeTeam.logo === "string" ? homeTeam.logo : ((homeTeam.logos as Array<Record<string, unknown>>)?.[0]?.href as string ?? "")
 
       matchups.push({
         eventId: event.id as string,
         gameTime: event.date as string,
         awayTeam: {
-          id: awayId,
-          abbr: awayTeam.abbreviation as string,
+          id: awayTeam.id as string,
+          abbr: awayEspnAbbr,
           name: awayTeam.displayName as string,
-          logo: (awayLogos[0]?.href as string) ?? "",
+          logo: awayLogo,
         },
         homeTeam: {
-          id: homeId,
-          abbr: homeTeam.abbreviation as string,
+          id: homeTeam.id as string,
+          abbr: homeEspnAbbr,
           name: homeTeam.displayName as string,
-          logo: (homeLogos[0]?.href as string) ?? "",
+          logo: homeLogo,
         },
         insights,
       })
     }
 
     return matchups
-
   } catch (err) {
     console.error("[NBA DvP] Failed to build today's matchup insights:", err)
     return []
   }
-}
-
-/* ── Get full league rankings table (for a rankings view) ── */
-
-export interface PositionRankingRow {
-  rank: number
-  teamAbbr: string
-  teamName: string
-  avgAllowed: number
-  gamesPlayed: number
-}
-
-export async function getPositionRankings(
-  position: Position,
-  stat: StatCategory
-): Promise<PositionRankingRow[]> {
-  const rankings = await getLeagueDefenseVsPosition()
-
-  const field = STAT_CATEGORIES.find((c) => c.key === stat)?.field ?? "pts"
-
-  return [...rankings]
-    .map((r) => ({
-      rank: 0,
-      teamAbbr: r.teamAbbr,
-      teamName: r.teamName,
-      avgAllowed: r.byPosition[position]?.[field as keyof PositionStatLine] as number ?? 0,
-      gamesPlayed: r.byPosition[position]?.gamesCount ?? 0,
-    }))
-    .sort((a, b) => b.avgAllowed - a.avgAllowed)
-    .map((row, i) => ({ ...row, rank: i + 1 }))
 }

@@ -1,0 +1,41 @@
+name: Generate Social Content
+
+on:
+  schedule:
+    # 3x daily (all times UTC, adjust for ET: UTC-5 / UTC-4 DST)
+    - cron: '0 14 * * *'   # 9 AM ET — morning batch
+    - cron: '0 17 * * *'   # 12 PM ET — midday batch
+    - cron: '0 21 * * *'   # 4 PM ET — pregame batch
+  workflow_dispatch:         # manual trigger from GitHub Actions UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Generate social content
+        run: |
+          echo "🔥 Triggering social content generation..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            "https://heatcheckhq.io/api/social/generate?secret=${{ secrets.SOCIAL_SECRET }}")
+
+          echo "Response status: $RESPONSE"
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Generation failed with status $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ Social content generated successfully"
+
+      - name: Verify sheets are rendering
+        run: |
+          echo "Checking sheet endpoints..."
+          for TYPE in nba_dvp nba_parlay daily_recap; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              "https://heatcheckhq.io/api/social/sheets/$TYPE")
+            echo "$TYPE: $STATUS"
+          done
+          echo "✅ Sheet verification complete"

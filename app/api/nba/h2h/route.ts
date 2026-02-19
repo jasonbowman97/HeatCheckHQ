@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server"
-import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule } from "@/lib/nba-api"
+import { getNBAScoreboard, getNBATeamSummary, getNBATeamSchedule, getNBAInjuries } from "@/lib/nba-api"
 import type { NBAGameResult } from "@/lib/nba-api"
-import { scrapeDvpData } from "@/lib/bettingpros-scraper"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 /** Build H2H history between two teams from their schedule data */
 function buildH2H(
   awaySchedule: NBAGameResult[],
   awayTeamId: string,
   homeTeamId: string,
+  awayAbbr: string,
+  homeAbbr: string,
 ) {
   // Find games where away team played against home team (from away team's perspective)
   const meetings = awaySchedule
@@ -32,7 +34,7 @@ function buildH2H(
       awayScore: m.home ? m.opponentScore : m.teamScore,
       homeScore: m.home ? m.teamScore : m.opponentScore,
       total: m.teamScore + m.opponentScore,
-      winner: m.won ? awayTeamId : homeTeamId,
+      winner: m.won ? awayAbbr : homeAbbr,
     }
   })
 
@@ -74,8 +76,8 @@ export async function GET(request: Request) {
       teamIds.add(g.homeTeam.id)
     }
 
-    // Fetch team summaries + schedules + DVP in parallel
-    const [summaryEntries, scheduleEntries, dvpData] = await Promise.all([
+    // Fetch team summaries + schedules + injuries in parallel
+    const [summaryEntries, scheduleEntries, allInjuries] = await Promise.all([
       Promise.all(
         Array.from(teamIds).map(async (id) => {
           const summary = await getNBATeamSummary(id)
@@ -88,10 +90,17 @@ export async function GET(request: Request) {
           return [id, schedule] as const
         })
       ),
-      scrapeDvpData().catch(() => null),
+      getNBAInjuries(),
     ])
 
     const summaries = Object.fromEntries(summaryEntries.filter(([, v]) => v !== null))
+
+    // Merge league-wide injuries into team summaries
+    for (const [id, summary] of Object.entries(summaries)) {
+      if (summary && allInjuries[id]?.length) {
+        summary.injuries = allInjuries[id]
+      }
+    }
     const schedules: Record<string, NBAGameResult[]> = Object.fromEntries(scheduleEntries)
 
     // Build H2H data and last-N records for each matchup
@@ -102,7 +111,7 @@ export async function GET(request: Request) {
       const awaySchedule = schedules[g.awayTeam.id] ?? []
       const homeSchedule = schedules[g.homeTeam.id] ?? []
 
-      h2hData[g.id] = buildH2H(awaySchedule, g.awayTeam.id, g.homeTeam.id)
+      h2hData[g.id] = buildH2H(awaySchedule, g.awayTeam.id, g.homeTeam.id, g.awayTeam.abbreviation, g.homeTeam.abbreviation)
 
       lastRecords[g.awayTeam.id] ??= {
         last5: lastNRecord(awaySchedule, 5),
@@ -114,12 +123,11 @@ export async function GET(request: Request) {
       }
     }
 
-    // Build DVP rankings lookup (BettingPros team abbreviations -> rankings per position)
-    const dvpRankings: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }> = dvpData?.rankings ?? {}
-
-    return NextResponse.json({ games, summaries, h2hData, lastRecords, dvpRankings })
+    const res = NextResponse.json({ games, summaries, h2hData, lastRecords, updatedAt: new Date().toISOString() })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.SEMI_LIVE))
+    return res
   } catch (e) {
     console.error("[NBA H2H API]", e)
-    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {}, dvpRankings: {} })
+    return NextResponse.json({ games: [], summaries: {}, h2hData: {}, lastRecords: {} }, { status: 500 })
   }
 }

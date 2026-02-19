@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head><title>HeatCheck HQ — Twitter Avatar Export</title></head>
+<body style="background: #0d1117; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;">
+  <div style="text-align: center;">
+    <h2 style="color: #fff; font-family: sans-serif;">Right-click the image below and "Save image as..." to download</h2>
+    <p style="color: #888; font-family: sans-serif;">400x400px PNG — ready for Twitter/X profile picture</p>
+    <canvas id="canvas" width="400" height="400" style="border: 1px solid #333; border-radius: 16px;"></canvas>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const size = 400;
+
+    // Background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, size, size);
+
+    // Subtle rounded inner bg
+    const pad = 20;
+    ctx.fillStyle = '#151b23';
+    ctx.beginPath();
+    ctx.roundRect(pad, pad, size - pad*2, size - pad*2, 40);
+    ctx.fill();
+
+    // Scale the 24x24 viewBox to fit nicely
+    ctx.save();
+    ctx.translate(size/2, size/2 + 15);
+    const scale = 13;
+    ctx.scale(scale, scale);
+    ctx.translate(-12, -14);
+
+    // Bar 1 (shortest, most transparent)
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#2dd4a8';
+    ctx.beginPath();
+    ctx.roundRect(3, 17, 4, 5, 1);
+    ctx.fill();
+
+    // Bar 2 (medium)
+    ctx.globalAlpha = 0.65;
+    ctx.beginPath();
+    ctx.roundRect(10, 13, 4, 9, 1);
+    ctx.fill();
+
+    // Bar 3 (tallest, most opaque)
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.roundRect(17, 10, 4, 12, 1);
+    ctx.fill();
+
+    // Flame crest — outer
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#2dd4a8';
+    ctx.beginPath();
+    ctx.moveTo(19, 10);
+    ctx.bezierCurveTo(19, 10, 16.2, 6.5, 16.2, 3.7);
+    ctx.bezierCurveTo(16.2, 2.2, 17, 1, 17.7, 0.4);
+    ctx.bezierCurveTo(18, 1.5, 18.8, 2.4, 19.6, 3.1);
+    ctx.bezierCurveTo(20.4, 3.9, 21.1, 4.8, 21.1, 6.1);
+    ctx.bezierCurveTo(21.1, 8.1, 19.9, 9.9, 19, 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Flame crest — inner highlight
+    ctx.fillStyle = '#0d1117';
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(19, 10);
+    ctx.bezierCurveTo(19, 10, 17.8, 8.5, 17.8, 7.2);
+    ctx.bezierCurveTo(17.8, 6.5, 18.15, 6, 18.4, 5.7);
+    ctx.bezierCurveTo(18.53, 6.2, 18.9, 6.6, 19.25, 6.9);
+    ctx.bezierCurveTo(19.6, 7.25, 19.9, 7.7, 19.9, 8.4);
+    ctx.bezierCurveTo(19.9, 9.3, 19.4, 9.6, 19, 10);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // Convert to downloadable image
+    const img = new Image();
+    img.src = canvas.toDataURL('image/png');
+    img.style.cssText = 'border-radius: 16px; cursor: pointer; margin-top: 20px;';
+    img.title = 'Right-click to save';
+    canvas.parentElement.appendChild(img);
+    canvas.style.display = 'none';
+  </script>
+</body>
+</html>

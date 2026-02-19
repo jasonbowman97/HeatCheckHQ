@@ -1,11 +1,16 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 /** @type {import('next').NextConfig} */
-// Force redeploy: 2026-02-11
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
+  async redirects() {
+    return [
+      { source: '/nba/trends', destination: '/nba/streaks', permanent: true },
+      { source: '/mlb/trends', destination: '/mlb/streaks', permanent: true },
+      { source: '/nfl/trends', destination: '/nfl/streaks', permanent: true },
+    ]
   },
-  eslint: {
-    ignoreDuringBuilds: true,
+  typescript: {
+    ignoreBuildErrors: false,
   },
   images: {
     // Enable image optimization for production
@@ -21,6 +26,11 @@ const nextConfig = {
         hostname: 'img.mlbstatic.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.fantasypros.com',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
   },
@@ -33,8 +43,34 @@ const nextConfig = {
   poweredByHeader: false,
   // Optimize bundle size
   experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion'],
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      'recharts',
+      'posthog-js',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-navigation-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-tooltip',
+    ],
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  // Suppress source map upload warnings when SENTRY_AUTH_TOKEN is not set
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  // Upload source maps for better stack traces (requires SENTRY_AUTH_TOKEN)
+  widenClientFileUpload: true,
+  // Disable Sentry telemetry
+  telemetry: false,
+  // Don't add Sentry to middleware (it has its own edge config)
+  disableLogger: true,
+  // Tree-shake Sentry debug code in production
+  hideSourceMaps: true,
+})

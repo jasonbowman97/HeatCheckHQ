@@ -6,6 +6,15 @@
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+/** Timeout for external fetches (10 seconds) */
+const FETCH_TIMEOUT = 10_000
+
+function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 /** Extract a balanced JSON object/array starting at a given position in the string */
 function extractBalanced(html: string, startIdx: number): string {
   const open = html[startIdx]
@@ -89,7 +98,7 @@ interface FBCategory {
 }
 
 export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
-  const res = await fetch("https://www.bettingpros.com/nba/picks/first-basket/", {
+  const res = await fetchWithTimeout("https://www.bettingpros.com/nba/picks/first-basket/", {
     headers: { "User-Agent": UA },
     next: { revalidate: 43200 },
   })
@@ -208,15 +217,30 @@ export async function scrapeFirstBasketData(): Promise<BPFirstBasketData> {
 /*  Defense vs Position                                                */
 /* ------------------------------------------------------------------ */
 
-export interface BPDvpRankings {
-  /** Points allowed per position, ranked 1-30 (1 = fewest pts allowed = best D) */
-  rankings: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }>
-  /** Raw points allowed per position per team */
-  raw: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }>
+export interface BPDvpPositionStats {
+  points: number
+  rebounds: number
+  assists: number
+  three_points_made: number
+  steals: number
+  blocks: number
+  turnovers: number
 }
 
-export async function scrapeDvpData(): Promise<BPDvpRankings> {
-  const res = await fetch("https://www.bettingpros.com/nba/defense-vs-position/", {
+export type BPDvpPosition = "PG" | "SG" | "SF" | "PF" | "C"
+export const BP_DVP_POSITIONS: BPDvpPosition[] = ["PG", "SG", "SF", "PF", "C"]
+
+export interface BPDvpTeamData {
+  teamAbbr: string
+  byPosition: Record<BPDvpPosition, BPDvpPositionStats>
+}
+
+export interface BPDvpData {
+  teams: BPDvpTeamData[]
+}
+
+export async function scrapeDvpData(): Promise<BPDvpData> {
+  const res = await fetchWithTimeout("https://www.bettingpros.com/nba/defense-vs-position/", {
     headers: { "User-Agent": UA },
     next: { revalidate: 43200 },
   })
@@ -244,37 +268,24 @@ export async function scrapeDvpData(): Promise<BPDvpRankings> {
     free_throw_perc: number
   }>> = JSON.parse(teamStatsJson)
 
-  const posKeys = ["pg", "sg", "sf", "pf", "c"] as const
-  const posLabels = ["PG", "SG", "SF", "PF", "C"] as const
+  const teams: BPDvpTeamData[] = []
 
-  // Collect raw points allowed per position per team
-  const raw: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }> = {}
-  for (const [team, posData] of Object.entries(teamStats)) {
-    raw[team] = {
-      pg: posData.PG?.points ?? 0,
-      sg: posData.SG?.points ?? 0,
-      sf: posData.SF?.points ?? 0,
-      pf: posData.PF?.points ?? 0,
-      c: posData.C?.points ?? 0,
+  for (const [teamAbbr, posData] of Object.entries(teamStats)) {
+    const byPosition = {} as Record<BPDvpPosition, BPDvpPositionStats>
+    for (const pos of BP_DVP_POSITIONS) {
+      const raw = posData[pos]
+      byPosition[pos] = {
+        points: raw?.points ?? 0,
+        rebounds: raw?.rebounds ?? 0,
+        assists: raw?.assists ?? 0,
+        three_points_made: raw?.three_points_made ?? 0,
+        steals: raw?.steals ?? 0,
+        blocks: raw?.blocks ?? 0,
+        turnovers: raw?.turnovers ?? 0,
+      }
     }
+    teams.push({ teamAbbr, byPosition })
   }
 
-  // Compute rankings per position (1 = fewest points allowed = best defense)
-  const rankings: Record<string, { pg: number; sg: number; sf: number; pf: number; c: number }> = {}
-  for (const team of Object.keys(raw)) {
-    rankings[team] = { pg: 0, sg: 0, sf: 0, pf: 0, c: 0 }
-  }
-
-  for (let p = 0; p < posLabels.length; p++) {
-    const posKey = posKeys[p]
-    const sorted = Object.entries(raw)
-      .map(([team, vals]) => ({ team, pts: vals[posKey] }))
-      .sort((a, b) => a.pts - b.pts) // ascending = fewer pts allowed = better D
-
-    sorted.forEach((entry, idx) => {
-      rankings[entry.team][posKey] = idx + 1
-    })
-  }
-
-  return { rankings, raw }
+  return { teams }
 }

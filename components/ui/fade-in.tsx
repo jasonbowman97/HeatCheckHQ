@@ -22,10 +22,10 @@ export function FadeIn({
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   const directions = {
-    up: { y: 40, x: 0 },
-    down: { y: -40, x: 0 },
-    left: { y: 0, x: 40 },
-    right: { y: 0, x: -40 },
+    up: { y: 24, x: 0 },
+    down: { y: -24, x: 0 },
+    left: { y: 0, x: 24 },
+    right: { y: 0, x: -24 },
     none: { y: 0, x: 0 },
   }
 
@@ -49,7 +49,7 @@ export function FadeIn({
             }
       }
       transition={{
-        duration: 0.7,
+        duration: 0.4,
         delay,
         ease: [0.21, 0.47, 0.32, 0.98],
       }}

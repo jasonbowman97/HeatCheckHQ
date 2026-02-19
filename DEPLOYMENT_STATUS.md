@@ -14,7 +14,7 @@ Updated `app/actions/stripe.ts` to properly build return URL with VERCEL_URL fal
 ```typescript
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                "https://heatcheckhq.com"
+                "https://heatcheckhq.io"
 ```
 
 ## What Works

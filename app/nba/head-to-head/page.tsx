@@ -1,18 +1,22 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import useSWR from "swr"
-import { BarChart3, Loader2 } from "lucide-react"
-import { nbaGames as staticGames } from "@/lib/nba-h2h-data"
+import { Loader2, Lock, AlertCircle, RefreshCw } from "lucide-react"
+import { DashboardShell } from "@/components/dashboard-shell"
 import type { NBAGame } from "@/lib/nba-h2h-data"
 import type { NBAScheduleGame, NBATeamSummary } from "@/lib/nba-api"
 import type { InjuredPlayer } from "@/lib/nba-h2h-data"
 import { H2HMatchupSelector } from "@/components/nba/h2h-matchup-selector"
 import { H2HHistory } from "@/components/nba/h2h-history"
 import { H2HMomentum } from "@/components/nba/h2h-momentum"
-import { H2HDefense } from "@/components/nba/h2h-defense"
 import { H2HInjuries } from "@/components/nba/h2h-injuries"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
+import { DateNavigator } from "@/components/nba/date-navigator"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -31,8 +35,6 @@ const emptyMomentum: NBAGame["awayMomentum"] = {
   awayRecord: "N/A",
   awayPpg: 0,
 }
-
-const emptyDefense: NBAGame["awayDefense"] = { pg: 0, sg: 0, sf: 0, pf: 0, c: 0 }
 
 function mapInjuryStatus(status: string): InjuredPlayer["status"] {
   const lower = status.toLowerCase()
@@ -81,33 +83,26 @@ interface H2HApiData {
   recentMeetings: { date: string; awayScore: number; homeScore: number; total: number; winner: string }[]
 }
 
-type DvpRank = { pg: number; sg: number; sf: number; pf: number; c: number }
-
-// BettingPros uses slightly different abbreviations for a few teams
-const ESPN_TO_BP: Record<string, string> = { UTAH: "UTH", GS: "GSW", SA: "SAS", NY: "NYK", NO: "NOP", WSH: "WAS", PHX: "PHO" }
-function bpAbbr(espn: string) { return ESPN_TO_BP[espn] ?? espn }
-
 function espnToH2HGames(
   espnGames: NBAScheduleGame[],
   summaries: Record<string, NBATeamSummary>,
   h2hData: Record<string, H2HApiData | null>,
   lastRecords: Record<string, LastRecord>,
-  dvpRankings: Record<string, DvpRank>,
 ): NBAGame[] {
   return espnGames.map((g) => {
     const time = new Date(g.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
     const awaySummary = summaries[g.awayTeam.id]
     const homeSummary = summaries[g.homeTeam.id]
     const h2h = h2hData[g.id]
-    const awayDvp = dvpRankings[bpAbbr(g.awayTeam.abbreviation)]
-    const homeDvp = dvpRankings[bpAbbr(g.homeTeam.abbreviation)]
 
     return {
       id: g.id,
       awayTeam: g.awayTeam.abbreviation,
       awayFull: g.awayTeam.displayName,
+      awayLogo: g.awayTeam.logo,
       homeTeam: g.homeTeam.abbreviation,
       homeFull: g.homeTeam.displayName,
+      homeLogo: g.homeTeam.logo,
       date: new Date(g.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       time,
       venue: g.venue,
@@ -118,122 +113,161 @@ function espnToH2HGames(
         : { record: "N/A", awayAvgPts: 0, homeAvgPts: 0, avgTotal: 0, margin: "N/A", recentMeetings: [] },
       awayMomentum: buildMomentum(awaySummary, lastRecords[g.awayTeam.id]),
       homeMomentum: buildMomentum(homeSummary, lastRecords[g.homeTeam.id]),
-      awayDefense: awayDvp ?? { ...emptyDefense },
-      homeDefense: homeDvp ?? { ...emptyDefense },
     }
   })
 }
 
 export default function NBAH2HPage() {
-  const { data, isLoading } = useSWR<{
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+
+  const [date, setDate] = useState(new Date())
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
+
+  const handlePrevDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() - 1); return d })
+    setSelectedGameId(null)
+  }, [])
+
+  const handleNextDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() + 1); return d })
+    setSelectedGameId(null)
+  }, [])
+
+  const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
+
+  const { data, isLoading, error, mutate } = useSWR<{
     games: NBAScheduleGame[]
     summaries: Record<string, NBATeamSummary>
     h2hData: Record<string, H2HApiData | null>
     lastRecords: Record<string, LastRecord>
-    dvpRankings: Record<string, DvpRank>
-  }>("/api/nba/h2h", fetcher, {
+    dvpRankings: Record<string, unknown>
+    updatedAt?: string
+  }>(`/api/nba/h2h?date=${dateParam}`, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
 
-  const liveGames = useMemo(() => (data?.games?.length ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {}, data.dvpRankings ?? {}) : null), [data])
+  const games = useMemo(
+    () => data?.games?.length
+      ? espnToH2HGames(data.games, data.summaries ?? {}, data.h2hData ?? {}, data.lastRecords ?? {})
+      : [],
+    [data],
+  )
 
-  // Merge: use live games for the matchup selector but fall back to static for detailed stats
-  const allGames = liveGames ?? staticGames
-  const isLive = !!liveGames
+  const isLive = games.length > 0
 
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
-  const activeId = selectedGameId ?? allGames[0]?.id
-  // Try to find a matching static game for full detail, otherwise use the live shell
-  const selectedGame = staticGames.find((g) => g.id === activeId)
-    ?? allGames.find((g) => g.id === activeId)
-    ?? allGames[0]
+  const activeId = selectedGameId ?? games[0]?.id
+  const selectedGame = games.find((g) => g.id === activeId) ?? games[0]
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="mx-auto max-w-[1440px] flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <BarChart3 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                  HeatCheck HQ
-                </h1>
-                <p className="text-xs text-muted-foreground">NBA Head-to-Head</p>
-              </div>
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/nba/first-basket"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              First Basket
-            </Link>
-  <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-  H2H
-  </span>
-  <Link
-    href="/nba/defense-vs-position"
-    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-  >
-  Def vs Pos
-  </Link>
-  <Link
-    href="/nba/trends"
-    className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-  >
-  Trends
-  </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link
-              href="/mlb/hitting-stats"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              MLB
-            </Link>
-            <Link
-              href="/nfl/matchup"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
-            >
-              NFL
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">Team vs Team H2H Analysis</h2>
+    <DashboardShell>
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
+        {/* Heading */}
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">Head-to-Head</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live
               </span>
             )}
+            {!isLoading && games.length > 0 && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                {games.length} Games
+              </span>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Comprehensive matchup analytics with betting insights and injury reports
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
+            <p className="text-sm text-muted-foreground">
+              Season series, team form, and injury reports.
+            </p>
+          </div>
+          <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
-        <div className="flex flex-col gap-6">
-          <H2HMatchupSelector
-            games={allGames}
-            selectedId={activeId}
-            onSelect={setSelectedGameId}
-          />
-          <H2HHistory game={selectedGame} />
-          <H2HMomentum game={selectedGame} />
-          <H2HDefense game={selectedGame} />
-          <H2HInjuries game={selectedGame} />
-        </div>
+        {/* Loading skeleton */}
+        {isLoading && games.length === 0 && <TableSkeleton rows={5} columns={4} />}
+
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load matchup data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try again.</p>
+            <button
+              onClick={() => mutate()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* No games state */}
+        {!isLoading && !error && games.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <p className="text-sm text-muted-foreground">
+              No games scheduled for {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}.
+            </p>
+          </div>
+        )}
+
+        {/* Content */}
+        {selectedGame && (
+          <>
+            {/* Game selector — locked for anonymous when multiple games */}
+            {isAnonymous && games.length > 1 ? (
+              <div className="relative">
+                <div className="absolute inset-0 z-10 flex items-center justify-end pr-6">
+                  <Link
+                    href="/auth/sign-up"
+                    className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
+                  >
+                    <Lock className="h-3 w-3" />
+                    Sign up to switch games
+                  </Link>
+                </div>
+                <div className="pointer-events-none opacity-60">
+                  <H2HMatchupSelector
+                    games={games}
+                    selectedId={activeId}
+                    onSelect={setSelectedGameId}
+                  />
+                </div>
+              </div>
+            ) : (
+              <H2HMatchupSelector
+                games={games}
+                selectedId={activeId}
+                onSelect={setSelectedGameId}
+              />
+            )}
+
+            {/* H2H History shown as preview */}
+            <H2HHistory game={selectedGame} />
+
+            {/* Momentum + Injuries gated for anonymous */}
+            {isAnonymous ? (
+              <SignupGate
+                headline="See full matchup breakdown — free"
+                description="Unlock team momentum, injury reports, and every game's H2H data. Free forever, no credit card."
+                countLabel={`${games.length} games tonight`}
+                preview={<H2HMomentum game={selectedGame} />}
+                gated={<H2HInjuries game={selectedGame} />}
+              />
+            ) : (
+              <>
+                <H2HMomentum game={selectedGame} />
+                <H2HInjuries game={selectedGame} />
+              </>
+            )}
+          </>
+        )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

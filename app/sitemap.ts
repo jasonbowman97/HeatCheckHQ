@@ -1,8 +1,16 @@
 import { MetadataRoute } from 'next'
+import { getAllPosts } from '@/lib/blog'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heatcheckhq.com'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://heatcheckhq.io'
   const currentDate = new Date().toISOString()
+
+  const blogPosts = getAllPosts().map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: post.date,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }))
 
   return [
     // Home
@@ -38,7 +46,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/mlb/trends`,
+      url: `${baseUrl}/mlb/streaks`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,
@@ -49,7 +57,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'hourly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/mlb/due-for-hr`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
     // NBA Pages
+    {
+      url: `${baseUrl}/nba/streaks`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.95,
+    },
     {
       url: `${baseUrl}/nba/first-basket`,
       lastModified: currentDate,
@@ -68,12 +88,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/nba/trends`,
-      lastModified: currentDate,
-      changeFrequency: 'hourly',
-      priority: 0.95,
-    },
     // NFL Pages
     {
       url: `${baseUrl}/nfl/matchup`,
@@ -82,7 +96,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/nfl/trends`,
+      url: `${baseUrl}/nfl/defense-vs-position`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/nfl/streaks`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,
@@ -100,5 +120,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.3,
     },
+    // Blog
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    ...blogPosts,
   ]
 }

@@ -11,11 +11,25 @@ export async function getUserTier(): Promise<"anonymous" | "free" | "pro"> {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("subscription_tier")
+      .select("subscription_tier, trial_expires_at")
       .eq("id", user.id)
       .single()
 
-    if (profile?.subscription_tier === "pro") return "pro"
+    if (!profile) return "free"
+
+    if (profile.subscription_tier === "pro") {
+      // If user is on a trial, check if it's expired
+      if (profile.trial_expires_at) {
+        const trialEnd = new Date(profile.trial_expires_at)
+        if (trialEnd > new Date()) {
+          return "pro" // Trial still active
+        }
+        // Trial expired — they're back to free
+        return "free"
+      }
+      return "pro" // Paid Pro, no trial
+    }
+
     return "free"
   } catch {
     return "anonymous"

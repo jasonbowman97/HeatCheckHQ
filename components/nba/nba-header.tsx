@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import Link from "next/link"
 
 export function NBAHeader() {
@@ -10,7 +10,7 @@ export function NBAHeader() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
@@ -22,7 +22,7 @@ export function NBAHeader() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/mlb/hitting-stats"
+            href="/mlb"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
             MLB
@@ -43,14 +43,14 @@ export function NBAHeader() {
             Def vs Pos
           </Link>
           <Link
-            href="/nba/trends"
+            href="/nba/streaks"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
-            Trends
+            Streaks
           </Link>
           <div className="hidden sm:block h-5 w-px bg-border mx-1" />
           <Link
-            href="/nfl/matchup"
+            href="/nfl"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
             NFL

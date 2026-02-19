@@ -46,31 +46,54 @@ function cleanupRateLimit() {
 
 export async function middleware(request: NextRequest) {
   // --- Supabase session refresh ---
+  // Only refresh auth sessions on pages that need it (auth, account, checkout,
+  // protected dashboards). Skip for public pages, API routes, and static assets
+  // to avoid 50-200ms latency on every request.
+  const pathname = request.nextUrl.pathname
+  const needsAuth =
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/account') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/nba/defense-vs-position') ||
+    pathname.startsWith('/nba/head-to-head') ||
+    pathname.startsWith('/nba/streaks') ||
+    pathname.startsWith('/nba/first-basket') ||
+    pathname.startsWith('/nfl/defense-vs-position') ||
+    pathname.startsWith('/nfl/streaks') ||
+    pathname.startsWith('/nfl/matchup') ||
+    pathname.startsWith('/mlb/hitting-stats') ||
+    pathname.startsWith('/mlb/pitching-stats') ||
+    pathname.startsWith('/mlb/hot-hitters') ||
+    pathname.startsWith('/mlb/streaks')
+
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
-            request.cookies.set(name, value),
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          )
+  if (needsAuth) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+            cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
+              request.cookies.set(name, value),
+            )
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) =>
+              supabaseResponse.cookies.set(name, value, options),
+            )
+          },
         },
       },
-    },
-  )
+    )
 
-  // Refresh session - must call getUser() to keep sessions alive
-  await supabase.auth.getUser()
+    // Refresh session - must call getUser() to keep sessions alive
+    await supabase.auth.getUser()
+  }
 
   const response = supabaseResponse
 
@@ -107,11 +130,11 @@ export async function middleware(request: NextRequest) {
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://*.i.posthog.com https://browser.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co",
+    "connect-src 'self' https://api.espn.com https://statsapi.mlb.com https://*.vercel.app https://vercel.live wss://ws-us3.pusher.com https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.i.posthog.com https://*.ingest.us.sentry.io https://*.sentry.io",
     "frame-src 'self' https://vercel.live https://js.stripe.com https://*.supabase.co",
     "media-src 'self'",
     "object-src 'none'",
@@ -147,10 +170,18 @@ export async function middleware(request: NextRequest) {
   // Remove server header
   headers.delete('X-Powered-By')
 
-  // CORS headers for API routes
+  // CORS headers for API routes — restrict to production domain
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    headers.set('Access-Control-Allow-Origin', '*')
-    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    const origin = request.headers.get('origin') || ''
+    const allowedOrigins = [
+      'https://heatcheckhq.io',
+      'https://www.heatcheckhq.io',
+    ]
+    // Also allow Vercel preview deployments
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      headers.set('Access-Control-Allow-Origin', origin)
+    }
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   }
 
@@ -175,6 +206,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 }

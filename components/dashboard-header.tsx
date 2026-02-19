@@ -1,6 +1,7 @@
 "use client"
 
-import { BarChart3, ChevronLeft } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -28,14 +29,14 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
           )}
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">
                 {playerName ? playerName : "HeatCheck HQ"}
               </h1>
               {!playerName && (
-                <p className="text-xs text-muted-foreground">Player Hitting Stats</p>
+                <p className="text-xs text-muted-foreground">Hitter vs Pitcher</p>
               )}
               {playerName && (
                 <p className="text-xs text-muted-foreground">Game Log & At-Bat Analysis</p>
@@ -51,7 +52,7 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
             Hot Hitters
           </Link>
           <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-            Hitting Stats
+            Hitter vs Pitcher
           </span>
           <Link
             href="/mlb/pitching-stats"
@@ -72,20 +73,20 @@ export function DashboardHeader({ showBack, onBack, playerName }: DashboardHeade
             Weather
           </Link>
           <Link
-            href="/mlb/trends"
+            href="/mlb/streaks"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
-            Trends
+            Streaks
           </Link>
           <div className="hidden sm:block h-5 w-px bg-border mx-1" />
           <Link
-            href="/nba/first-basket"
+            href="/nba"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
             NBA
           </Link>
           <Link
-            href="/nfl/matchup"
+            href="/nfl"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
           >
             NFL

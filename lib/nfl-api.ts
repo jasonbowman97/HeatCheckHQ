@@ -259,7 +259,7 @@ export async function getNFLPlayerOverview(playerId: string): Promise<NFLPlayerS
 }
 
 /* ------------------------------------------------------------------ */
-/*  Team Statistics                                                     */
+/*  Team Statistics (scraped from ESPN team stats pages)                */
 /* ------------------------------------------------------------------ */
 
 export interface NFLTeamStats {
@@ -277,49 +277,92 @@ export interface NFLTeamStats {
   rushingYardsAllowedRank: number
 }
 
+interface ESPNTeamStatEntry {
+  team: { id: string; abbrev: string; displayName: string }
+  stats: { name: string; value: string; rank: string }[]
+}
+
+/** Scrape ESPN team stats page and extract __espnfitt__ embedded JSON */
+async function scrapeESPNTeamStats(view: "offense" | "defense"): Promise<ESPNTeamStatEntry[]> {
+  const year = new Date().getFullYear()
+  const viewParam = view === "defense" ? "/view/defense" : ""
+  const url = `https://www.espn.com/nfl/stats/team/_${viewParam}/season/${year}/seasontype/2`
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; HeatCheckHQ/1.0)" },
+    next: { revalidate: 43200 },
+  })
+  if (!res.ok) return []
+  const html = await res.text()
+  const match = html.match(/window\['__espnfitt__'\]\s*=\s*(\{.+?\});/s)
+  if (!match) return []
+  try {
+    const data = JSON.parse(match[1])
+    return (data.page?.content?.teamStats ?? []) as ESPNTeamStatEntry[]
+  } catch {
+    return []
+  }
+}
+
+function parseStat(entry: ESPNTeamStatEntry, name: string): { value: number; rank: number } {
+  const s = entry.stats.find((st) => st.name === name)
+  if (!s) return { value: 0, rank: 0 }
+  return {
+    value: Math.round(parseFloat(s.value.replace(/,/g, "")) * 10) / 10 || 0,
+    rank: parseInt(s.rank) || 0,
+  }
+}
+
+/** Cached league-wide team stats (offense + defense, all 32 teams) */
+let _statsCache: { data: Map<string, NFLTeamStats>; ts: number } | null = null
+const CACHE_TTL = 12 * 60 * 60 * 1000 // 12 hours
+
+async function getAllNFLTeamStats(): Promise<Map<string, NFLTeamStats>> {
+  if (_statsCache && Date.now() - _statsCache.ts < CACHE_TTL) return _statsCache.data
+
+  const [offenseEntries, defenseEntries] = await Promise.all([
+    scrapeESPNTeamStats("offense"),
+    scrapeESPNTeamStats("defense"),
+  ])
+
+  // Build defense lookup by team ID
+  const defMap = new Map<string, ESPNTeamStatEntry>()
+  for (const e of defenseEntries) defMap.set(e.team.id, e)
+
+  const result = new Map<string, NFLTeamStats>()
+  for (const off of offenseEntries) {
+    const def = defMap.get(off.team.id)
+    const offPPG = parseStat(off, "totalPointsPerGame")
+    const offPassYPG = parseStat(off, "netPassingYardsPerGame")
+    const offRushYPG = parseStat(off, "rushingYardsPerGame")
+    const defPPG = def ? parseStat(def, "totalPointsPerGame") : { value: 0, rank: 0 }
+    const defPassYPG = def ? parseStat(def, "netPassingYardsPerGame") : { value: 0, rank: 0 }
+    const defRushYPG = def ? parseStat(def, "rushingYardsPerGame") : { value: 0, rank: 0 }
+
+    result.set(off.team.id, {
+      pointsScored: offPPG.value,
+      pointsScoredRank: offPPG.rank,
+      pointsAllowed: defPPG.value,
+      pointsAllowedRank: defPPG.rank,
+      passYards: offPassYPG.value,
+      passYardsRank: offPassYPG.rank,
+      passYardsAllowed: defPassYPG.value,
+      passYardsAllowedRank: defPassYPG.rank,
+      rushingYards: offRushYPG.value,
+      rushingYardsRank: offRushYPG.rank,
+      rushingYardsAllowed: defRushYPG.value,
+      rushingYardsAllowedRank: defRushYPG.rank,
+    })
+  }
+
+  _statsCache = { data: result, ts: Date.now() }
+  console.log(`[NFL Stats] Scraped ${result.size} teams (offense + defense)`)
+  return result
+}
+
 export async function getNFLTeamStats(teamId: string): Promise<NFLTeamStats | null> {
   try {
-    const raw = await espnFetch<{
-      results: {
-        stats: {
-          categories: {
-            name: string
-            stats: { name: string; displayValue: string; value: number; rank?: number; rankDisplayValue?: string }[]
-          }[]
-        }
-      }
-    }>(`/teams/${teamId}/statistics`)
-
-    const cats = raw.results?.stats?.categories ?? []
-    const findStat = (catName: string, statName: string) => {
-      const cat = cats.find((c) => c.name.toLowerCase().includes(catName.toLowerCase()))
-      return cat?.stats?.find((s) => s.name === statName)
-    }
-
-    // Offensive stats
-    const totalPts = findStat("scoring", "totalPoints") ?? findStat("scoring", "totalPointsPerGame")
-    const passYds = findStat("passing", "netPassingYardsPerGame") ?? findStat("passing", "netPassingYards")
-    const rushYds = findStat("rushing", "rushingYardsPerGame") ?? findStat("rushing", "rushingYards")
-
-    // Defensive stats (opponent categories)
-    const ptsAllowed = findStat("scoring", "pointsAgainst") ?? findStat("defensive", "pointsAgainst")
-    const passYdsAllowed = findStat("defensive", "netPassingYardsAllowed") ?? findStat("passing", "opponentNetPassingYards")
-    const rushYdsAllowed = findStat("defensive", "rushingYardsAllowed") ?? findStat("rushing", "opponentRushingYards")
-
-    return {
-      pointsScored: Math.round((totalPts?.value ?? 0) * 10) / 10,
-      pointsScoredRank: totalPts?.rank ?? 0,
-      pointsAllowed: Math.round((ptsAllowed?.value ?? 0) * 10) / 10,
-      pointsAllowedRank: ptsAllowed?.rank ?? 0,
-      passYards: Math.round((passYds?.value ?? 0) * 10) / 10,
-      passYardsRank: passYds?.rank ?? 0,
-      passYardsAllowed: Math.round((passYdsAllowed?.value ?? 0) * 10) / 10,
-      passYardsAllowedRank: passYdsAllowed?.rank ?? 0,
-      rushingYards: Math.round((rushYds?.value ?? 0) * 10) / 10,
-      rushingYardsRank: rushYds?.rank ?? 0,
-      rushingYardsAllowed: Math.round((rushYdsAllowed?.value ?? 0) * 10) / 10,
-      rushingYardsAllowedRank: rushYdsAllowed?.rank ?? 0,
-    }
+    const allStats = await getAllNFLTeamStats()
+    return allStats.get(teamId) ?? null
   } catch {
     return null
   }

@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { BarChart3, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,7 +43,7 @@ export default function ForgotPasswordPage() {
         <div className="mb-8 flex flex-col items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
           </Link>
@@ -54,9 +55,21 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-foreground">
               Check your email for a password reset link. It may take a minute to arrive.
             </p>
+            <p className="text-xs text-muted-foreground">
+              Don&apos;t see it? Check your spam or junk folder.
+            </p>
+            <button
+              onClick={() => {
+                setSuccess(false)
+                setLoading(false)
+              }}
+              className="text-sm text-primary hover:underline"
+            >
+              Send again
+            </button>
             <Link
               href="/auth/login"
-              className="flex items-center gap-1 text-sm text-primary hover:underline"
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3 w-3" />
               Back to login

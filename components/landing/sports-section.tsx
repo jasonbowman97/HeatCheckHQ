@@ -13,24 +13,26 @@ const sports = [
       "Pitcher arsenals, batter vs. pitcher matchups, NRFI probabilities, and strikeout projections. Drill into every pitch type with heatmap-colored stat breakdowns.",
     dashboards: [
       { name: "Hot Hitters", href: "/mlb/hot-hitters", description: "Active hitting, XBH, and HR streaks across all players" },
-      { name: "Hitting Stats", href: "/mlb/hitting-stats", description: "Batter matchups, exit velo, barrel rates, platoon splits" },
+      { name: "Hitter vs Pitcher", href: "/mlb/hitting-stats", description: "Batter vs pitcher matchups, exit velo, barrel rates, platoon splits" },
       { name: "Pitching Stats", href: "/mlb/pitching-stats", description: "ERA, K%, CSW%, pitch arsenal breakdowns" },
       { name: "NRFI", href: "/mlb/nrfi", description: "No Run First Inning records, streaks, opponent ranks" },
-      { name: "Trends", href: "/mlb/trends", description: "Hit streaks, XBH runs, HR surges, cold slumps" },
+      { name: "Weather", href: "/mlb/weather", description: "Ballpark temps, wind direction & speed, altitude" },
+      { name: "Due for HR", href: "/mlb/due-for-hr", description: "Statcast barrel rate, exit velo, xSLG gap — hitters due for homers" },
+      { name: "Streak Tracker", href: "/mlb/streaks", description: "Custom stat thresholds for batters and pitchers" },
     ],
   },
   {
     name: "NBA",
     label: "Basketball",
     icon: BasketballIcon,
-    accentClass: "text-accent bg-accent/10",
+    accentClass: "text-primary bg-primary/10",
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
     dashboards: [
+      { name: "Streak Tracker", href: "/nba/streaks", description: "Custom stat thresholds — see who consistently hits your lines" },
       { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank by player" },
       { name: "Head-to-Head", href: "/nba/head-to-head", description: "Team H2H, momentum, defense vs position, injuries" },
       { name: "Def vs Position", href: "/nba/defense-vs-position", description: "Which teams give up the most stats to each position" },
-      { name: "Trends", href: "/nba/trends", description: "Scoring runs, 3PT streaks, rebound and assist surges" },
     ],
   },
   {
@@ -42,49 +44,47 @@ const sports = [
       "Full team stat comparisons with league rankings, side-by-side passing, rushing, and receiving breakdowns with recent game log chips.",
     dashboards: [
       { name: "Matchup", href: "/nfl/matchup", description: "Team stats, positional splits, game log trends" },
-      { name: "Trends", href: "/nfl/trends", description: "Passing yard streaks, rushing TDs, target surges" },
+      { name: "Def vs Position", href: "/nfl/defense-vs-position", description: "Which defenses give up the most to QBs, RBs, and WRs" },
+      { name: "Streak Tracker", href: "/nfl/streaks", description: "Custom stat thresholds for QBs, RBs, and WRs" },
     ],
   },
 ]
 
 export function SportsSection() {
   return (
-    <section id="dashboards" className="py-20 md:py-32">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="dashboards" className="py-16 md:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <FadeIn>
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               Dashboards
             </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
               Purpose-built dashboards for every sport
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
               Each sport gets its own set of analytics tools tailored to the data points and
               insights that matter most.
             </p>
           </div>
         </FadeIn>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {sports.map((sport, index) => (
             <FadeIn key={sport.name} delay={0.1 + index * 0.1}>
               <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden h-full">
               {/* Sport header */}
-              <div className="p-6 pb-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${sport.accentClass}`}>
-                    <sport.icon className="h-5 w-5" />
+              <div className="p-4 sm:p-6 pb-3 sm:pb-4">
+                <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${sport.accentClass}`}>
+                    <sport.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">{sport.name}</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">{sport.name}</h3>
                     <p className="text-xs text-muted-foreground">{sport.label}</p>
                   </div>
-                  <span className="ml-auto text-xs font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-                    {sport.dashboards.length} views
-                  </span>
                 </div>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
                   {sport.description}
                 </p>
               </div>
@@ -95,7 +95,7 @@ export function SportsSection() {
                   <Link
                     key={dashboard.name}
                     href={dashboard.href}
-                    className={`group flex items-center justify-between p-4 transition-colors hover:bg-secondary/50 ${
+                    className={`group flex items-center justify-between px-4 py-3 sm:p-4 transition-colors hover:bg-secondary/50 ${
                       i < sport.dashboards.length - 1 ? "border-b border-border/50" : ""
                     }`}
                   >

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Lock, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AccessTier } from "@/lib/access-control"
+import { TrackEvent } from "@/components/track-event"
 
 interface PaywallProps {
   requiredTier: AccessTier
@@ -29,6 +30,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
 
   return (
     <div className="relative">
+      <TrackEvent event="paywall_hit" params={{ required_tier: requiredTier, user_tier: userTier }} />
       {/* Blurred content preview */}
       <div className="pointer-events-none select-none" aria-hidden="true">
         <div className="blur-sm opacity-40">
@@ -71,7 +73,7 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
               </div>
             </>
           ) : isAnonymous && isProPage ? (
-            /* Anonymous user on a PRO-tier page */
+            /* Anonymous user on a PRO-tier page — go straight to checkout */
             <>
               <h2 className="text-xl font-bold text-foreground">
                 Pro subscription required
@@ -85,23 +87,26 @@ export function Paywall({ requiredTier, userTier, children }: PaywallProps) {
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                   asChild
                 >
-                  <Link href="/auth/sign-up">
-                    Sign up and subscribe
+                  <Link href="/checkout">
+                    Subscribe to Pro
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <ul className="mt-3 flex flex-col gap-1 text-left text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
+                  No account needed — we&apos;ll create one at checkout.
+                </p>
+                <ul className="mt-2 flex flex-col gap-1 text-left text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    Streak Trackers across MLB, NBA, NFL
+                  </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-primary" />
                     Hot Hitters, Hitting and Pitching Stats
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-primary" />
-                    Head-to-Head and NFL Matchup
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="h-1 w-1 rounded-full bg-primary" />
-                    All dashboards across MLB, NBA, NFL
+                    NFL Matchup and all Pro dashboards
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-primary" />

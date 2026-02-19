@@ -1,22 +1,27 @@
+"use client"
+
 import Link from "next/link"
-import { Check, X } from "lucide-react"
+import { Check, X, Shield, CreditCard, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
+import { analytics } from "@/lib/analytics"
 
 const plans = [
   {
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Preview the dashboards with limited data.",
-    cta: "Get started free",
+    description: "9 dashboards across MLB, NBA & NFL — plus a 7-day Pro trial, no credit card needed.",
+    cta: "Create free account",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "NRFI, Weather & First Basket (no account)", included: true },
-      { text: "Defense vs Position & all Trends pages", included: true },
-      { text: "Full dashboard access", included: false },
-      { text: "Hot Hitters, Hitting & Pitching Stats", included: false },
-      { text: "Head-to-Head & NFL Matchup", included: false },
+      { text: "7-day Pro trial — every feature unlocked free", included: true },
+      { text: "First Basket picks with live tipoff data", included: true },
+      { text: "NRFI matchups & stadium weather impact", included: true },
+      { text: "Head-to-Head player comparisons", included: true },
+      { text: "Defense vs Position rankings (NBA + NFL)", included: true },
+      { text: "Active streak trends across all 3 sports", included: true },
+      { text: "NBA dashboards free during launch promo", included: true },
     ],
   },
   {
@@ -24,16 +29,17 @@ const plans = [
     price: "$12",
     period: "/month",
     description:
-      "Full access to every dashboard, trend, and insight across all sports.",
-    cta: "Get Pro",
+      "Unlimited data, all filters unlocked, zero gates — the full edge across every dashboard.",
+    cta: "Unlock all dashboards",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Hot Hitters, Hitting & Pitching Stats", included: true },
-      { text: "Head-to-Head & NFL Matchup", included: true },
-      { text: "All dashboards across MLB, NBA, NFL", included: true },
-      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Unlimited data — no signup gates or row limits", included: true },
+      { text: "All filters & sorting unlocked on every dashboard", included: true },
+      { text: "Full advanced stats across MLB, NBA & NFL", included: true },
+      { text: "Daily-updated heatmaps, trends & matchup tools", included: true },
+      { text: "New dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
     ],
   },
@@ -42,46 +48,49 @@ const plans = [
     price: "$100",
     period: "/year",
     description:
-      "Same full access as monthly. Pay once, save $44 over 12 months.",
-    cta: "Get Pro Annual",
+      "Full Pro access year-round — save 2 months vs. monthly billing.",
+    cta: "Get 2 months free",
     ctaVariant: "default" as const,
-    savings: "Save $44",
+    savings: "2 Months Free",
     highlights: [
       { text: "Everything in Pro Monthly", included: true },
-      { text: "Just $8.33/mo billed annually", included: true },
-      { text: "All dashboards across MLB, NBA, NFL", included: true },
-      { text: "Real-time data & advanced filtering", included: true },
+      { text: "Just $8.33/mo — billed annually", included: true },
+      { text: "All 13 dashboards across MLB, NBA, NFL", included: true },
+      { text: "Save $44 vs. monthly", included: true },
+      { text: "Priority access to new sports & features", included: true },
       { text: "Cancel anytime", included: true },
-      { text: "Best value", included: true },
     ],
   },
 ]
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="py-20 md:py-32 border-t border-border">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="pricing" className="py-16 md:py-24 border-t border-border">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <FadeIn>
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               Pricing
             </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              Start free. Unlock everything with Pro.
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
+              Start free. Go Pro when you want the full edge.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Preview the data for free, then go Pro for full access to every dashboard, filter,
-              and insight. Save with an annual plan.
+            <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
+              Get instant access to every dashboard free — no credit card required.
+              Upgrade to Pro for unlimited data, all filters unlocked, and zero gates.
+            </p>
+            <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
+              NBA dashboards are free during our launch promotion. Real-time data across MLB, NBA, and NFL.
             </p>
           </div>
         </FadeIn>
 
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-4 sm:gap-6 md:grid-cols-3">
           {plans.map((plan, index) => (
             <FadeIn key={plan.name} delay={0.1 + index * 0.1}>
               <div
-                className={`relative flex flex-col rounded-xl border p-8 h-full ${
-                  plan.popular
+                className={`relative flex flex-col rounded-xl border p-5 sm:p-8 h-full ${
+                  plan.popular || (plan as Record<string, unknown>).savings
                     ? "border-primary bg-card shadow-lg shadow-primary/5"
                     : "border-border bg-card"
                 }`}
@@ -97,20 +106,20 @@ export function PricingSection() {
                 </div>
               ) : null}
 
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-foreground">{plan.price}</span>
                   <span className="text-sm text-muted-foreground">{plan.period}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
               </div>
 
-              <div className="mb-8 flex flex-col gap-3">
+              <div className="mb-6 sm:mb-8 flex flex-col gap-2.5 sm:gap-3">
                 {plan.highlights.map((item) => (
                   <div
                     key={item.text}
-                    className={`flex items-start gap-3 text-sm ${item.included ? "text-foreground" : "text-muted-foreground/50"}`}
+                    className={`flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm ${item.included ? "text-foreground" : "text-muted-foreground/50"}`}
                   >
                     {item.included ? (
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -133,13 +142,31 @@ export function PricingSection() {
                   size="lg"
                   asChild
                 >
-                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"}>{plan.cta}</Link>
+                  <Link href={plan.name === "Free" ? "/auth/sign-up" : "/checkout"} onClick={() => analytics.ctaClicked("pricing", plan.cta)}>{plan.cta}</Link>
                 </Button>
               </div>
               </div>
             </FadeIn>
           ))}
         </div>
+
+        {/* Trust badges */}
+        <FadeIn delay={0.4}>
+          <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" />
+              <span>No credit card for Free plan</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" />
+              <span>Secure payments via Stripe</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Cancel anytime — no lock-in</span>
+            </div>
+          </div>
+        </FadeIn>
       </div>
     </section>
   )

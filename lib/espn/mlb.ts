@@ -435,3 +435,65 @@ export async function getAllMLBBatters(): Promise<RosterPlayer[]> {
     return []
   }
 }
+
+/* ════════════════════════════════════════════
+   6.  ALL ACTIVE MLB PITCHERS (via team rosters)
+   Fetches rosters for all 30 teams and returns
+   every pitcher (SP, RP, CP, P).
+   ════════════════════════════════════════════ */
+export async function getAllMLBPitchers(): Promise<RosterPlayer[]> {
+  try {
+    const teamsRaw = await fetchMLBTeams()
+    const sports = (teamsRaw as Record<string, unknown[]>).sports ?? []
+    const teamIds: { id: string; abbr: string }[] = []
+
+    for (const sport of sports as Array<Record<string, unknown>>) {
+      const leagues = (sport.leagues ?? []) as Array<Record<string, unknown>>
+      for (const league of leagues) {
+        const teams = (league.teams ?? []) as Array<Record<string, unknown>>
+        for (const teamEntry of teams) {
+          const team = teamEntry.team as Record<string, unknown> | undefined
+          if (team) {
+            teamIds.push({
+              id: team.id as string,
+              abbr: (team.abbreviation as string) ?? "",
+            })
+          }
+        }
+      }
+    }
+
+    const rosterPromises = teamIds.map(async ({ id, abbr }) => {
+      try {
+        const raw = await fetchMLBTeamRoster(id)
+        const athletes = (raw as Record<string, unknown[]>).athletes ?? []
+        const players: RosterPlayer[] = []
+
+        for (const group of athletes as Array<Record<string, unknown>>) {
+          const items = (group.items ?? []) as Array<Record<string, unknown>>
+          for (const item of items) {
+            const pos = (item.position as Record<string, unknown>)?.abbreviation as string ?? ""
+            // Only pitchers
+            if (pos !== "SP" && pos !== "RP" && pos !== "P" && pos !== "CP") continue
+
+            players.push({
+              id: item.id as string,
+              name: (item.displayName as string) ?? (item.fullName as string) ?? "",
+              team: abbr,
+              position: pos,
+            })
+          }
+        }
+        return players
+      } catch {
+        return []
+      }
+    })
+
+    const results = await Promise.all(rosterPromises)
+    return results.flat()
+  } catch (err) {
+    console.error("[ESPN] Failed to fetch all MLB pitchers:", err)
+    return []
+  }
+}

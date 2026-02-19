@@ -1,11 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
 import Link from "next/link"
 import Image from "next/image"
-import { BarChart3, Loader2, Shield, ChevronDown } from "lucide-react"
+import { Loader2, Shield, ChevronDown, Zap, ArrowRight, Lock, AlertCircle, RefreshCw } from "lucide-react"
+import { DashboardShell } from "@/components/dashboard-shell"
+import { SignupGate } from "@/components/signup-gate"
+import { useUserTier } from "@/components/user-tier-provider"
+import { DateNavigator } from "@/components/nba/date-navigator"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -26,22 +32,96 @@ const STAT_CATEGORIES: { key: StatCategory; label: string }[] = [
 
 type ViewMode = "matchups" | "rankings"
 
+/* ── Reusable filter button group ── */
+
+function FilterGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  showAll,
+}: {
+  label: string
+  options: { key: T; label: string }[]
+  value: T | "ALL"
+  onChange: (v: T | "ALL") => void
+  showAll?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+      <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label={`Filter by ${label.toLowerCase()}`}>
+        {showAll && (
+          <button
+            onClick={() => onChange("ALL" as T | "ALL")}
+            aria-pressed={value === "ALL"}
+            aria-label={`All ${label.toLowerCase()} options`}
+            className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
+              value === "ALL"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            All
+          </button>
+        )}
+        {options.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => onChange(opt.key)}
+            aria-pressed={value === opt.key}
+            aria-label={`${label} ${opt.label}`}
+            className={`px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
+              value === opt.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Page ── */
+
+/** Number of games/ranking rows visible to anonymous users */
+const PREVIEW_GAMES = 2
+const PREVIEW_RANKING_ROWS = 10
+
 export default function DefenseVsPositionPage() {
+  const userTier = useUserTier()
+  const isAnonymous = userTier === "anonymous"
+
   const [viewMode, setViewMode] = useState<ViewMode>("matchups")
   const [filterPosition, setFilterPosition] = useState<Position | "ALL">("ALL")
   const [filterStat, setFilterStat] = useState<StatCategory | "ALL">("ALL")
   const [rankPosition, setRankPosition] = useState<Position>("PG")
   const [rankStat, setRankStat] = useState<StatCategory>("PTS")
 
-  // Matchups data
-  const { data: matchupsData, isLoading: matchupsLoading } = useSWR<{ matchups: TodayMatchup[] }>(
-    viewMode === "matchups" ? "/api/nba/defense-vs-position?mode=matchups" : null,
+  const [date, setDate] = useState(new Date())
+
+  const handlePrevDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() - 1); return d })
+  }, [])
+
+  const handleNextDay = useCallback(() => {
+    setDate((prev) => { const d = new Date(prev); d.setDate(d.getDate() + 1); return d })
+  }, [])
+
+  const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
+
+  // Matchups data (fetch for selected date)
+  const { data: matchupsData, isLoading: matchupsLoading, error: matchupsError, mutate: mutateMatchups } = useSWR<{ matchups: TodayMatchup[]; updatedAt?: string }>(
+    `/api/nba/defense-vs-position?mode=matchups&date=${dateParam}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
   // Rankings data
-  const { data: rankingsData, isLoading: rankingsLoading } = useSWR<{ rankings: PositionRankingRow[] }>(
+  const { data: rankingsData, isLoading: rankingsLoading, error: rankingsError, mutate: mutateRankings } = useSWR<{ rankings: PositionRankingRow[]; updatedAt?: string }>(
     viewMode === "rankings" ? `/api/nba/defense-vs-position?mode=rankings&position=${rankPosition}&stat=${rankStat}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -49,229 +129,250 @@ export default function DefenseVsPositionPage() {
 
   const matchups = matchupsData?.matchups ?? []
   const rankings = rankingsData?.rankings ?? []
-  const isLoading = matchupsLoading || rankingsLoading
+  const isLoading = (viewMode === "matchups" && matchupsLoading) || (viewMode === "rankings" && rankingsLoading)
+  const hasError = (viewMode === "matchups" && matchupsError) || (viewMode === "rankings" && rankingsError)
+
+  // Collect today's team abbreviations for highlighting in rankings
+  const todayTeams = useMemo(() => {
+    const teams = new Set<string>()
+    for (const m of matchups) {
+      teams.add(m.awayTeam.abbr)
+      teams.add(m.homeTeam.abbr)
+    }
+    return teams
+  }, [matchups])
+
+  const STAT_LABEL_MAP: Record<StatCategory, string> = {
+    PTS: "Points",
+    REB: "Rebounds",
+    AST: "Assists",
+    STL: "Steals",
+    BLK: "Blocks",
+    "3PM": "3-Pointers Made",
+  }
 
   function filterInsights(insights: MatchupInsight[]) {
     return insights.filter((i) => {
       if (filterPosition !== "ALL" && i.position !== filterPosition) return false
-      if (filterStat !== "ALL" && !i.statCategory.toLowerCase().includes(filterStat.toLowerCase().replace("3pm", "3-pointer"))) return false
+      if (filterStat !== "ALL" && i.statCategory !== STAT_LABEL_MAP[filterStat as StatCategory]) return false
       return true
     })
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="mx-auto max-w-[1440px] flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <BarChart3 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                  HeatCheck HQ
-                </h1>
-                <p className="text-xs text-muted-foreground">NBA Defense vs Position</p>
-              </div>
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/mlb/hot-hitters" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              MLB
-            </Link>
-            <Link href="/nba/first-basket" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              First Basket
-            </Link>
-            <Link href="/nba/head-to-head" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              H2H
-            </Link>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md">
-              Def vs Pos
-            </span>
-            <Link href="/nba/trends" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              Trends
-            </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <Link href="/nfl/matchup" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NFL
-            </Link>
-            <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-            <span className="text-xs font-medium text-muted-foreground bg-secondary px-2.5 py-1 rounded-md">
-              2025-26 Season
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+    <DashboardShell>
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Page heading */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Defense VS Position</h2>
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <Shield className="h-5 w-5 text-primary" />
+            <h1 className="text-lg sm:text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Find favorable and tough matchups based on team defensive rankings. Shows which teams allow the most stats to each position and maps it to {"today's"} opposing players.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            {viewMode === "matchups" && (
+              <DateNavigator date={date} onPrev={handlePrevDay} onNext={handleNextDay} />
+            )}
+            <p className="text-sm text-muted-foreground">
+              Which teams allow the most stats to each position — PG, SG, SF, PF, C.
+            </p>
+          </div>
+          <LastUpdated timestamp={matchupsData?.updatedAt} />
         </div>
 
-        {/* View mode toggle */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex rounded-lg border border-border overflow-hidden">
+        {/* View mode toggle + filters — locked for anonymous users */}
+        <div className="relative">
+          {isAnonymous && (
+            <div className="absolute inset-0 z-10 flex items-center justify-end pr-4">
+              <Link
+                href="/auth/sign-up"
+                className="flex items-center gap-1.5 rounded-lg bg-card/95 border border-border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shadow-sm backdrop-blur-sm"
+              >
+                <Lock className="h-3 w-3" />
+                Sign up to filter
+              </Link>
+            </div>
+          )}
+          <div className={`flex flex-wrap items-center gap-3 sm:gap-4 ${isAnonymous ? "pointer-events-none opacity-40" : ""}`}>
+            <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="View mode">
+              <button
+                onClick={() => setViewMode("matchups")}
+                aria-pressed={viewMode === "matchups"}
+                aria-label="View today's matchups"
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
+                  viewMode === "matchups"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {"Today's Matchups"}
+              </button>
+              <button
+                onClick={() => setViewMode("rankings")}
+                aria-pressed={viewMode === "rankings"}
+                aria-label="View full rankings"
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
+                  viewMode === "rankings"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Full Rankings
+              </button>
+            </div>
+
+            {viewMode === "matchups" && (
+              <>
+                <FilterGroup label="Position" options={POSITIONS} value={filterPosition} onChange={setFilterPosition} showAll />
+                <FilterGroup label="Stat" options={STAT_CATEGORIES} value={filterStat} onChange={setFilterStat} showAll />
+              </>
+            )}
+
+            {viewMode === "rankings" && (
+              <>
+                <FilterGroup label="Position" options={POSITIONS} value={rankPosition} onChange={(v) => { if (v !== "ALL") setRankPosition(v as Position) }} />
+                <FilterGroup label="Stat" options={STAT_CATEGORIES} value={rankStat} onChange={(v) => { if (v !== "ALL") setRankStat(v as StatCategory) }} />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Error state */}
+        {hasError && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
             <button
-              onClick={() => setViewMode("matchups")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
-                viewMode === "matchups"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={() => { mutateMatchups(); mutateRankings() }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
             >
-              {"Today's Matchups"}
-            </button>
-            <button
-              onClick={() => setViewMode("rankings")}
-              className={`px-4 py-2 text-xs font-semibold transition-colors ${
-                viewMode === "rankings"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Full Rankings
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
             </button>
           </div>
-
-          {viewMode === "matchups" && (
-            <>
-              {/* Position filter */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    onClick={() => setFilterPosition("ALL")}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      filterPosition === "ALL"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {POSITIONS.map((pos) => (
-                    <button
-                      key={pos.key}
-                      onClick={() => setFilterPosition(pos.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        filterPosition === pos.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stat filter */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    onClick={() => setFilterStat("ALL")}
-                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      filterStat === "ALL"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {STAT_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.key}
-                      onClick={() => setFilterStat(cat.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        filterStat === cat.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {viewMode === "rankings" && (
-            <>
-              {/* Position selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Position</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  {POSITIONS.map((pos) => (
-                    <button
-                      key={pos.key}
-                      onClick={() => setRankPosition(pos.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        rankPosition === pos.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {pos.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stat selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stat</span>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  {STAT_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.key}
-                      onClick={() => setRankStat(cat.key)}
-                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        rankStat === cat.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        )}
 
         {/* Content */}
-        {viewMode === "matchups" && (
-          <MatchupsView
-            matchups={matchups}
-            isLoading={matchupsLoading}
-            filterInsights={filterInsights}
-          />
+        {!hasError && viewMode === "matchups" && (
+          isAnonymous && matchups.length > PREVIEW_GAMES ? (
+            <SignupGate
+              headline="See every matchup breakdown — free"
+              description="Unlock all defensive insights for tonight's games. Free forever, no credit card."
+              countLabel={`${matchups.length} games today — updated live`}
+              preview={
+                <MatchupsView
+                  matchups={matchups.slice(0, PREVIEW_GAMES)}
+                  isLoading={matchupsLoading}
+                  filterInsights={filterInsights}
+                />
+              }
+              gated={
+                <MatchupsView
+                  matchups={matchups.slice(PREVIEW_GAMES)}
+                  isLoading={false}
+                  filterInsights={filterInsights}
+                />
+              }
+            />
+          ) : (
+            <MatchupsView
+              matchups={matchups}
+              isLoading={matchupsLoading}
+              filterInsights={filterInsights}
+            />
+          )
         )}
 
-        {viewMode === "rankings" && (
-          <RankingsView
-            rankings={rankings}
-            isLoading={rankingsLoading}
-            position={rankPosition}
-            stat={rankStat}
-          />
+        {!hasError && viewMode === "rankings" && (
+          isAnonymous && rankings.length > PREVIEW_RANKING_ROWS ? (
+            <SignupGate
+              headline="See all 30 teams ranked — free"
+              description="Unlock the complete defensive rankings by position. Free forever, no credit card."
+              countLabel={`${rankings.length} teams ranked — find the weakest defenses`}
+              preview={
+                <RankingsView
+                  rankings={rankings.slice(0, PREVIEW_RANKING_ROWS)}
+                  isLoading={rankingsLoading}
+                  position={rankPosition}
+                  stat={rankStat}
+                  todayTeams={todayTeams}
+                />
+              }
+              gated={
+                <RankingsView
+                  rankings={rankings.slice(PREVIEW_RANKING_ROWS)}
+                  isLoading={false}
+                  position={rankPosition}
+                  stat={rankStat}
+                  todayTeams={todayTeams}
+                />
+              }
+            />
+          ) : (
+            <RankingsView
+              rankings={rankings}
+              isLoading={rankingsLoading}
+              position={rankPosition}
+              stat={rankStat}
+              todayTeams={todayTeams}
+            />
+          )
+        )}
+        {/* Pro upsell for free users */}
+        {userTier === "free" && (
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Go Pro for unlimited data, all filters & zero gates</p>
+                <p className="text-xs text-muted-foreground">Full access to every dashboard — $12/mo</p>
+              </div>
+            </div>
+            <Link
+              href="/checkout"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            >
+              Go Pro
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
+}
+
+/* ── Rank badge color ── */
+
+function rankBadgeClass(rank: number): string {
+  if (rank <= 3) return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
+  return "bg-secondary text-muted-foreground border-border"
+}
+
+function statUnit(category: string): string {
+  const c = category.toLowerCase()
+  if (c.includes("3-pointer")) return "3PM/G"
+  if (c.includes("point")) return "PPG"
+  if (c.includes("rebound")) return "RPG"
+  if (c.includes("assist")) return "APG"
+  if (c.includes("steal")) return "SPG"
+  if (c.includes("block")) return "BPG"
+  return "/G"
+}
+
+const POSITION_LABELS: Record<string, string> = {
+  PG: "Point Guards",
+  SG: "Shooting Guards",
+  SF: "Small Forwards",
+  PF: "Power Forwards",
+  C: "Centers",
+}
+
+function positionLabel(pos: string): string {
+  return POSITION_LABELS[pos] ?? pos
 }
 
 /* ── Matchups View ── */
@@ -297,17 +398,7 @@ function MatchupsView({
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Scanning box scores to build defensive rankings...
-          </p>
-          <p className="text-xs text-muted-foreground">This may take a moment on first load</p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={5} />
   }
 
   if (matchups.length === 0) {
@@ -343,8 +434,8 @@ function MatchupsView({
             className="rounded-xl border border-border bg-card overflow-hidden"
           >
             {/* Game header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/80">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 border-b border-border bg-card/80">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-2">
                   {matchup.awayTeam.logo && (
                     <Image
@@ -353,6 +444,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
+
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.awayTeam.abbr}</span>
@@ -366,6 +458,7 @@ function MatchupsView({
                       width={28}
                       height={28}
                       className="rounded"
+
                     />
                   )}
                   <span className="text-sm font-bold text-foreground">{matchup.homeTeam.abbr}</span>
@@ -377,31 +470,49 @@ function MatchupsView({
             </div>
 
             {/* Insights */}
-            <div className="px-5 py-3">
+            <div className="px-3 sm:px-5 py-3">
               {filtered.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">
                   No notable position matchups (top 5) for this game with current filters.
                 </p>
               ) : (
                 <div className="flex flex-col">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">
-                    2025-26 Season
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                    Season Averages
                   </p>
                   {displayInsights.map((insight, i) => (
                     <div
                       key={`${insight.teamAbbr}-${insight.position}-${insight.statCategory}-${i}`}
-                      className="flex items-baseline gap-1.5 py-1.5 border-b border-dashed border-border last:border-0"
+                      className="flex items-center gap-2 py-2 border-b border-dashed border-border/50 last:border-0"
                     >
-                      <span className="text-sm text-muted-foreground">
-                        {insight.teamAbbr} allow{" "}
-                        <span className={`font-semibold ${insight.rank <= 2 ? "text-primary" : "text-foreground"}`}>
+                      {/* Rank badge */}
+                      <span
+                        className={`shrink-0 text-[10px] font-bold w-6 h-5 flex items-center justify-center rounded border ${rankBadgeClass(insight.rank)}`}
+                      >
+                        #{insight.rank}
+                      </span>
+
+                      {/* Insight text */}
+                      <span className="text-sm text-muted-foreground flex-1 min-w-0">
+                        <span className="text-foreground font-medium">{insight.teamAbbr}</span>
+                        {" allow "}
+                        <span className={`font-semibold ${insight.rank <= 2 ? "text-emerald-400" : "text-foreground"}`}>
                           {insight.rankLabel}
                         </span>
-                        {" "}{insight.statCategory} to {insight.position}
+                        {" "}{insight.statCategory} to {positionLabel(insight.position)}
+                        {insight.playerName && (
+                          <span className="text-foreground font-medium">
+                            {" — "}{insight.playerName}
+                          </span>
+                        )}
                       </span>
-                      <span className="text-sm text-muted-foreground mx-0.5">|</span>
-                      <span className="text-sm font-bold text-foreground">
-                        {insight.playerName}
+
+                      {/* Avg stat */}
+                      <span className="shrink-0 text-xs font-bold text-foreground font-mono tabular-nums">
+                        {insight.avgAllowed.toFixed(1)}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {statUnit(insight.statCategory)}
                       </span>
                     </div>
                   ))}
@@ -432,23 +543,18 @@ function RankingsView({
   isLoading,
   position,
   stat,
+  todayTeams,
 }: {
   rankings: PositionRankingRow[]
   isLoading: boolean
   position: Position
   stat: StatCategory
+  todayTeams: Set<string>
 }) {
   const statLabel = STAT_CATEGORIES.find((c) => c.key === stat)?.label ?? stat
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading rankings...</p>
-        </div>
-      </div>
-    )
+    return <TableSkeleton rows={10} columns={6} />
   }
 
   if (rankings.length === 0) {
@@ -463,12 +569,12 @@ function RankingsView({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-5 py-4 border-b border-border">
+      <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">
-          {statLabel} Allowed to {position} -- All 30 Teams
+          {statLabel} Allowed to {positionLabel(position)} — All 30 Teams
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ranked from most allowed (worst defense) to least allowed (best defense). Based on last 14 days of box scores.
+          Ranked from most allowed (worst defense) to least.
         </p>
       </div>
 
@@ -476,13 +582,12 @@ function RankingsView({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border text-left">
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-16">Rank</th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-16">Rank</th>
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                 Avg {statLabel} Allowed
               </th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">GP</th>
-              <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48" />
+              <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48" />
             </tr>
           </thead>
           <tbody>
@@ -490,34 +595,40 @@ function RankingsView({
               const barWidth = maxVal > 0 ? (row.avgAllowed / maxVal) * 100 : 0
               const isTop5 = row.rank <= 5
               const isBottom5 = row.rank > 25
+              const isPlaying = todayTeams.has(row.teamAbbr)
 
               return (
                 <tr
                   key={row.teamAbbr}
-                  className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
+                  className={`border-b border-border last:border-0 hover:bg-secondary/30 transition-colors ${
+                    isPlaying ? "bg-primary/[0.03]" : ""
+                  }`}
                 >
-                  <td className="px-5 py-3">
-                    <span className={`text-sm font-bold ${isTop5 ? "text-primary" : isBottom5 ? "text-blue-400" : "text-foreground"}`}>
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
+                    <span className={`text-sm font-bold ${isTop5 ? "text-emerald-400" : isBottom5 ? "text-red-400" : "text-foreground"}`}>
                       {row.rank}
                     </span>
                   </td>
-                  <td className="px-5 py-3">
-                    <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
-                    <span className="text-xs text-muted-foreground ml-2 hidden md:inline">{row.teamName}</span>
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{row.teamAbbr}</span>
+                      {isPlaying && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                          Tonight
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-primary" : "text-foreground"}`}>
+                    <span className={`text-sm font-bold tabular-nums ${isTop5 ? "text-emerald-400" : isBottom5 ? "text-red-400" : "text-foreground"}`}>
                       {row.avgAllowed.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
-                    <span className="text-xs text-muted-foreground tabular-nums">{row.gamesPlayed}</span>
-                  </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          isTop5 ? "bg-primary" : isBottom5 ? "bg-blue-400/60" : "bg-muted-foreground/40"
+                          isTop5 ? "bg-emerald-400/70" : isBottom5 ? "bg-red-400/60" : "bg-muted-foreground/40"
                         }`}
                         style={{ width: `${barWidth}%` }}
                       />

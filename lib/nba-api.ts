@@ -13,8 +13,21 @@ async function espnFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+/** Short-lived cache for daily/live data (scoreboard, team summaries) */
+async function espnFetchLive<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 300 } })
+  if (!res.ok) throw new Error(`ESPN NBA ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 async function espnFetchV3<T>(path: string): Promise<T> {
-  const res = await fetch(`${LEADERS_BASE}${path}`, { next: { revalidate: 3600 } })
+  // Skip Next.js data cache for /leaders (raw response is 2.6MB, exceeds 2MB limit).
+  // The calling API route already caches the trimmed (~50KB) result at the route level.
+  const opts: RequestInit =
+    path === "/leaders"
+      ? { cache: "no-store" }
+      : { next: { revalidate: 3600 } }
+  const res = await fetch(`${LEADERS_BASE}${path}`, opts)
   if (!res.ok) throw new Error(`ESPN NBA v3 ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
@@ -51,7 +64,7 @@ export interface NBATeamRecord {
 
 export async function getNBAScoreboard(date?: string): Promise<NBAScheduleGame[]> {
   const params = date ? `?dates=${date.replace(/-/g, "")}` : ""
-  const raw = await espnFetch<ESPNScoreboard>(`/scoreboard${params}`)
+  const raw = await espnFetchLive<ESPNScoreboard>(`/scoreboard${params}`)
   return (raw.events ?? []).map((ev) => {
     const away = ev.competitions[0]?.competitors?.find((c: ESPNCompetitor) => c.homeAway === "away")
     const home = ev.competitions[0]?.competitors?.find((c: ESPNCompetitor) => c.homeAway === "home")
@@ -119,7 +132,7 @@ export interface NBATeamSummary {
 
 export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary | null> {
   try {
-    const raw = await espnFetch<{
+    const raw = await espnFetchLive<{
       team: {
         record?: { items?: { summary?: string; type?: string; stats?: { name: string; value: number }[] }[] }
         injuries?: { items?: { athlete: { displayName: string }; status: string; details?: { detail?: string } }[] }[]
@@ -138,8 +151,8 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
     const getStat = (item: typeof overall, name: string) =>
       item?.stats?.find((s: { name: string }) => s.name === name)?.value ?? 0
 
-    const ppg = getStat(overall, "pointsFor") || getStat(overall, "avgPointsFor")
-    const oppPpg = getStat(overall, "pointsAgainst") || getStat(overall, "avgPointsAgainst")
+    const ppg = getStat(overall, "avgPointsFor") || getStat(overall, "pointsFor")
+    const oppPpg = getStat(overall, "avgPointsAgainst") || getStat(overall, "pointsAgainst")
     const streak = getStat(overall, "streak")
     const pointDiff = getStat(overall, "pointDifferential")
 
@@ -157,6 +170,53 @@ export async function getNBATeamSummary(teamId: string): Promise<NBATeamSummary 
     return { record, homeRecord, awayRecord, streak, ppg, oppPpg, pointDiff, injuries }
   } catch {
     return null
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  League-wide Injuries                                               */
+/* ------------------------------------------------------------------ */
+
+export interface NBAInjury {
+  name: string
+  status: string
+  detail: string
+}
+
+/**
+ * Fetch all NBA injuries from the league-wide endpoint.
+ * Returns a map of ESPN team ID → injury list.
+ */
+export async function getNBAInjuries(): Promise<Record<string, NBAInjury[]>> {
+  try {
+    const raw = await espnFetchLive<{
+      injuries: {
+        id: string
+        displayName: string
+        injuries: {
+          status: string
+          athlete: { displayName: string }
+          details?: { type?: string; detail?: string; side?: string }
+        }[]
+      }[]
+    }>("/injuries")
+
+    const map: Record<string, NBAInjury[]> = {}
+    for (const team of raw.injuries ?? []) {
+      map[team.id] = (team.injuries ?? []).map((inj) => {
+        const parts = [inj.details?.type, inj.details?.detail].filter(Boolean)
+        const side = inj.details?.side ? `${inj.details.side} ` : ""
+        return {
+          name: inj.athlete?.displayName ?? "",
+          status: inj.status ?? "Unknown",
+          detail: parts.length > 0 ? `${side}${parts.join(" - ")}` : inj.status ?? "",
+        }
+      })
+    }
+    return map
+  } catch (e) {
+    console.error("[NBA Injuries]", e)
+    return {}
   }
 }
 
@@ -232,30 +292,41 @@ export interface NBALeaderCategory {
   leaders: NBALeaderEntry[]
 }
 
+/** Categories we actually use — only keep these to avoid 2.6MB cache overflow */
+const USED_LEADER_CATEGORIES = new Set([
+  "pointsPerGame",
+  "3PointsMadePerGame",
+  "reboundsPerGame",
+  "assistsPerGame",
+])
+
 export async function getNBALeaders(): Promise<NBALeaderCategory[]> {
   const raw = await espnFetchV3<{ leaders: { categories: Array<{ name: string; displayName?: string; leaders: Array<Record<string, unknown>> }> } }>("/leaders")
   const categories = raw.leaders?.categories ?? []
 
-  // Normalize v3 response to match expected shape
-  return categories.map((cat) => ({
-    name: cat.name,
-    displayName: cat.displayName ?? cat.name,
-    leaders: (cat.leaders ?? []).map((l) => {
-      const athlete = (l.athlete ?? {}) as Record<string, unknown>
-      const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
-      const position = (athlete.position ?? {}) as Record<string, unknown>
-      return {
-        athlete: {
-          id: String(athlete.id ?? ""),
-          displayName: (athlete.displayName as string) ?? "",
-          position: { abbreviation: (position.abbreviation as string) ?? "" },
-          team: { abbreviation: (team.abbreviation as string) ?? "" },
-        },
-        value: (l.value as number) ?? 0,
-        displayValue: (l.displayValue as string) ?? "0",
-      }
-    }),
-  }))
+  // Only keep categories we use + trim to 20 leaders + strip everything except 6 fields
+  // This reduces ~2.6MB → ~50KB, staying well under Next.js 2MB data cache limit
+  return categories
+    .filter((cat) => USED_LEADER_CATEGORIES.has(cat.name))
+    .map((cat) => ({
+      name: cat.name,
+      displayName: cat.displayName ?? cat.name,
+      leaders: (cat.leaders ?? []).slice(0, 20).map((l) => {
+        const athlete = (l.athlete ?? {}) as Record<string, unknown>
+        const team = (l.team ?? athlete.team ?? {}) as Record<string, unknown>
+        const position = (athlete.position ?? {}) as Record<string, unknown>
+        return {
+          athlete: {
+            id: String(athlete.id ?? ""),
+            displayName: (athlete.displayName as string) ?? "",
+            position: { abbreviation: (position.abbreviation as string) ?? "" },
+            team: { abbreviation: (team.abbreviation as string) ?? "" },
+          },
+          value: (l.value as number) ?? 0,
+          displayValue: (l.displayValue as string) ?? "0",
+        }
+      }),
+    }))
 }
 
 /* ------------------------------------------------------------------ */

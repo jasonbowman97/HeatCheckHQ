@@ -16,7 +16,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Full access to every dashboard, trend, and insight across MLB, NBA, and NFL.",
     priceInCents: 1200, // $12.00
-    stripePriceId: "price_1SzJrERn1HmfixUe6yZ76QeI",
+    stripePriceId: "price_1T0VQJDuniHIJa3prCpquQ3q",
     interval: "month",
     label: "$12 / month",
   },
@@ -26,7 +26,7 @@ export const PRODUCTS: Product[] = [
     description:
       "Full access to every dashboard, trend, and insight across MLB, NBA, and NFL.",
     priceInCents: 10000, // $100.00
-    stripePriceId: "price_1SzJrZRn1HmfixUerOLlVeAr",
+    stripePriceId: "price_1T0VRjDuniHIJa3pbTou8J5e",
     interval: "year",
     label: "$100 / year",
     savings: "Save $44",

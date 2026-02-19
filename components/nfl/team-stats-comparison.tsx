@@ -8,12 +8,12 @@ interface TeamStatsComparisonProps {
 }
 
 const statRows = [
-  { label: "Points Scored", awayKey: "pointsScored", homeKey: "pointsScored", awayRank: "pointsScoredRank", homeRank: "pointsScoredRank", higherBetter: true },
-  { label: "Points Allowed", awayKey: "pointsAllowed", homeKey: "pointsAllowed", awayRank: "pointsAllowedRank", homeRank: "pointsAllowedRank", higherBetter: false },
-  { label: "Pass Yards", awayKey: "passYards", homeKey: "passYards", awayRank: "passYardsRank", homeRank: "passYardsRank", higherBetter: true },
-  { label: "Pass Yards Allowed", awayKey: "passYardsAllowed", homeKey: "passYardsAllowed", awayRank: "passYardsAllowedRank", homeRank: "passYardsAllowedRank", higherBetter: false },
-  { label: "Rushing Yards", awayKey: "rushingYards", homeKey: "rushingYards", awayRank: "rushingYardsRank", homeRank: "rushingYardsRank", higherBetter: true },
-  { label: "Rushing Yards Allowed", awayKey: "rushingYardsAllowed", homeKey: "rushingYardsAllowed", awayRank: "rushingYardsAllowedRank", homeRank: "rushingYardsAllowedRank", higherBetter: false },
+  { label: "Points / Game", key: "pointsScored", rankKey: "pointsScoredRank", higherBetter: true },
+  { label: "Points Allowed / Game", key: "pointsAllowed", rankKey: "pointsAllowedRank", higherBetter: false },
+  { label: "Pass Yards / Game", key: "passYards", rankKey: "passYardsRank", higherBetter: true },
+  { label: "Pass Yards Allowed / Game", key: "passYardsAllowed", rankKey: "passYardsAllowedRank", higherBetter: false },
+  { label: "Rush Yards / Game", key: "rushingYards", rankKey: "rushingYardsRank", higherBetter: true },
+  { label: "Rush Yards Allowed / Game", key: "rushingYardsAllowed", rankKey: "rushingYardsAllowedRank", higherBetter: false },
 ] as const
 
 function getRankColor(rank: number): string {
@@ -33,6 +33,13 @@ function getStatColor(awayVal: number, homeVal: number, higherBetter: boolean, s
 }
 
 export function TeamStatsComparison({ away, home }: TeamStatsComparisonProps) {
+  // Filter out rows where both values are 0 (unavailable stats)
+  const visibleRows = statRows.filter((row) => {
+    const awayVal = away.stats[row.key] as number
+    const homeVal = home.stats[row.key] as number
+    return awayVal !== 0 || homeVal !== 0
+  })
+
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header row */}
@@ -51,17 +58,17 @@ export function TeamStatsComparison({ away, home }: TeamStatsComparisonProps) {
       </div>
 
       {/* Stat rows */}
-      {statRows.map((row, i) => {
-        const awayVal = away.stats[row.awayKey] as number
-        const homeVal = home.stats[row.homeKey] as number
-        const awayRank = away.stats[row.awayRank] as number
-        const homeRank = home.stats[row.homeRank] as number
+      {visibleRows.map((row, i) => {
+        const awayVal = away.stats[row.key] as number
+        const homeVal = home.stats[row.key] as number
+        const awayRank = away.stats[row.rankKey] as number
+        const homeRank = home.stats[row.rankKey] as number
 
         return (
           <div
             key={row.label}
             className={`grid grid-cols-[1fr_auto_1fr] items-center px-6 py-3 ${
-              i < statRows.length - 1 ? "border-b border-border/50" : ""
+              i < visibleRows.length - 1 ? "border-b border-border/50" : ""
             } hover:bg-secondary/30 transition-colors`}
           >
             {/* Away side */}
@@ -70,9 +77,11 @@ export function TeamStatsComparison({ away, home }: TeamStatsComparisonProps) {
                 <span className={`text-lg font-bold font-mono tabular-nums ${getStatColor(awayVal, homeVal, row.higherBetter, "away")}`}>
                   {awayVal.toFixed(1)}
                 </span>
-                <span className={`text-[10px] font-bold ${getRankColor(awayRank)}`}>
-                  #{awayRank}
-                </span>
+                {awayRank > 0 && (
+                  <span className={`text-[10px] font-bold ${getRankColor(awayRank)}`}>
+                    #{awayRank}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -87,9 +96,11 @@ export function TeamStatsComparison({ away, home }: TeamStatsComparisonProps) {
                 <span className={`text-lg font-bold font-mono tabular-nums ${getStatColor(awayVal, homeVal, row.higherBetter, "home")}`}>
                   {homeVal.toFixed(1)}
                 </span>
-                <span className={`text-[10px] font-bold ${getRankColor(homeRank)}`}>
-                  #{homeRank}
-                </span>
+                {homeRank > 0 && (
+                  <span className={`text-[10px] font-bold ${getRankColor(homeRank)}`}>
+                    #{homeRank}
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -2,12 +2,15 @@
 
 import { useState, useMemo, useCallback } from "react"
 import useSWR from "swr"
-import { NFLHeader } from "@/components/nfl/nfl-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { TeamStatsComparison } from "@/components/nfl/team-stats-comparison"
 import { PassingSection, RushingSection, ReceivingSection } from "@/components/nfl/positional-tables"
 import { getAllMatchups, type NFLMatchup } from "@/lib/nfl-matchup-data"
 import type { LiveMatchup } from "@/lib/nfl-api"
-import { Loader2 } from "lucide-react"
+import Image from "next/image"
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { TableSkeleton } from "@/components/ui/table-skeleton"
+import { LastUpdated } from "@/components/ui/last-updated"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -97,8 +100,10 @@ interface GameOption {
   id: string
   away: string
   awayFull: string
+  awayLogo?: string
   home: string
   homeFull: string
+  homeLogo?: string
   week: string
   venue: string
 }
@@ -111,7 +116,7 @@ export default function NFLMatchupPage() {
   const staticMatchups = getAllMatchups()
 
   // Fetch live schedule
-  const { data: scheduleData, isLoading: scheduleLoading } = useSWR<{ games: GameOption[] }>(
+  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError, mutate: mutateSchedule } = useSWR<{ games: GameOption[] }>(
     "/api/nfl/schedule",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -127,7 +132,7 @@ export default function NFLMatchupPage() {
 
   // Fetch matchup data for selected game
   const matchupUrl = effectiveGameId ? `/api/nfl/matchup?gameId=${effectiveGameId}` : null
-  const { data: matchupData, isLoading: matchupLoading } = useSWR<{ matchup: LiveMatchup | null }>(
+  const { data: matchupData, isLoading: matchupLoading, error: matchupError, mutate: mutateMatchup } = useSWR<{ matchup: LiveMatchup | null; updatedAt?: string }>(
     hasLiveGames ? matchupUrl : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
@@ -143,10 +148,9 @@ export default function NFLMatchupPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      <NFLHeader />
+    <DashboardShell>
 
-      <main className="mx-auto max-w-[1440px] px-6 py-6 flex flex-col gap-6">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Game Selector */}
         <div className="flex flex-col gap-4">
           {/* Live games */}
@@ -164,13 +168,15 @@ export default function NFLMatchupPage() {
                 <button
                   key={g.id}
                   onClick={() => selectGame(g.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     effectiveGameId === g.id
                       ? "bg-primary text-primary-foreground"
                       : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
                   }`}
                 >
+                  {g.awayLogo && <Image src={g.awayLogo} alt={g.away} width={16} height={16} className="rounded" />}
                   {g.away} @ {g.home}
+                  {g.homeLogo && <Image src={g.homeLogo} alt={g.home} width={16} height={16} className="rounded" />}
                 </button>
               ))}
             </div>
@@ -207,14 +213,42 @@ export default function NFLMatchupPage() {
           )}
         </div>
 
+        {/* Error state */}
+        {(scheduleError || matchupError) && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <p className="text-sm font-medium text-foreground">Failed to load data</p>
+            <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
+            <button
+              onClick={() => { mutateSchedule(); mutateMatchup() }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Matchup Header */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
+            {(() => {
+              const game = liveGames.find((g) => g.id === effectiveGameId)
+              return game?.awayLogo ? (
+                <Image src={game.awayLogo} alt={displayMatchup.away.abbreviation} width={32} height={32} className="rounded" />
+              ) : null
+            })()}
             <h2 className="text-xl font-bold text-foreground text-balance">
               {displayMatchup.away.name}{" "}
               <span className="text-muted-foreground font-normal">@</span>{" "}
               {displayMatchup.home.name}
             </h2>
+            {(() => {
+              const game = liveGames.find((g) => g.id === effectiveGameId)
+              return game?.homeLogo ? (
+                <Image src={game.homeLogo} alt={displayMatchup.home.abbreviation} width={32} height={32} className="rounded" />
+              ) : null
+            })()}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live
@@ -224,10 +258,9 @@ export default function NFLMatchupPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             {displayMatchup.week}
-            {isLive
-              ? " — Player stats from current season via ESPN"
-              : " — Sample data (no live games available)"}
+            {!isLive && " — Sample data (no live games available)"}
           </p>
+          <LastUpdated timestamp={matchupData?.updatedAt} />
         </div>
 
         {/* Team Stats Comparison */}
@@ -238,12 +271,7 @@ export default function NFLMatchupPage() {
 
         {/* Loading state for matchup data */}
         {matchupLoading && (
-          <div className="flex items-center justify-center py-12 rounded-xl border border-border bg-card">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Fetching live roster and player stats...</span>
-            </div>
-          </div>
+          <TableSkeleton rows={6} columns={5} />
         )}
 
         {/* Positional Breakdowns */}
@@ -272,6 +300,6 @@ export default function NFLMatchupPage() {
           </>
         )}
       </main>
-    </div>
+    </DashboardShell>
   )
 }

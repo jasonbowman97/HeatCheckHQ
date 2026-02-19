@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart3 } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 export const metadata = {
   title: "Privacy Policy - HeatCheck HQ",
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <div className="mx-auto max-w-[1440px] flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
@@ -134,8 +134,8 @@ export default function PrivacyPage() {
             </p>
             <div className="bg-card border border-border rounded-lg p-4 mt-4">
               <p className="text-muted-foreground">
-                Email: privacy@heatcheckhq.com<br />
-                Website: <Link href="/" className="text-primary hover:underline">heatcheckhq.com</Link>
+                Email: admin@heatcheckhq.io<br />
+                Website: <Link href="/" className="text-primary hover:underline">heatcheckhq.io</Link>
               </p>
             </div>
           </section>

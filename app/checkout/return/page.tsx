@@ -1,15 +1,37 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { BarChart3, CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Mail } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
 export default function CheckoutReturnPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        setIsAuthenticated(!!user)
+      } catch {
+        setIsAuthenticated(false)
+      }
+    }
+    checkAuth()
+  }, [])
+
+  const isGuest = isAuthenticated === false
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm text-center">
         <div className="mb-6 flex flex-col items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <Logo className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold text-foreground">HeatCheck HQ</span>
           </Link>
@@ -26,12 +48,34 @@ export default function CheckoutReturnPage() {
           Your subscription is active. You now have full access to every dashboard, insight, and tool across MLB, NBA, and NFL.
         </p>
 
+        {isGuest && (
+          <div className="mt-5 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <div className="flex justify-center mb-2">
+              <Mail className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-foreground">Check your email</p>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+              We sent a link to set your password and access your account.
+              If you don&apos;t see it, check your spam folder.
+            </p>
+          </div>
+        )}
+
         <Button
           className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
           asChild
         >
-          <Link href="/mlb/hitting-stats">Explore dashboards</Link>
+          <Link href="/mlb">Explore dashboards</Link>
         </Button>
+
+        {isGuest && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Already set your password?{" "}
+            <Link href="/auth/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )

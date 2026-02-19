@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { getSchedule } from "@/lib/mlb-api"
 import { getAllGameWeather, isWeatherConfigured, getStadiumInfo, getStadiumAltitude, isMLBSeason } from "@/lib/weather-api"
+import { cacheHeader, CACHE } from "@/lib/cache"
 
-export const revalidate = 1800 // 30 minutes
+export const revalidate = 1800
 
 export async function GET(request: Request) {
   try {
@@ -46,13 +47,17 @@ export async function GET(request: Request) {
       }
     })
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       games: weatherGames,
       hasLiveWeather: useOpenWeather && Object.keys(liveWeather).length > 0,
       isOffseason: !isMLBSeason(),
       date: date ?? new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString(),
     })
+    res.headers.set("Cache-Control", cacheHeader(CACHE.WEATHER))
+    return res
   } catch {
-    return NextResponse.json({ games: [], hasLiveWeather: false, isOffseason: !isMLBSeason() }, { status: 200 })
+    console.error("[MLB Weather API] Error fetching weather data")
+    return NextResponse.json({ games: [], hasLiveWeather: false, isOffseason: !isMLBSeason() }, { status: 500 })
   }
 }
