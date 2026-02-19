@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { InviteModal } from "@/components/bet-board/invite-modal"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Users, Plus, Loader2, Link2, BarChart3 } from "lucide-react"
@@ -36,8 +35,7 @@ export default function BetBoardLobbyPage() {
   useEffect(() => { loadBoards() }, [loadBoards])
 
   return (
-    <ProtectedPage pathname="/bet-board">
-      <DashboardShell subtitle="Collaborative boards">
+    <DashboardShell subtitle="Collaborative boards">
       <div className="mx-auto max-w-3xl px-4 py-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
@@ -98,8 +96,7 @@ export default function BetBoardLobbyPage() {
           />
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }
 

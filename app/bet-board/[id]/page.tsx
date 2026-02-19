@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { BoardView } from "@/components/bet-board/board-view"
 import { InviteModal } from "@/components/bet-board/invite-modal"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -105,8 +104,7 @@ export default function BetBoardDetailPage({ params }: { params: Promise<{ id: s
   }, [id, loadBoard])
 
   return (
-    <ProtectedPage pathname="/bet-board">
-      <DashboardShell subtitle="Board detail">
+    <DashboardShell subtitle="Board detail">
       <div className="mx-auto max-w-3xl px-4 py-6">
         {/* Back link + invite */}
         <div className="flex items-center justify-between mb-4">
@@ -155,7 +153,6 @@ export default function BetBoardDetailPage({ params }: { params: Promise<{ id: s
           />
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

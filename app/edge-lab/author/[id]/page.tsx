@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { StrategyCard } from "@/components/edge-lab/strategy-card"
 import { ArrowLeft, Loader2, Trophy, TrendingUp, BarChart3, Star } from "lucide-react"
@@ -47,8 +46,7 @@ export default function AuthorProfilePage({ params }: { params: Promise<{ id: st
     : 0
 
   return (
-    <ProtectedPage pathname="/edge-lab">
-      <DashboardShell subtitle="Author profile">
+    <DashboardShell subtitle="Author profile">
       <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
         {/* Back */}
         <Link
@@ -121,8 +119,7 @@ export default function AuthorProfilePage({ params }: { params: Promise<{ id: st
           </>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }
 

@@ -7,7 +7,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { TombstoneCard } from "@/components/graveyard/tombstone-card"
 import { AutopsyView } from "@/components/graveyard/autopsy-view"
 import { LossPatternsView } from "@/components/graveyard/loss-patterns"
@@ -69,8 +68,7 @@ export default function GraveyardPage() {
   const patterns = analyzeLossPatterns(entries)
 
   return (
-    <ProtectedPage pathname="/graveyard">
-      <DashboardShell subtitle="Bad beat autopsy">
+    <DashboardShell subtitle="Bad beat autopsy">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-6 flex items-start justify-between">
           <div>
@@ -144,8 +142,7 @@ export default function GraveyardPage() {
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }
 

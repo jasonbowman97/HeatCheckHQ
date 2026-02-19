@@ -7,7 +7,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { getStrategyBadges } from "@/types/community"
 import {
@@ -86,28 +85,24 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
 
   if (loading) {
     return (
-      <ProtectedPage pathname="/edge-lab">
-        <DashboardShell subtitle="Strategy detail">
+      <DashboardShell subtitle="Strategy detail">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-        </DashboardShell>
-      </ProtectedPage>
+      </DashboardShell>
     )
   }
 
   if (!strategy) {
     return (
-      <ProtectedPage pathname="/edge-lab">
-        <DashboardShell subtitle="Strategy detail">
+      <DashboardShell subtitle="Strategy detail">
         <div className="mx-auto max-w-3xl px-4 py-6 text-center">
           <p className="text-sm text-red-400">Strategy not found</p>
           <Link href="/edge-lab/community" className="text-xs text-primary mt-2 inline-block">
             Back to library
           </Link>
         </div>
-        </DashboardShell>
-      </ProtectedPage>
+      </DashboardShell>
     )
   }
 
@@ -116,8 +111,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
   const btHitRate = Math.round(strategy.backtest.hitRate * 100)
 
   return (
-    <ProtectedPage pathname="/edge-lab">
-      <DashboardShell subtitle="Strategy detail">
+    <DashboardShell subtitle="Strategy detail">
       <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
         {/* Back */}
         <Link
@@ -316,8 +310,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
           )}
         </div>
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }
 

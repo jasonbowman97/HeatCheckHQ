@@ -7,7 +7,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { MatrixHeatmap } from "@/components/correlations/matrix-heatmap"
 import { ParlaySuggestions } from "@/components/correlations/parlay-suggestions"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -73,8 +72,7 @@ export default function CorrelationsPage() {
   }, [sport])
 
   return (
-    <ProtectedPage pathname="/correlations">
-      <DashboardShell subtitle="Prop correlation matrix">
+    <DashboardShell subtitle="Prop correlation matrix">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -150,7 +148,6 @@ export default function CorrelationsPage() {
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

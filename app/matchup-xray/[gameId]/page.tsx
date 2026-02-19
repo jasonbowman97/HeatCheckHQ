@@ -7,7 +7,6 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { TeamProfile } from "@/components/matchup-xray/team-profile"
 import { KeyMatchups } from "@/components/matchup-xray/key-matchups"
 import { PaceGauge } from "@/components/matchup-xray/pace-gauge"
@@ -47,8 +46,7 @@ export default function MatchupXRayPage({
   }, [gameId, sport])
 
   return (
-    <ProtectedPage pathname="/matchup-xray">
-      <DashboardShell subtitle="Deep matchup analysis">
+    <DashboardShell subtitle="Deep matchup analysis">
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -127,7 +125,6 @@ export default function MatchupXRayPage({
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

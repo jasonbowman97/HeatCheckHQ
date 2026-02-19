@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { PropGrid } from "@/components/convergence-dashboard/prop-grid"
 import { SportTabs } from "@/components/convergence-dashboard/sport-tabs"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -47,8 +46,7 @@ export default function ConvergenceDashboardPage() {
   const topCount = allProps.filter(p => p.convergenceScore >= 6).length
 
   return (
-    <ProtectedPage pathname="/check">
-      <DashboardShell subtitle="Cross-sport signal overview">
+    <DashboardShell subtitle="Cross-sport signal overview">
       <div className="mx-auto max-w-5xl px-4 py-6 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -95,7 +93,6 @@ export default function ConvergenceDashboardPage() {
           <PropGrid props={allProps} />
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

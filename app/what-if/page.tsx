@@ -7,7 +7,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { ScenarioControls } from "@/components/what-if/scenario-controls"
 import { DiffView } from "@/components/what-if/diff-view"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -60,8 +59,7 @@ export default function WhatIfPage() {
   }, [playerName, stat, line])
 
   return (
-    <ProtectedPage pathname="/what-if">
-      <DashboardShell subtitle="Scenario simulator">
+    <DashboardShell subtitle="Scenario simulator">
       <div className="mx-auto max-w-4xl px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -127,7 +125,6 @@ export default function WhatIfPage() {
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

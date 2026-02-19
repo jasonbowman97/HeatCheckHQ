@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { StrategyCard } from "@/components/edge-lab/strategy-card"
 import { Library, Loader2, Search, TrendingUp, Clock, Star, Users, Flame } from "lucide-react"
@@ -70,8 +69,7 @@ export default function CommunityLibraryPage() {
     : strategies
 
   return (
-    <ProtectedPage pathname="/edge-lab">
-      <DashboardShell subtitle="Community strategy library">
+    <DashboardShell subtitle="Community strategy library">
       <div className="mx-auto max-w-4xl px-4 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -157,7 +155,6 @@ export default function CommunityLibraryPage() {
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }

@@ -6,7 +6,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { ProtectedPage } from "@/components/protected-page"
 import { TimelineView } from "@/components/narrative/timeline-view"
 import { NarrativePerformanceView } from "@/components/narrative/narrative-performance"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -38,8 +37,7 @@ export default function NarrativeTimelinePage({ params }: { params: Promise<{ pl
   useEffect(() => { loadData() }, [loadData])
 
   return (
-    <ProtectedPage pathname="/check">
-      <DashboardShell subtitle="Narrative timeline">
+    <DashboardShell subtitle="Narrative timeline">
       <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
         {/* Back */}
         <Link
@@ -113,7 +111,6 @@ export default function NarrativeTimelinePage({ params }: { params: Promise<{ pl
           </div>
         )}
       </div>
-      </DashboardShell>
-    </ProtectedPage>
+    </DashboardShell>
   )
 }
