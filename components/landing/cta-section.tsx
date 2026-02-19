@@ -18,7 +18,7 @@ export function CtaSection() {
               </h2>
               <p className="max-w-lg text-muted-foreground">
                 Join for free in 30 seconds. No credit card required. Get instant
-                access to heatmaps, streaks, and matchup tools across all three sports.
+                access to prop research tools, heatmaps, streaks, and matchup dashboards across all three sports.
               </p>
               <AuthCta location="bottom_cta" />
             </div>

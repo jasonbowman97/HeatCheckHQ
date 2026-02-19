@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Search, Crosshair, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
 import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
@@ -7,25 +7,25 @@ import { AuthCta } from "@/components/landing/auth-cta"
 
 const dashboardPreviews = [
   {
-    sport: "MLB",
-    label: "NRFI",
-    icon: BaseballIcon,
-    description: "No Run First Inning probabilities, pitcher matchups, and streak data.",
-    href: "/mlb/nrfi",
+    sport: "Tool",
+    label: "Check My Prop",
+    icon: Search,
+    description: "7-factor convergence analysis for any player prop. Get a heat score before you bet.",
+    href: "/check",
   },
   {
-    sport: "NBA",
-    label: "First Basket",
-    icon: BasketballIcon,
-    description: "Tip-off win rates, first shot percentages, and player rankings.",
-    href: "/nba/first-basket",
+    sport: "Tool",
+    label: "Situation Room",
+    icon: Crosshair,
+    description: "Full-slate research hub with live matchups, trends, and prop edges in one view.",
+    href: "/situation-room",
   },
   {
-    sport: "NFL",
-    label: "Matchup",
-    icon: FootballIcon,
-    description: "Side-by-side team stats, positional splits, and game log trends.",
-    href: "/nfl/matchup",
+    sport: "Dashboard",
+    label: "14 Dashboards",
+    icon: BarChart3,
+    description: "Heatmaps, streaks, matchup breakdowns, and more across MLB, NBA, and NFL.",
+    href: "#dashboards",
   },
 ]
 
@@ -49,15 +49,15 @@ export function HeroSection() {
 
           <FadeIn delay={0.2}>
             <h1 className="max-w-4xl text-3xl sm:text-4xl font-bold leading-tight tracking-tight text-foreground text-balance md:text-6xl lg:text-7xl">
-              Your daily heat checks{" "}
-              <span className="text-primary">for every play</span>
+              Research tools &amp; dashboards{" "}
+              <span className="text-primary">for every edge</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.3}>
             <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              Heatmaps, streaks, matchup breakdowns, and prop research tools across
-              MLB, NBA, and NFL. Updated daily so you never miss an edge.
+              Prop validation, full-slate research, heatmaps, streaks, and matchup
+              breakdowns across MLB, NBA, and NFL. Updated daily so you never miss an edge.
             </p>
           </FadeIn>
 

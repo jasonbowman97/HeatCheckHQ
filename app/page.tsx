@@ -18,8 +18,8 @@ export default function LandingPage() {
         <Navbar />
         <main id="main-content">
           <HeroSection />
-          <SportsSection />
           <FeaturesSection />
+          <SportsSection />
           <PricingSection />
           <FaqSection />
           <CtaSection />

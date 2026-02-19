@@ -11,15 +11,15 @@ const plans = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "9 dashboards across MLB, NBA & NFL — plus a 7-day Pro trial, no credit card needed.",
+    description: "Check My Prop, 9 dashboards across MLB, NBA & NFL, plus a 7-day Pro trial — no credit card needed.",
     cta: "Create free account",
     ctaVariant: "outline" as const,
     highlights: [
-      { text: "7-day Pro trial — every feature unlocked free", included: true },
+      { text: "7-day Pro trial — every tool & dashboard unlocked", included: true },
+      { text: "Check My Prop — 7-factor convergence analysis", included: true },
       { text: "First Basket picks with live tipoff data", included: true },
       { text: "NRFI matchups & stadium weather impact", included: true },
-      { text: "Head-to-Head player comparisons", included: true },
-      { text: "Defense vs Position rankings (NBA + NFL)", included: true },
+      { text: "Head-to-Head & Defense vs Position rankings", included: true },
       { text: "Active streak trends across all 3 sports", included: true },
       { text: "NBA dashboards free during launch promo", included: true },
     ],
@@ -29,17 +29,17 @@ const plans = [
     price: "$12",
     period: "/month",
     description:
-      "Unlimited data, all filters unlocked, zero gates — the full edge across every dashboard.",
-    cta: "Unlock all dashboards",
+      "Every tool and dashboard unlocked, zero gates — the full edge across MLB, NBA, and NFL.",
+    cta: "Unlock everything",
     ctaVariant: "default" as const,
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Unlimited data — no signup gates or row limits", included: true },
-      { text: "All filters & sorting unlocked on every dashboard", included: true },
-      { text: "Full advanced stats across MLB, NBA & NFL", included: true },
-      { text: "Daily-updated heatmaps, trends & matchup tools", included: true },
-      { text: "New dashboards added first to Pro", included: true },
+      { text: "Situation Room — full-slate research hub", included: true },
+      { text: "Custom Alerts — get notified when criteria hit", included: true },
+      { text: "Enhanced Check My Prop with split overlays", included: true },
+      { text: "All 14 dashboards across MLB, NBA & NFL", included: true },
+      { text: "New tools & dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
     ],
   },
@@ -55,9 +55,9 @@ const plans = [
     highlights: [
       { text: "Everything in Pro Monthly", included: true },
       { text: "Just $8.33/mo — billed annually", included: true },
-      { text: "All 13 dashboards across MLB, NBA, NFL", included: true },
+      { text: "All tools & 14 dashboards across MLB, NBA, NFL", included: true },
       { text: "Save $44 vs. monthly", included: true },
-      { text: "Priority access to new sports & features", included: true },
+      { text: "Priority access to new tools & features", included: true },
       { text: "Cancel anytime", included: true },
     ],
   },
@@ -76,8 +76,8 @@ export function PricingSection() {
               Start free. Go Pro when you want the full edge.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
-              Get instant access to every dashboard free — no credit card required.
-              Upgrade to Pro for unlimited data, all filters unlocked, and zero gates.
+              Get instant access to Check My Prop, dashboards, and a 7-day Pro trial — no credit card required.
+              Upgrade to Pro for the Situation Room, Alerts, and every tool unlocked.
             </p>
             <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
               NBA dashboards are free during our launch promotion. Real-time data across MLB, NBA, and NFL.
