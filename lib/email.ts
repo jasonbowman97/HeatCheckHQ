@@ -7,13 +7,21 @@
 import "server-only"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM_EMAIL = "HeatCheck HQ <hello@heatcheckhq.io>"
+
+// Lazy-init to avoid build-time crash when RESEND_API_KEY isn't set
+let _resend: Resend | null = null
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 
 // ── Welcome email ──────────────────────────────────────────
 export async function sendWelcomeEmail(to: string, name?: string) {
   const firstName = name || "there"
+  const resend = getResend()
+  if (!resend) return { success: false, error: "RESEND_API_KEY not configured" }
 
   try {
     const { data, error } = await resend.emails.send({
@@ -37,6 +45,9 @@ export async function sendWelcomeEmail(to: string, name?: string) {
 
 // ── Pro upgrade confirmation ──────────────────────────────
 export async function sendProUpgradeEmail(to: string, plan: string) {
+  const resend = getResend()
+  if (!resend) return { success: false, error: "RESEND_API_KEY not configured" }
+
   try {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
