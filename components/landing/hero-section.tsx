@@ -7,25 +7,28 @@ import { AuthCta } from "@/components/landing/auth-cta"
 
 const dashboardPreviews = [
   {
-    sport: "Tool",
+    tag: "Tool",
     label: "Check My Prop",
     icon: Search,
     description: "7-factor convergence analysis for any player prop. Get a heat score before you bet.",
     href: "/check",
+    accent: true,
   },
   {
-    sport: "Tool",
+    tag: "Tool",
     label: "Situation Room",
     icon: Crosshair,
     description: "Full-slate research hub with live matchups, trends, and prop edges in one view.",
     href: "/situation-room",
+    accent: true,
   },
   {
-    sport: "Dashboard",
+    tag: "MLB · NBA · NFL",
     label: "14 Dashboards",
     icon: BarChart3,
-    description: "Heatmaps, streaks, matchup breakdowns, and more across MLB, NBA, and NFL.",
+    description: "Heatmaps, streaks, matchup breakdowns, and more across all three sports.",
     href: "#dashboards",
+    accent: false,
   },
 ]
 
@@ -70,22 +73,30 @@ export function HeroSection() {
             </div>
           </FadeIn>
 
-          {/* Three sport preview cards */}
+          {/* Three preview cards — tools first, then dashboards */}
           <div className="mt-10 sm:mt-14 w-full grid gap-3 sm:gap-4 md:grid-cols-3">
             {dashboardPreviews.map((preview, index) => (
               <FadeIn key={preview.label} delay={0.3 + index * 0.05}>
                 <Link
                   href={preview.href}
-                  className="group flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5 transition-colors hover:border-primary/30"
+                  className={`group flex h-full flex-col rounded-xl border p-4 sm:p-5 transition-colors hover:border-primary/30 ${
+                    preview.accent
+                      ? "border-primary/20 bg-card shadow-sm shadow-primary/5"
+                      : "border-border bg-card"
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        preview.accent ? "bg-primary/15" : "bg-primary/10"
+                      }`}>
                         <preview.icon className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {preview.sport}
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                          preview.accent ? "text-primary" : "text-muted-foreground"
+                        }`}>
+                          {preview.tag}
                         </span>
                         <p className="text-sm font-semibold text-foreground">{preview.label}</p>
                       </div>

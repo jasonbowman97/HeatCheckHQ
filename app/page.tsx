@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "@/components/landing/hero-section"
+import { SocialProof } from "@/components/landing/social-proof"
 import { SportsSection } from "@/components/landing/sports-section"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { PricingSection } from "@/components/landing/pricing-section"
@@ -18,6 +19,7 @@ export default function LandingPage() {
         <Navbar />
         <main id="main-content">
           <HeroSection />
+          <SocialProof />
           <FeaturesSection />
           <SportsSection />
           <PricingSection />

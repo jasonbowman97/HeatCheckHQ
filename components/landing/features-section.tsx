@@ -1,54 +1,63 @@
 import { Filter, BarChart3, TrendingUp, Shield, Users, AlertTriangle, Search, Crosshair } from "lucide-react"
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { FadeIn } from "@/components/ui/fade-in"
 
-const features = [
+const tools = [
   {
     icon: Search,
     title: "Check My Prop",
     description:
       "Enter any player prop and get a 7-factor convergence score — recent form, matchup, splits, and more — condensed into a single heat rating with a clear over/under verdict.",
+    href: "/check",
+    cta: "Try it free",
   },
   {
     icon: Crosshair,
     title: "Situation Room",
     description:
       "Full-slate research hub that brings today's matchups, trends, and prop edges into a single view. Your command center for game-day decisions across all three sports.",
+    href: "/situation-room",
+    cta: "Explore",
   },
+]
+
+const dashboardFeatures = [
   {
     icon: BarChart3,
     title: "Heatmap-Colored Stat Tables",
     description:
-      "Every stat cell is color-coded from red to green so you can instantly see who's elite and who's struggling. Applied across ERA, K%, NRFI%, tip win rates, and more.",
+      "Every stat cell is color-coded from red to green so you can instantly see who's elite and who's struggling.",
   },
   {
     icon: TrendingUp,
     title: "Hot & Cold Trend Detection",
     description:
-      "Automatically surfaces players on multi-game streaks — hitting XBH, scoring 25+, or rushing 100+ yards. Catches cold slumps too, so you know who to fade.",
+      "Automatically surfaces players on multi-game streaks. Catches cold slumps too, so you know who to fade.",
   },
   {
     icon: Filter,
     title: "Deep Filtering & Custom Alerts",
     description:
-      "Slice data by pitcher hand, time range, matchup, and slate. Set custom stat thresholds to build alerts and get notified when your research criteria hit.",
+      "Slice data by pitcher hand, time range, matchup, and slate. Set thresholds and get notified when criteria hit.",
   },
   {
     icon: Users,
     title: "Head-to-Head Breakdowns",
     description:
-      "Team vs team history, momentum indicators, win/loss streaks, ATS records, and defense vs position rankings. Know the matchup before you commit.",
+      "Team vs team history, momentum indicators, win/loss streaks, ATS records, and defense vs position rankings.",
   },
   {
     icon: Shield,
     title: "Pitch Arsenal Drill-Downs",
     description:
-      "Click any pitcher to see their full arsenal — usage %, AVG, SLG, ISO, barrel rate, and hard-hit rate per pitch. Color-coded so you spot the exploitable pitch instantly.",
+      "Click any pitcher to see their full arsenal — usage %, AVG, SLG, ISO, barrel rate, and hard-hit rate per pitch.",
   },
   {
     icon: AlertTriangle,
     title: "Injury & Availability Tracking",
     description:
-      "Live injury reports with Day-to-Day and Out status badges for both teams. Know exactly which key players are missing before making any decisions.",
+      "Live injury reports with Day-to-Day and Out status badges for both teams. Know who's missing before committing.",
   },
 ]
 
@@ -71,19 +80,53 @@ export function FeaturesSection() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, index) => (
-            <FadeIn key={feature.title} delay={0.1 + index * 0.05}>
-              <div className="group flex flex-col gap-3 sm:gap-4 rounded-xl border border-border bg-card p-4 sm:p-6 transition-colors hover:border-primary/30 h-full">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <feature.icon className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-semibold text-foreground">
-                {feature.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {feature.description}
-              </p>
+        {/* Featured tools — larger cards */}
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 mb-6">
+          {tools.map((tool, index) => (
+            <FadeIn key={tool.title} delay={0.1 + index * 0.05}>
+              <Link
+                href={tool.href}
+                className="group flex flex-col gap-4 rounded-xl border border-primary/20 bg-card p-5 sm:p-8 transition-colors hover:border-primary/40 hover:bg-primary/[0.02] h-full shadow-sm shadow-primary/5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <tool.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                      Tool
+                    </span>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {tool.title}
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground flex-1">
+                  {tool.description}
+                </p>
+                <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                  {tool.cta}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </Link>
+            </FadeIn>
+          ))}
+        </div>
+
+        {/* Dashboard features — compact grid */}
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {dashboardFeatures.map((feature, index) => (
+            <FadeIn key={feature.title} delay={0.2 + index * 0.05}>
+              <div className="group flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:p-6 transition-colors hover:border-primary/30 h-full">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
               </div>
             </FadeIn>
           ))}
