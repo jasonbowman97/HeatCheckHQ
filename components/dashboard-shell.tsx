@@ -37,6 +37,7 @@ import { useState, useEffect } from "react"
 import { OnboardingTooltip } from "@/components/onboarding-tooltip"
 import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
 import { useUserTier } from "@/components/user-tier-provider"
+import { analytics } from "@/lib/analytics"
 
 /* ─── Navigation types ─── */
 
@@ -278,6 +279,12 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
   const segments = pathname.split("/").filter(Boolean)
   const sport = segments[0] ?? ""
   const page = segments[1] ?? ""
+
+  // Fire dashboard_viewed analytics event on every page navigation
+  useEffect(() => {
+    const dashboard = page || sport || segments[0] || "home"
+    analytics.dashboardViewed(dashboard, sport)
+  }, [pathname, sport, page, segments])
   const sportConfig = SPORT_CONFIG[sport]
 
   // Determine if we're on a sport page or a tool page

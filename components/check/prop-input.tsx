@@ -98,7 +98,10 @@ export function PropInput({
     : []
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+    <form
+      onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
+      className="rounded-xl border border-border bg-card p-4 sm:p-6"
+    >
       <h2 className="text-lg font-semibold text-foreground mb-4">Check My Prop</h2>
 
       <div className="grid gap-4 sm:grid-cols-[1fr_180px_120px_auto]">
@@ -185,7 +188,7 @@ export function PropInput({
 
         {/* Submit */}
         <Button
-          onClick={handleSubmit}
+          type="submit"
           disabled={!selectedPlayer || !stat || !line || isLoading}
           className="bg-[#E85D2C] hover:bg-[#d14e20] text-white"
         >
@@ -215,6 +218,6 @@ export function PropInput({
           )}
         </div>
       )}
-    </div>
+    </form>
   )
 }
