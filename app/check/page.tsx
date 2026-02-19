@@ -2,7 +2,7 @@
 
 import { useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, Search, TrendingUp, Zap, Shield } from "lucide-react"
 import { PropInput } from "@/components/check/prop-input"
 import { VerdictBanner } from "@/components/check/verdict-banner"
 import { HeatRingSVG } from "@/components/check/heat-ring-svg"
@@ -96,6 +96,64 @@ function CheckMyPropContent() {
         {/* Input */}
         <PropInput onSubmit={handleSubmit} isLoading={isLoading} />
 
+        {/* Empty State — show when no result, no error, not loading */}
+        {!result && !error && !isLoading && (
+          <div className="mt-8">
+            <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
+              <div className="text-center max-w-lg mx-auto">
+                <div className="flex justify-center mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Enter a player prop to analyze
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  Search for any player, pick a stat, set the line, and get a full convergence
+                  breakdown with heat score, narrative flags, and matchup context.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="flex items-start gap-3 rounded-lg bg-secondary/30 p-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">7-Factor Score</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Recent form, matchup, splits, and more
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-lg bg-secondary/30 p-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Heat Ring</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Visual game-by-game hit/miss pattern
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-lg bg-secondary/30 p-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Shield className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Matchup Intel</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Defense ranking and opponent context
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error State */}
         {error && (
           <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center">
@@ -111,12 +169,33 @@ function CheckMyPropContent() {
         {/* Loading State */}
         {isLoading && (
           <div className="mt-6 space-y-4">
-            <div className="h-24 rounded-xl bg-muted animate-pulse" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="h-64 rounded-xl bg-muted animate-pulse" />
-              <div className="h-64 rounded-xl bg-muted animate-pulse" />
+            {/* Verdict skeleton */}
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+            {/* Heat Ring + Convergence skeleton */}
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+              <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-40 w-40 rounded-full bg-muted animate-pulse" />
+                  <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse shrink-0" />
+                      <div className="h-4 flex-1 rounded bg-muted animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="h-48 rounded-xl bg-muted animate-pulse" />
+            {/* Narrative flags skeleton */}
+            <div className="flex gap-2">
+              <div className="h-8 w-32 rounded-full bg-muted animate-pulse" />
+              <div className="h-8 w-40 rounded-full bg-muted animate-pulse" />
+              <div className="h-8 w-28 rounded-full bg-muted animate-pulse" />
+            </div>
+            {/* Chart skeleton */}
+            <div className="h-56 rounded-xl bg-muted animate-pulse" />
           </div>
         )}
 
@@ -132,42 +211,52 @@ function CheckMyPropContent() {
             />
 
             {/* 2. Heat Ring + Convergence (two-column on desktop) */}
-            <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
-              <div className="flex flex-col items-center gap-4">
-                <HeatRingSVG
-                  games={result.heatRing.games}
-                  size="lg"
-                  hitRate={result.heatRing.aggregates.hitRate}
-                  hitCount={result.heatRing.aggregates.hitCount}
-                  totalGames={result.heatRing.aggregates.totalGames}
-                  streak={result.heatRing.aggregates.streak}
-                />
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Avg margin: <span className="font-mono text-foreground">
-                      {result.heatRing.aggregates.avgMargin > 0 ? '+' : ''}
-                      {result.heatRing.aggregates.avgMargin.toFixed(1)}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Avg value: <span className="font-mono text-foreground">
-                      {result.heatRing.aggregates.avgValue.toFixed(1)}
-                    </span>
-                  </p>
-                  {!isPro && (
-                    <p className="text-[10px] text-primary mt-1">
-                      Showing last 10 games &middot; Pro shows 20
-                    </p>
-                  )}
-                </div>
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Convergence Analysis
+                </h3>
+                <span className="text-[10px] text-muted-foreground">
+                  {result.convergence.overCount} over · {result.convergence.underCount} under · {result.convergence.neutralCount} neutral
+                </span>
               </div>
+              <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
+                <div className="flex flex-col items-center gap-4">
+                  <HeatRingSVG
+                    games={result.heatRing.games}
+                    size="lg"
+                    hitRate={result.heatRing.aggregates.hitRate}
+                    hitCount={result.heatRing.aggregates.hitCount}
+                    totalGames={result.heatRing.aggregates.totalGames}
+                    streak={result.heatRing.aggregates.streak}
+                  />
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">
+                      Avg margin: <span className="font-mono text-foreground">
+                        {result.heatRing.aggregates.avgMargin > 0 ? '+' : ''}
+                        {result.heatRing.aggregates.avgMargin.toFixed(1)}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Avg value: <span className="font-mono text-foreground">
+                        {result.heatRing.aggregates.avgValue.toFixed(1)}
+                      </span>
+                    </p>
+                    {!isPro && (
+                      <p className="text-[10px] text-primary mt-1">
+                        Showing last 10 games &middot; Pro shows 20
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-              <ConvergenceBreakdown
-                factors={result.convergence.factors}
-                overCount={result.convergence.overCount}
-                underCount={result.convergence.underCount}
-                neutralCount={result.convergence.neutralCount}
-              />
+                <ConvergenceBreakdown
+                  factors={result.convergence.factors}
+                  overCount={result.convergence.overCount}
+                  underCount={result.convergence.underCount}
+                  neutralCount={result.convergence.neutralCount}
+                />
+              </div>
             </div>
 
             {/* 3. Narrative Flags (always visible) */}
