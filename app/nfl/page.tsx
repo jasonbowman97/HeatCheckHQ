@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, Lock } from "lucide-react"
-import { Logo } from "@/components/logo"
+import { AppShell } from "@/components/app-shell"
 
 const NFL_DASHBOARDS = [
   {
@@ -25,34 +25,10 @@ const NFL_DASHBOARDS = [
 
 export default function NFLHubPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="mx-auto max-w-[1440px] flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary/10">
-                <Logo className="h-4 w-4 sm:h-5 sm:w-5" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">HeatCheck HQ</h1>
-                <p className="text-[11px] sm:text-xs text-muted-foreground">NFL Dashboards</p>
-              </div>
-            </Link>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Link href="/mlb" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              MLB
-            </Link>
-            <Link href="/nba" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary">
-              NBA
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-6 sm:py-10">
+    <AppShell subtitle="NFL Dashboards">
+      <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">NFL Dashboards</h2>
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">NFL Dashboards</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             Full team stat comparisons, defensive position rankings, and active player streaks across the league.
           </p>
@@ -91,6 +67,6 @@ export default function NFLHubPage() {
           ))}
         </div>
       </main>
-    </div>
+    </AppShell>
   )
 }

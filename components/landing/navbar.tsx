@@ -35,7 +35,7 @@ const sportLinks = [
       { name: "First Basket", href: "/nba/first-basket", tier: "free" as Tier },
       { name: "Head-to-Head", href: "/nba/head-to-head", tier: "free" as Tier },
       { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
-      { name: "Streak Tracker", href: "/nba/streaks", tier: "pro" as Tier },
+      { name: "Streak Tracker", href: "/nba/streaks", tier: "free" as Tier },
     ],
   },
   {
@@ -64,7 +64,7 @@ const toolLinks = [
   {
     category: "Track",
     pages: [
-      { name: "Alerts", href: "/criteria", tier: "pro" as Tier, icon: Bell, desc: "Research-based alerts" },
+      { name: "Alerts", href: "/alerts", tier: "pro" as Tier, icon: Bell, desc: "Research-based alerts" },
     ],
   },
 ]

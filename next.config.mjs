@@ -7,6 +7,7 @@ const nextConfig = {
       { source: '/nba/trends', destination: '/nba/streaks', permanent: true },
       { source: '/mlb/trends', destination: '/mlb/streaks', permanent: true },
       { source: '/nfl/trends', destination: '/nfl/streaks', permanent: true },
+      { source: '/criteria', destination: '/alerts', permanent: true },
     ]
   },
   typescript: {

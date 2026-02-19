@@ -64,7 +64,7 @@ const NBA_NAV: NavLink[] = [
   { href: "/nba/first-basket", label: "First Basket", tier: "free" },
   { href: "/nba/head-to-head", label: "H2H", tier: "free", ariaLabel: "Head to Head" },
   { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free", ariaLabel: "Defense vs Position" },
-  { href: "/nba/streaks", label: "Streak Tracker", tier: "pro" },
+  { href: "/nba/streaks", label: "Streak Tracker", tier: "free" },
 ]
 
 const NFL_NAV: NavLink[] = [
@@ -123,7 +123,7 @@ const TOOL_NAV: ToolCategory[] = [
   {
     label: "Track",
     links: [
-      { href: "/criteria", label: "Alerts", tier: "pro", icon: Bell, description: "Research-based alerts" },
+      { href: "/alerts", label: "Alerts", tier: "pro", icon: Bell, description: "Research-based alerts" },
     ],
   },
 ]
@@ -150,7 +150,7 @@ const PAGE_NAMES: Record<string, string> = {
   // Tool pages
   check: "Check My Prop",
   "situation-room": "Situation Room",
-  criteria: "Alerts",
+  alerts: "Alerts",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
@@ -176,7 +176,7 @@ function QuickAccessBar({ pathname }: { pathname: string }) {
   const quickLinks = [
     { href: "/check", label: "Check", icon: SearchCheck },
     { href: "/situation-room", label: "Situation Room", icon: Radio },
-    { href: "/criteria", label: "Alerts", icon: Bell },
+    { href: "/alerts", label: "Alerts", icon: Bell },
   ]
 
   return (
