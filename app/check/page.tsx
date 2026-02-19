@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { PropInput } from "@/components/check/prop-input"
 import { VerdictBanner } from "@/components/check/verdict-banner"
 import { HeatRingSVG } from "@/components/check/heat-ring-svg"
@@ -18,6 +19,20 @@ import { useUserTier } from "@/components/user-tier-provider"
 import type { PropCheckResult, PropCheckError } from "@/types/check-prop"
 
 export default function CheckMyPropPage() {
+  return (
+    <Suspense fallback={
+      <DashboardShell subtitle="Validate any prop bet">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardShell>
+    }>
+      <CheckMyPropContent />
+    </Suspense>
+  )
+}
+
+function CheckMyPropContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tier = useUserTier()
