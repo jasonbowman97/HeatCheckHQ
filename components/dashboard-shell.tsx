@@ -2,7 +2,22 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu } from "lucide-react"
+import {
+  Menu,
+  SearchCheck,
+  FlaskConical,
+  Radio,
+  Gauge,
+  Swords,
+  GitBranch,
+  Users,
+  Zap,
+  Dices,
+  Bell,
+  Skull,
+  BookOpen,
+  ChevronRight,
+} from "lucide-react"
 import { Logo } from "@/components/logo"
 import {
   Sheet,
@@ -24,7 +39,7 @@ import { OnboardingTooltip } from "@/components/onboarding-tooltip"
 import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
 import { useUserTier } from "@/components/user-tier-provider"
 
-/* ─── Navigation config per sport ─── */
+/* ─── Navigation types ─── */
 
 type Tier = "public" | "free" | "pro"
 
@@ -33,6 +48,13 @@ interface NavLink {
   label: string
   tier: Tier
 }
+
+interface ToolNavLink extends NavLink {
+  icon: React.ComponentType<{ className?: string }>
+  description: string
+}
+
+/* ─── Sport navigation config ─── */
 
 const MLB_NAV: NavLink[] = [
   { href: "/mlb/hot-hitters", label: "Hot Hitters", tier: "pro" },
@@ -84,9 +106,54 @@ const SPORT_CONFIG: Record<string, { nav: NavLink[]; subtitle: string; otherSpor
   },
 }
 
+/* ─── Tool navigation config — grouped by category ─── */
+
+interface ToolCategory {
+  label: string
+  links: ToolNavLink[]
+}
+
+const TOOL_NAV: ToolCategory[] = [
+  {
+    label: "Analyze",
+    links: [
+      { href: "/check", label: "Check My Prop", tier: "free", icon: SearchCheck, description: "Validate any prop bet" },
+      { href: "/edge-lab", label: "Edge Lab", tier: "pro", icon: FlaskConical, description: "Custom filters & strategy builder" },
+      { href: "/convergence-dashboard", label: "Convergence", tier: "pro", icon: Gauge, description: "Cross-sport signal overview" },
+      { href: "/correlations", label: "Correlations", tier: "pro", icon: GitBranch, description: "Prop correlation matrix" },
+    ],
+  },
+  {
+    label: "Game Day",
+    links: [
+      { href: "/situation-room", label: "Situation Room", tier: "pro", icon: Radio, description: "Live game-day command center" },
+      { href: "/matchup-xray", label: "Matchup X-Ray", tier: "pro", icon: Swords, description: "Deep matchup analysis" },
+    ],
+  },
+  {
+    label: "Build",
+    links: [
+      { href: "/bet-builder", label: "Bet Builder", tier: "pro", icon: Zap, description: "60-second parlay builder" },
+      { href: "/what-if", label: "What-If", tier: "pro", icon: Dices, description: "Scenario simulator" },
+      { href: "/bet-board", label: "Bet Board", tier: "pro", icon: Users, description: "Collaborative boards" },
+    ],
+  },
+  {
+    label: "Track",
+    links: [
+      { href: "/criteria", label: "Alerts", tier: "pro", icon: Bell, description: "Research-based alerts" },
+      { href: "/graveyard", label: "Graveyard", tier: "pro", icon: Skull, description: "Bad beat autopsy" },
+    ],
+  },
+]
+
+// Flat list of all tool links for quick matching
+const ALL_TOOL_LINKS = TOOL_NAV.flatMap(c => c.links)
+
 /* ─── Human-readable page names for breadcrumbs ─── */
 
 const PAGE_NAMES: Record<string, string> = {
+  // Sport pages
   "hot-hitters": "Hot Hitters",
   "hitting-stats": "Hitter vs Pitcher",
   "pitching-stats": "Pitching Stats",
@@ -99,6 +166,19 @@ const PAGE_NAMES: Record<string, string> = {
   "defense-vs-position": "Defense vs Position",
   matchup: "Matchup",
   streaks: "Streak Tracker",
+  // Tool pages
+  check: "Check My Prop",
+  "edge-lab": "Edge Lab",
+  "situation-room": "Situation Room",
+  "convergence-dashboard": "Convergence",
+  "matchup-xray": "Matchup X-Ray",
+  correlations: "Correlations",
+  "bet-builder": "Bet Builder",
+  "what-if": "What-If",
+  "bet-board": "Bet Board",
+  criteria: "Alerts",
+  graveyard: "Graveyard",
+  narratives: "Narratives",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
@@ -113,16 +193,74 @@ function TierBadge({ tier }: { tier: Tier }) {
   return null
 }
 
-/* ─── Shared class constants (hoisted to avoid re-creation) ─── */
+/* ─── Shared class constants ─── */
 
 const NAV_ACTIVE_CLASS = "text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md"
 const NAV_INACTIVE_CLASS = "text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
+
+/* ─── Quick-access bar shown on every page ─── */
+
+function QuickAccessBar({ pathname }: { pathname: string }) {
+  const quickLinks = [
+    { href: "/check", label: "Check", icon: SearchCheck },
+    { href: "/convergence-dashboard", label: "Convergence", icon: Gauge },
+    { href: "/situation-room", label: "Situation Room", icon: Radio },
+    { href: "/bet-builder", label: "Builder", icon: Zap },
+  ]
+
+  return (
+    <div className="border-b border-border/50 bg-muted/20">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 flex items-center gap-1 py-1 overflow-x-auto scrollbar-hide">
+        <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mr-2 flex-shrink-0">
+          Quick
+        </span>
+        {quickLinks.map(link => {
+          const isActive = pathname.startsWith(link.href)
+          const Icon = link.icon
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-shrink-0 ${
+                isActive
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              {link.label}
+            </Link>
+          )
+        })}
+
+        {/* Sport shortcuts */}
+        <div className="h-3 w-px bg-border/50 mx-1 flex-shrink-0" />
+        {["MLB", "NBA", "NFL"].map(s => {
+          const slug = s.toLowerCase()
+          const isActive = pathname.startsWith(`/${slug}`)
+          return (
+            <Link
+              key={slug}
+              href={`/${slug}`}
+              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors flex-shrink-0 ${
+                isActive
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/50"
+              }`}
+            >
+              {s}
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 /* ─── Component ─── */
 
 interface DashboardShellProps {
   children: React.ReactNode
-  /** Override subtitle shown under "HeatCheck HQ", e.g. "MLB Hot Hitters" */
   subtitle?: string
 }
 
@@ -141,19 +279,24 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
 
   // Derive sport and page from pathname
   const segments = pathname.split("/").filter(Boolean)
-  const sport = segments[0] ?? "mlb"
+  const sport = segments[0] ?? ""
   const page = segments[1] ?? ""
-  const config = SPORT_CONFIG[sport]
+  const sportConfig = SPORT_CONFIG[sport]
 
-  if (!config) {
-    // Fallback for non-sport pages
-    return <>{children}</>
-  }
+  // Determine if we're on a sport page or a tool page
+  const isSportPage = !!sportConfig
+  const isToolPage = !isSportPage
 
-  const activeClass = NAV_ACTIVE_CLASS
-  const inactiveClass = NAV_INACTIVE_CLASS
+  // Find active tool link for breadcrumbs
+  const activeToolLink = isToolPage
+    ? ALL_TOOL_LINKS.find(l => pathname.startsWith(l.href))
+    : null
 
-  const headerSubtitle = subtitle ?? `${config.subtitle} ${PAGE_NAMES[page] ?? page}`
+  const headerSubtitle = subtitle ?? (
+    isSportPage
+      ? `${sportConfig.subtitle} ${PAGE_NAMES[page] ?? page}`
+      : activeToolLink?.description ?? PAGE_NAMES[segments[0]] ?? "Tools"
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,27 +317,55 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
           </div>
 
           {/* Desktop nav — hidden on mobile */}
-          <div className="hidden md:flex items-center gap-3 flex-wrap justify-end">
-            {/* Other sports */}
-            {config.otherSports.map((s) => (
-              <Link key={s.href} href={s.href} className={inactiveClass}>
-                {s.label}
-              </Link>
-            ))}
-            <div className="h-5 w-px bg-border mx-1" />
-            {/* Current sport links */}
-            {config.nav.map((link) => {
-              const isActive = pathname === link.href
-              return isActive ? (
-                <span key={link.href} className={activeClass}>
-                  {link.label}
-                </span>
-              ) : (
-                <Link key={link.href} href={link.href} className={inactiveClass}>
-                  {link.label}
-                </Link>
-              )
-            })}
+          <div className="hidden md:flex items-center gap-1.5 flex-wrap justify-end">
+            {isSportPage ? (
+              <>
+                {/* Other sports */}
+                {sportConfig.otherSports.map((s) => (
+                  <Link key={s.href} href={s.href} className={NAV_INACTIVE_CLASS}>
+                    {s.label}
+                  </Link>
+                ))}
+                <div className="h-5 w-px bg-border mx-1" />
+                {/* Current sport links */}
+                {sportConfig.nav.map((link) => {
+                  const isActive = pathname === link.href
+                  return isActive ? (
+                    <span key={link.href} className={NAV_ACTIVE_CLASS}>
+                      {link.label}
+                    </span>
+                  ) : (
+                    <Link key={link.href} href={link.href} className={NAV_INACTIVE_CLASS}>
+                      {link.label}
+                    </Link>
+                  )
+                })}
+              </>
+            ) : (
+              <>
+                {/* Tool navigation — categorized inline */}
+                {TOOL_NAV.map((category, ci) => (
+                  <div key={category.label} className="flex items-center gap-1.5">
+                    {ci > 0 && <div className="h-4 w-px bg-border/40 mx-0.5" />}
+                    {category.links.map(link => {
+                      const isActive = pathname.startsWith(link.href)
+                      const Icon = link.icon
+                      return isActive ? (
+                        <span key={link.href} className={`${NAV_ACTIVE_CLASS} flex items-center gap-1`}>
+                          <Icon className="h-3 w-3" />
+                          {link.label}
+                        </span>
+                      ) : (
+                        <Link key={link.href} href={link.href} className={`${NAV_INACTIVE_CLASS} flex items-center gap-1`}>
+                          <Icon className="h-3 w-3" />
+                          {link.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger menu */}
@@ -207,7 +378,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[85vw] sm:w-72 bg-background">
+            <SheetContent side="right" className="w-[85vw] sm:w-80 bg-background overflow-y-auto">
               <SheetHeader className="text-left">
                 <SheetTitle className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
@@ -218,50 +389,76 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
               </SheetHeader>
 
               <div className="mt-6 flex flex-col gap-5">
-                {/* Current sport nav */}
+                {/* Tools section */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
-                    {config.subtitle}
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-3">
+                    Tools
                   </p>
-                  <div className="flex flex-col gap-1">
-                    {config.nav.map((link) => {
-                      const isActive = pathname === link.href
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`flex items-center rounded-md px-3 py-2 text-sm transition-colors ${
-                            isActive
-                              ? "text-primary bg-primary/10 font-medium"
-                              : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                          }`}
-                        >
-                          {link.label}
-                          <TierBadge tier={link.tier} />
-                        </Link>
-                      )
-                    })}
-                  </div>
+                  {TOOL_NAV.map(category => (
+                    <div key={category.label} className="mb-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1 px-3">
+                        {category.label}
+                      </p>
+                      <div className="flex flex-col gap-0.5">
+                        {category.links.map(link => {
+                          const isActive = pathname.startsWith(link.href)
+                          const Icon = link.icon
+                          return (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              onClick={() => setMobileOpen(false)}
+                              className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+                                isActive
+                                  ? "text-primary bg-primary/10 font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                              }`}
+                            >
+                              <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span>{link.label}</span>
+                              </div>
+                              <TierBadge tier={link.tier} />
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Other sports */}
+                {/* Sport dashboards section */}
                 <div className="border-t border-border pt-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                    Other Sports
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-3">
+                    Sport Dashboards
                   </p>
-                  <div className="flex flex-col gap-1">
-                    {config.otherSports.map((s) => (
-                      <Link
-                        key={s.href}
-                        href={s.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                      >
-                        {s.label}
-                      </Link>
-                    ))}
-                  </div>
+                  {Object.entries(SPORT_CONFIG).map(([key, cfg]) => (
+                    <div key={key} className="mb-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1 px-3">
+                        {cfg.subtitle}
+                      </p>
+                      <div className="flex flex-col gap-0.5">
+                        {cfg.nav.map(link => {
+                          const isActive = pathname === link.href
+                          return (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              onClick={() => setMobileOpen(false)}
+                              className={`flex items-center rounded-md px-3 py-2 text-sm transition-colors ${
+                                isActive
+                                  ? "text-primary bg-primary/10 font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                              }`}
+                            >
+                              <span className="flex-1">{link.label}</span>
+                              <TierBadge tier={link.tier} />
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Home */}
@@ -278,6 +475,9 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
             </SheetContent>
           </Sheet>
         </div>
+
+        {/* Quick-access bar */}
+        <QuickAccessBar pathname={pathname} />
       </header>
 
       {/* ── Breadcrumbs ── */}
@@ -290,18 +490,28 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={`/${sport}`}>{config.subtitle}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            {page && (
+            {isSportPage ? (
               <>
-                <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{PAGE_NAMES[page] ?? page}</BreadcrumbPage>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/${sport}`}>{sportConfig.subtitle}</Link>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
+                {page && (
+                  <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{PAGE_NAMES[page] ?? page}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </>
+                )}
               </>
+            ) : (
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {activeToolLink?.label ?? PAGE_NAMES[segments[0]] ?? segments[0]}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
             )}
           </BreadcrumbList>
         </Breadcrumb>
