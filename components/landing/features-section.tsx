@@ -1,4 +1,4 @@
-import { Filter, BarChart3, TrendingUp, Shield, Users, AlertTriangle, Search, Crosshair } from "lucide-react"
+import { Filter, BarChart3, TrendingUp, Shield, Users, AlertTriangle, Search } from "lucide-react"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { FadeIn } from "@/components/ui/fade-in"
@@ -8,17 +8,9 @@ const tools = [
     icon: Search,
     title: "Prop Analyzer",
     description:
-      "Search any player and instantly see all their props analyzed — hit rates, trends, and a 7-factor convergence score for every stat line. Drill into any prop for the full breakdown.",
+      "Search any player and instantly see all their props analyzed — hit rates, trends, and a 7-factor convergence score for every stat line. Full game log with convergence signals inline.",
     href: "/check",
     cta: "Try it free",
-  },
-  {
-    icon: Crosshair,
-    title: "Situation Room",
-    description:
-      "Full-slate research hub that brings today's matchups, trends, and prop edges into a single view. Your command center for game-day decisions across all three sports.",
-    href: "/situation-room",
-    cta: "Explore",
   },
 ]
 
@@ -80,8 +72,8 @@ export function FeaturesSection() {
           </div>
         </FadeIn>
 
-        {/* Featured tools — larger cards */}
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 mb-6">
+        {/* Featured tool — single card */}
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-1 max-w-2xl mx-auto mb-6">
           {tools.map((tool, index) => (
             <FadeIn key={tool.title} delay={0.1 + index * 0.05}>
               <Link

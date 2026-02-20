@@ -10,16 +10,8 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
     title: "Prop Analyzer",
     tips: [
       "Search any player to instantly see all their props analyzed at a glance.",
-      "Each prop card shows hit rates, trends, and convergence signals with adjustable lines.",
-      "Tap any prop to drill into the full 7-factor analysis with matchup context.",
-    ],
-  },
-  "/situation-room": {
-    title: "Situation Room",
-    tips: [
-      "Your live game-day command center — all prop-relevant updates in one place.",
-      "Track line movements, injury reports, and convergence shifts in real-time.",
-      "Top prop alerts surface the highest-conviction plays across today's games.",
+      "Switch between stats to see the full game log with hit rates and convergence signals.",
+      "Use the L5/L10/L20/All toggle to view different sample sizes.",
     ],
   },
   "/alerts": {

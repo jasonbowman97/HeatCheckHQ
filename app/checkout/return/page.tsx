@@ -10,11 +10,11 @@ import { createClient } from "@/lib/supabase/client"
 
 /** Validate the return path is a safe internal route */
 function getSafeReturnPath(raw: string | null): string {
-  if (!raw) return "/situation-room"
+  if (!raw) return "/check"
   // Only allow relative paths starting with /
-  if (!raw.startsWith("/")) return "/situation-room"
+  if (!raw.startsWith("/")) return "/check"
   // Block protocol-relative URLs and external redirects
-  if (raw.startsWith("//")) return "/situation-room"
+  if (raw.startsWith("//")) return "/check"
   return raw
 }
 
@@ -97,7 +97,7 @@ function CheckoutReturnContent() {
           asChild
         >
           <Link href={returnTo}>
-            {returnTo === "/situation-room" ? "Open Situation Room" : "Continue to dashboard"}
+            Continue to dashboard
           </Link>
         </Button>
 

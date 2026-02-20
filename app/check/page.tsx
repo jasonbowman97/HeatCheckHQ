@@ -5,14 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2, Search, TrendingUp, Zap, Shield } from "lucide-react"
 import { PlayerSearch } from "@/components/analyzer/player-search"
 import { RecentPerformance } from "@/components/analyzer/recent-performance"
-import { PropGrid, PropGridSkeleton } from "@/components/analyzer/prop-grid"
-import { DetailPanel } from "@/components/analyzer/detail-panel"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { useUserTier } from "@/components/user-tier-provider"
 import { analytics } from "@/lib/analytics"
-import type { PlayerAnalysis, PropSummary } from "@/types/analyzer"
+import type { PlayerAnalysis } from "@/types/analyzer"
 import type { PlayerSearchResult } from "@/types/shared"
-import { commandEvents } from "@/lib/command-events"
 
 export default function PropAnalyzerPage() {
   return (
@@ -31,53 +27,17 @@ export default function PropAnalyzerPage() {
 function PropAnalyzerContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const tier = useUserTier()
 
   const [analysis, setAnalysis] = useState<PlayerAnalysis | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Detail panel state
-  const [selectedStat, setSelectedStat] = useState<string | null>(null)
-  const [selectedProp, setSelectedProp] = useState<PropSummary | null>(null)
-
-  // Track the current player ID for deep linking + drill-down
+  // Track the current player ID for deep linking
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null)
-
-  // ── Deep linking: auto-load player from URL params on mount ──
-  useEffect(() => {
-    const playerId = searchParams.get("player")
-    const stat = searchParams.get("stat")
-    if (playerId && !analysis && !isAnalyzing) {
-      // Auto-fetch the player from URL
-      setCurrentPlayerId(playerId)
-      fetchAnalysis(playerId)
-        .then(() => {
-          // If a stat was specified in the URL, auto-open the drill-down
-          if (stat) {
-            setSelectedStat(stat)
-          }
-        })
-    }
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // When analysis loads and selectedStat is set (from deep link), find the prop
-  useEffect(() => {
-    if (analysis && selectedStat) {
-      const prop = analysis.props.find(p => p.stat === selectedStat)
-      if (prop) {
-        setSelectedProp(prop)
-      }
-    }
-  }, [analysis, selectedStat])
 
   const fetchAnalysis = useCallback(async (playerId: string) => {
     setIsAnalyzing(true)
     setError(null)
-    setSelectedStat(null)
-    setSelectedProp(null)
 
     try {
       const res = await fetch("/api/analyze-player", {
@@ -112,13 +72,16 @@ function PropAnalyzerContent() {
     }
   }, [router])
 
-  // ── Listen for ⌘K command palette player selections ──
+  // ── Deep linking: auto-load player from URL params on mount ──
   useEffect(() => {
-    return commandEvents.onPlayerSelect((playerId) => {
+    const playerId = searchParams.get("player")
+    if (playerId && !analysis && !isAnalyzing) {
       setCurrentPlayerId(playerId)
       fetchAnalysis(playerId)
-    })
-  }, [fetchAnalysis])
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handlePlayerSelect = useCallback((player: PlayerSearchResult) => {
     setCurrentPlayerId(player.id)
@@ -126,36 +89,18 @@ function PropAnalyzerContent() {
     fetchAnalysis(player.id)
   }, [fetchAnalysis])
 
-  const handlePropSelect = useCallback((stat: string) => {
+  const handleStatSelect = useCallback((stat: string) => {
     if (!analysis) return
-    const prop = analysis.props.find(p => p.stat === stat)
-    if (!prop) return
 
-    setSelectedStat(stat)
-    setSelectedProp(prop)
-
-    // Track drill-down
+    // Track stat selection
     analytics.propAnalyzerCardClick(stat, analysis.sport)
 
     // Update URL with stat for deep linking
     const params = new URLSearchParams()
     if (currentPlayerId) params.set("player", currentPlayerId)
     params.set("stat", stat)
-    params.set("line", prop.line.toString())
     router.replace(`/check?${params.toString()}`, { scroll: false })
   }, [analysis, currentPlayerId, router])
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedStat(null)
-    setSelectedProp(null)
-
-    // Restore URL to just player
-    if (currentPlayerId) {
-      const params = new URLSearchParams()
-      params.set("player", currentPlayerId)
-      router.replace(`/check?${params.toString()}`, { scroll: false })
-    }
-  }, [currentPlayerId, router])
 
   return (
     <DashboardShell subtitle="Analyze any player's props">
@@ -188,7 +133,7 @@ function PropAnalyzerContent() {
                     Search any player to get started
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    We'll analyze every available prop with pre-set common lines, hit rates,
+                    We&apos;ll analyze every available prop with pre-set common lines, hit rates,
                     trends, and convergence signals — all at a glance.
                   </p>
                 </div>
@@ -221,9 +166,9 @@ function PropAnalyzerContent() {
                       <Shield className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-foreground">Deep Drill-Down</p>
+                      <p className="text-xs font-semibold text-foreground">Full Analysis</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Tap any prop for full matchup context
+                        Game log, hit rates, and convergence — all in one view
                       </p>
                     </div>
                   </div>
@@ -250,33 +195,54 @@ function PropAnalyzerContent() {
 
           {/* ── STATE: Loading ── */}
           {isAnalyzing && (
-            <div className="mt-6 space-y-4">
-              {/* Player header skeleton */}
-              <div className="rounded-xl border border-border bg-card p-4 sm:p-5 animate-pulse">
-                <div className="flex items-start gap-4">
-                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-muted" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-5 w-40 rounded bg-muted" />
-                    <div className="h-4 w-32 rounded bg-muted" />
-                    <div className="h-3 w-48 rounded bg-muted" />
+            <div className="mt-6">
+              <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+                {/* Player header skeleton */}
+                <div className="p-4 sm:p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 w-40 rounded bg-muted" />
+                      <div className="h-4 w-32 rounded bg-muted" />
+                      <div className="h-3 w-48 rounded bg-muted" />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-12 rounded-lg bg-muted" />
+                    ))}
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-12 rounded-lg bg-muted" />
-                  ))}
+                <div className="border-t border-border" />
+                {/* Chart area skeleton */}
+                <div className="p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 w-20 rounded bg-muted" />
+                    <div className="h-6 w-32 rounded bg-muted" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-7 w-16 rounded-full bg-muted" />
+                    ))}
+                  </div>
+                  <div className="h-64 rounded-lg bg-muted" />
+                  <div className="flex gap-3">
+                    <div className="flex-1 h-24 rounded-xl bg-muted" />
+                    <div className="w-56 h-24 rounded-xl bg-muted" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="h-12 w-14 rounded-lg bg-muted" />
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {/* Prop grid skeleton */}
-              <PropGridSkeleton />
             </div>
           )}
 
           {/* ── STATE: Results ── */}
           {analysis && !isAnalyzing && (
-            <div className="mt-6 space-y-4">
-              {/* Player Header + Recent Performance (unified card) */}
+            <div className="mt-6">
               <RecentPerformance
                 player={analysis.player}
                 nextGame={analysis.nextGame}
@@ -284,16 +250,7 @@ function PropAnalyzerContent() {
                 sport={analysis.sport}
                 seasonAverages={analysis.seasonAverages}
                 gamesPlayed={analysis.gamesPlayed}
-                onSelectProp={handlePropSelect}
-              />
-
-              {/* Prop Card Grid */}
-              <PropGrid
-                props={analysis.props}
-                sport={analysis.sport}
-                selectedStat={selectedStat}
-                onSelectProp={handlePropSelect}
-                hideTopSignals
+                onSelectProp={handleStatSelect}
                 matchupContext={analysis.matchupContext ? {
                   defRank: analysis.matchupContext.opponentDefRank,
                   isHome: analysis.matchupContext.isHome,
@@ -305,17 +262,6 @@ function PropAnalyzerContent() {
           )}
         </div>
       </div>
-
-      {/* ── Drill-Down Detail Panel ── */}
-      {selectedProp && currentPlayerId && analysis && (
-        <DetailPanel
-          prop={selectedProp}
-          playerId={currentPlayerId}
-          sport={analysis.sport}
-          line={selectedProp.line}
-          onClose={handleClosePanel}
-        />
-      )}
     </DashboardShell>
   )
 }

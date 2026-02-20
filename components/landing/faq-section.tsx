@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "What do I get with Pro?",
     answer:
-      "Pro unlocks the Situation Room, custom Alerts, all 14 dashboards (including Hot Hitters, Hitter vs Pitcher, Pitching Stats, and NFL Matchup), plus enhanced Prop Analyzer analysis with split overlays and similar situations. You also get priority access to every new tool and dashboard we ship.",
+      "Pro unlocks custom Alerts, all 14 dashboards (including Hot Hitters, Hitter vs Pitcher, Pitching Stats, and NFL Matchup), plus the full Prop Analyzer with every stat and game log. You also get priority access to every new tool and dashboard we ship.",
   },
   {
     question: "Can I cancel anytime?",

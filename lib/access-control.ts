@@ -3,7 +3,7 @@
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
  * "free"    — Free account required (All NBA dashboards, Prop Analyzer, MLB Due for HR, NFL DVP)
- * "pro"     — Paid subscription (Situation Room, Alerts, MLB Streaks/Hot Hitters/Hitting/Pitching, NFL Matchup/Streaks)
+ * "pro"     — Paid subscription (Alerts, MLB Streaks/Hot Hitters/Hitting/Pitching, NFL Matchup/Streaks)
  */
 
 export type AccessTier = "public" | "free" | "pro"
@@ -29,7 +29,6 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/streaks", tier: "free", label: "NBA Streak Tracker" },
 
   // Pro subscription required — core features
-  { pattern: "/situation-room", tier: "pro", label: "Situation Room" },
   { pattern: "/alerts", tier: "pro", label: "Alerts" },
   { pattern: "/criteria", tier: "pro", label: "Alerts" },
 

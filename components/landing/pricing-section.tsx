@@ -35,9 +35,8 @@ const plans = [
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Situation Room — full-slate research hub", included: true },
       { text: "Custom Alerts — get notified when criteria hit", included: true },
-      { text: "Enhanced Prop Analyzer with all stats unlocked", included: true },
+      { text: "Full Prop Analyzer with all stats unlocked", included: true },
       { text: "All 14 dashboards across MLB, NBA & NFL", included: true },
       { text: "New tools & dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
@@ -77,7 +76,7 @@ export function PricingSection() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
               Get instant access to the Prop Analyzer, dashboards, and a 7-day Pro trial — no credit card required.
-              Upgrade to Pro for the Situation Room, Alerts, and every tool unlocked.
+              Upgrade to Pro for custom Alerts, all dashboards, and every tool unlocked.
             </p>
             <p className="mx-auto mt-2 text-xs text-muted-foreground/70">
               NBA dashboards are free during our launch promotion. Real-time data across MLB, NBA, and NFL.

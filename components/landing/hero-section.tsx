@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, Search, Crosshair, BarChart3 } from "lucide-react"
+import { ArrowRight, Search, BarChart3, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
 import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
@@ -10,16 +10,16 @@ const dashboardPreviews = [
     tag: "Tool",
     label: "Prop Analyzer",
     icon: Search,
-    description: "See every prop for any player at a glance. 7-factor convergence analysis before you bet.",
+    description: "See every prop for any player at a glance. 7-factor convergence analysis with full game log.",
     href: "/check",
     accent: true,
   },
   {
     tag: "Tool",
-    label: "Situation Room",
-    icon: Crosshair,
-    description: "Full-slate research hub with live matchups, trends, and prop edges in one view.",
-    href: "/situation-room",
+    label: "Custom Alerts",
+    icon: Bell,
+    description: "Set research criteria and get notified when props match your edge — never miss a play.",
+    href: "/alerts",
     accent: true,
   },
   {

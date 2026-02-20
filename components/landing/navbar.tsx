@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   SearchCheck,
-  Radio,
   Bell,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
@@ -53,12 +52,6 @@ const toolLinks = [
     category: "Analyze",
     pages: [
       { name: "Prop Analyzer", href: "/check", tier: "free" as Tier, icon: SearchCheck, desc: "Analyze any player's props" },
-    ],
-  },
-  {
-    category: "Game Day",
-    pages: [
-      { name: "Situation Room", href: "/situation-room", tier: "pro" as Tier, icon: Radio, desc: "Live command center" },
     ],
   },
   {

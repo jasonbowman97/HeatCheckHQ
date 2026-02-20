@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   Menu,
   SearchCheck,
-  Radio,
   Bell,
-  ChevronRight,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import {
@@ -26,7 +24,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useState, useEffect } from "react"
-import { CommandPalette } from "@/components/command-palette"
 import { OnboardingTooltip } from "@/components/onboarding-tooltip"
 import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
 import { hydrateOnboardingState } from "@/lib/onboarding"
@@ -42,11 +39,6 @@ interface NavLink {
   label: string
   tier: Tier
   ariaLabel?: string
-}
-
-interface ToolNavLink extends NavLink {
-  icon: React.ComponentType<{ className?: string }>
-  description: string
 }
 
 /* ─── Sport navigation config ─── */
@@ -101,37 +93,6 @@ const SPORT_CONFIG: Record<string, { nav: NavLink[]; subtitle: string; otherSpor
   },
 }
 
-/* ─── Tool navigation config — grouped by category ─── */
-
-interface ToolCategory {
-  label: string
-  links: ToolNavLink[]
-}
-
-const TOOL_NAV: ToolCategory[] = [
-  {
-    label: "Analyze",
-    links: [
-      { href: "/check", label: "Prop Analyzer", tier: "free", icon: SearchCheck, description: "Analyze any player's props" },
-    ],
-  },
-  {
-    label: "Game Day",
-    links: [
-      { href: "/situation-room", label: "Situation Room", tier: "pro", icon: Radio, description: "Live game-day command center" },
-    ],
-  },
-  {
-    label: "Track",
-    links: [
-      { href: "/alerts", label: "Alerts", tier: "pro", icon: Bell, description: "Research-based alerts" },
-    ],
-  },
-]
-
-// Flat list of all tool links for quick matching
-const ALL_TOOL_LINKS = TOOL_NAV.flatMap(c => c.links)
-
 /* ─── Human-readable page names for breadcrumbs ─── */
 
 const PAGE_NAMES: Record<string, string> = {
@@ -150,7 +111,6 @@ const PAGE_NAMES: Record<string, string> = {
   streaks: "Streak Tracker",
   // Tool pages
   check: "Prop Analyzer",
-  "situation-room": "Situation Room",
   alerts: "Alerts",
 }
 
@@ -171,56 +131,54 @@ function TierBadge({ tier }: { tier: Tier }) {
 const NAV_ACTIVE_CLASS = "text-xs font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-md"
 const NAV_INACTIVE_CLASS = "text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-secondary"
 
-/* ─── Quick-access bar shown on every page ─── */
+/* ─── Quick-access bar ─── */
 
 function QuickAccessBar({ pathname }: { pathname: string }) {
-  const quickLinks = [
-    { href: "/check", label: "Analyzer", icon: SearchCheck },
-    { href: "/situation-room", label: "Situation Room", icon: Radio },
-    { href: "/alerts", label: "Alerts", icon: Bell },
-  ]
-
   return (
     <div className="border-b border-border/50 bg-muted/20">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 flex items-center gap-1 py-1 overflow-x-auto scrollbar-hide">
-        <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mr-2 flex-shrink-0">
-          Quick
-        </span>
-        {quickLinks.map(link => {
-          const isActive = pathname.startsWith(link.href)
-          const Icon = link.icon
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-shrink-0 ${
-                isActive
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              }`}
-            >
-              <Icon className="h-3 w-3" />
-              {link.label}
-            </Link>
-          )
-        })}
+        {/* Prop Analyzer */}
+        <Link
+          href="/check"
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-shrink-0 ${
+            pathname.startsWith("/check")
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          }`}
+        >
+          <SearchCheck className="h-3 w-3" />
+          Prop Analyzer
+        </Link>
 
-        {/* Sport shortcuts */}
+        {/* Alerts */}
+        <Link
+          href="/alerts"
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-shrink-0 ${
+            pathname.startsWith("/alerts")
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          }`}
+        >
+          <Bell className="h-3 w-3" />
+          Alerts
+        </Link>
+
+        {/* Sport shortcuts — link directly to first dashboard */}
         <div className="h-3 w-px bg-border/50 mx-1 flex-shrink-0" />
-        {["MLB", "NBA", "NFL"].map(s => {
-          const slug = s.toLowerCase()
+        {Object.entries(SPORT_CONFIG).map(([slug, cfg]) => {
           const isActive = pathname.startsWith(`/${slug}`)
+          const firstDashboard = cfg.nav[0]?.href ?? `/${slug}`
           return (
             <Link
               key={slug}
-              href={`/${slug}`}
+              href={firstDashboard}
               className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors flex-shrink-0 ${
                 isActive
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/50"
               }`}
             >
-              {s}
+              {cfg.subtitle}
             </Link>
           )
         })}
@@ -244,8 +202,6 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
 
   useEffect(() => {
     if (userTier !== "anonymous") {
-      // Hydrate onboarding state from Supabase (cross-device persistence)
-      // then check if the user needs onboarding
       hydrateOnboardingState().then((alreadyOnboarded) => {
         if (!alreadyOnboarded && !isOnboarded()) {
           const timer = setTimeout(() => setShowWelcome(true), 500)
@@ -269,17 +225,11 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
 
   // Determine if we're on a sport page or a tool page
   const isSportPage = !!sportConfig
-  const isToolPage = !isSportPage
-
-  // Find active tool link for breadcrumbs
-  const activeToolLink = isToolPage
-    ? ALL_TOOL_LINKS.find(l => pathname.startsWith(l.href))
-    : null
 
   const headerSubtitle = subtitle ?? (
     isSportPage
       ? `${sportConfig.subtitle} ${PAGE_NAMES[page] ?? page}`
-      : activeToolLink?.description ?? PAGE_NAMES[segments[0]] ?? "Tools"
+      : PAGE_NAMES[segments[0]] ?? "Tools"
   )
 
   return (
@@ -300,12 +250,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
             </Link>
           </div>
 
-          {/* ⌘K Command Palette */}
-          <div className="flex-1 flex justify-center px-4 max-w-sm">
-            <CommandPalette />
-          </div>
-
-          {/* Desktop nav — hidden on mobile */}
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1.5 flex-wrap justify-end">
             {isSportPage ? (
               <>
@@ -332,27 +277,35 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
               </>
             ) : (
               <>
-                {/* Tool navigation — categorized inline */}
-                {TOOL_NAV.map((category, ci) => (
-                  <div key={category.label} className="flex items-center gap-1.5">
-                    {ci > 0 && <div className="h-4 w-px bg-border/40 mx-0.5" />}
-                    {category.links.map(link => {
-                      const isActive = pathname.startsWith(link.href)
-                      const Icon = link.icon
-                      return isActive ? (
-                        <span key={link.href} className={`${NAV_ACTIVE_CLASS} flex items-center gap-1`}>
-                          <Icon className="h-3 w-3" />
-                          {link.label}
-                        </span>
-                      ) : (
-                        <Link key={link.href} href={link.href} className={`${NAV_INACTIVE_CLASS} flex items-center gap-1`}>
-                          <Icon className="h-3 w-3" />
-                          {link.label}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                ))}
+                {/* Tool navigation — Prop Analyzer + Alerts */}
+                <Link
+                  href="/check"
+                  className={`${pathname.startsWith("/check") ? NAV_ACTIVE_CLASS : NAV_INACTIVE_CLASS} flex items-center gap-1`}
+                >
+                  <SearchCheck className="h-3 w-3" />
+                  Prop Analyzer
+                </Link>
+                <Link
+                  href="/alerts"
+                  className={`${pathname.startsWith("/alerts") ? NAV_ACTIVE_CLASS : NAV_INACTIVE_CLASS} flex items-center gap-1`}
+                >
+                  <Bell className="h-3 w-3" />
+                  Alerts
+                </Link>
+                <div className="h-4 w-px bg-border/40 mx-0.5" />
+                {/* Sport shortcuts */}
+                {Object.entries(SPORT_CONFIG).map(([slug, cfg]) => {
+                  const firstDash = cfg.nav[0]?.href ?? `/${slug}`
+                  return (
+                    <Link
+                      key={slug}
+                      href={firstDash}
+                      className={`${pathname.startsWith(`/${slug}`) ? NAV_ACTIVE_CLASS : NAV_INACTIVE_CLASS}`}
+                    >
+                      {cfg.subtitle}
+                    </Link>
+                  )
+                })}
               </>
             )}
           </div>
@@ -383,37 +336,35 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                   <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-3">
                     Tools
                   </p>
-                  {TOOL_NAV.map(category => (
-                    <div key={category.label} className="mb-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1 px-3">
-                        {category.label}
-                      </p>
-                      <div className="flex flex-col gap-0.5">
-                        {category.links.map(link => {
-                          const isActive = pathname.startsWith(link.href)
-                          const Icon = link.icon
-                          return (
-                            <Link
-                              key={link.href}
-                              href={link.href}
-                              onClick={() => setMobileOpen(false)}
-                              className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
-                                isActive
-                                  ? "text-primary bg-primary/10 font-medium"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                              }`}
-                            >
-                              <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <span>{link.label}</span>
-                              </div>
-                              <TierBadge tier={link.tier} />
-                            </Link>
-                          )
-                        })}
+                  <div className="flex flex-col gap-0.5">
+                    <Link
+                      href="/check"
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+                        pathname.startsWith("/check")
+                          ? "text-primary bg-primary/10 font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <SearchCheck className="h-3.5 w-3.5 flex-shrink-0" />
+                      Prop Analyzer
+                    </Link>
+                    <Link
+                      href="/alerts"
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+                        pathname.startsWith("/alerts")
+                          ? "text-primary bg-primary/10 font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <Bell className="h-3.5 w-3.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span>Alerts</span>
                       </div>
-                    </div>
-                  ))}
+                      <TierBadge tier="pro" />
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Sport dashboards section */}
@@ -484,7 +435,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
               <>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link href={`/${sport}`}>{sportConfig.subtitle}</Link>
+                    <Link href={sportConfig.nav[0]?.href ?? `/${sport}`}>{sportConfig.subtitle}</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 {page && (
@@ -499,7 +450,7 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
             ) : (
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {activeToolLink?.label ?? PAGE_NAMES[segments[0]] ?? segments[0]}
+                  {PAGE_NAMES[segments[0]] ?? segments[0]}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             )}
