@@ -11,11 +11,13 @@ import { resolvePlayerById } from '@/lib/player-service'
 import { resolveGameForPlayer } from '@/lib/game-service'
 import { fetchAndParseGameLogs } from '@/lib/gamelog-parser'
 import { resolveDefenseRanking } from '@/lib/defense-service'
-import { evaluate as evaluateConvergence } from '@/lib/convergence-engine'
+import { evaluateFull as evaluateConvergence } from '@/lib/convergence-engine'
+import type { ExtraData } from '@/lib/convergence-engine'
 import { computeSeasonStats, getHitRate } from '@/lib/game-log-service'
 import { getStatLabel, statLabels } from '@/lib/design-tokens'
 import { getSmartDefault, getOrderedStats } from '@/lib/prop-lines'
 import { mean, computeVolatility } from '@/lib/math-utils'
+import { fetchMLBConvergenceData, fetchNFLConvergenceData } from '@/lib/convergence-data-service'
 
 export const revalidate = 300 // 5-minute CDN cache
 
@@ -52,6 +54,45 @@ export async function POST(req: NextRequest) {
         { error: 'no_data', message: `No game log data found for ${player.name}` },
         { status: 200 },
       )
+    }
+
+    // ──── PHASE 1B: Sport-specific data for convergence engine ────
+    // Fetch MLB pitcher/platoon/weather or NFL weather in parallel with stat computation
+    let convergenceExtra: ExtraData = {}
+
+    if (game) {
+      if (player.sport === 'mlb') {
+        try {
+          const mlbData = await fetchMLBConvergenceData(player, game)
+          convergenceExtra.mlb = { weather: mlbData.weather }
+          if (mlbData.opposingPitcher) {
+            ;(game as any).opposingPitcher = {
+              name: mlbData.opposingPitcher.name,
+              hand: mlbData.opposingPitcher.hand,
+              era: mlbData.opposingPitcher.era,
+              whip: mlbData.opposingPitcher.whip,
+              kPer9: mlbData.opposingPitcher.kPer9,
+              fip: mlbData.opposingPitcher.fip,
+              daysRest: mlbData.opposingPitcher.daysRest,
+            }
+          }
+          if (mlbData.platoonSplits) {
+            ;(player as any).splits = {
+              wrcVsLHP: mlbData.platoonSplits.wrcVsLHP,
+              wrcVsRHP: mlbData.platoonSplits.wrcVsRHP,
+            }
+          }
+        } catch {
+          // Sport-specific data is optional — proceed without it
+        }
+      } else if (player.sport === 'nfl') {
+        try {
+          const nflData = await fetchNFLConvergenceData(game)
+          convergenceExtra.nfl = { weather: nflData.weather }
+        } catch {
+          // Sport-specific data is optional — proceed without it
+        }
+      }
     }
 
     // ──── PHASE 2: Compute per-stat summaries ────
@@ -131,29 +172,17 @@ export async function POST(req: NextRequest) {
             const defenseRanking = await resolveDefenseRanking(player, game, stat)
             const convergence = evaluateConvergence(
               player, game, gameLogs, seasonStats, defenseRanking, stat, line,
+              convergenceExtra,
             )
             convergenceOver = convergence.overCount
             convergenceUnder = convergence.underCount
 
-            // Derive confidence from convergence count + factor strength alignment + hit rate
-            const dominant = Math.max(convergenceOver, convergenceUnder)
-            const convergenceStrength = (dominant / 7) * 100
+            // Use the weighted lean confidence from the new engine
+            confidence = convergence.lean.confidence
 
-            // Factor in individual strength weights from the engine
-            const dominantDir = convergenceOver >= convergenceUnder ? 'over' : 'under'
-            const alignedStrength = convergence.factors
-              .filter(f => f.signal === dominantDir)
-              .reduce((sum, f) => sum + f.strength, 0)
-            const totalStrength = convergence.factors.reduce((sum, f) => sum + f.strength, 0)
-            const strengthRatio = totalStrength > 0 ? (alignedStrength / totalStrength) * 100 : 50
-
-            // Hit rate signal reinforcement
-            const hitRateStrength = Math.abs(hitRateL10 - 0.5) * 200
-
-            // Blend: 40% count-based + 30% strength-weighted + 30% hit rate
-            confidence = Math.round(
-              convergenceStrength * 0.4 + strengthRatio * 0.3 + hitRateStrength * 0.3
-            )
+            // Reinforce with hit rate signal
+            const hitRateBonus = Math.abs(hitRateL10 - 0.5) * 40
+            confidence = Math.round(confidence * 0.8 + hitRateBonus * 0.2 + 10) // floor of 10
             confidence = Math.min(99, Math.max(10, confidence))
           } catch {
             // Defense ranking may fail for some stat/sport combos; use hit rate only

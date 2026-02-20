@@ -8,7 +8,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import type { PropCheckResult, PropCheckError } from '@/types/check-prop'
-import { evaluate as evaluateConvergence } from '@/lib/convergence-engine'
+import { evaluateFull as evaluateConvergence } from '@/lib/convergence-engine'
+import type { ExtraData } from '@/lib/convergence-engine'
 import { synthesizeVerdict } from '@/lib/verdict-service'
 import { computeSpectrum } from '@/lib/prop-spectrum-service'
 import { computeHeatRing } from '@/lib/heat-ring-service'
@@ -23,6 +24,7 @@ import { resolveDefenseRanking } from '@/lib/defense-service'
 import { fetchTeamInjuries } from '@/lib/injury-service'
 import { findSimilarSituations } from '@/lib/similar-situations-service'
 import { getUserTier } from '@/lib/get-user-tier'
+import { fetchMLBConvergenceData, fetchNFLConvergenceData } from '@/lib/convergence-data-service'
 
 export const revalidate = 300 // 5-minute CDN cache
 
@@ -61,9 +63,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ──── PHASE 1C: Game-dependent data (needs game + player) ────
-    const [defenseRanking, injuryData] = await Promise.all([
+    // Fetch defense ranking, injuries, user tier, and sport-specific data in parallel
+    const [defenseRanking, injuryData, userTier] = await Promise.all([
       resolveDefenseRanking(player, game, stat),
       fetchTeamInjuries(player, game),
+      getUserTier(),
     ])
 
     // Compute season stats from game logs
@@ -80,15 +84,82 @@ export async function POST(req: NextRequest) {
 
     const isHome = game.homeTeam.id === player.team.id
 
-    // Determine user tier for Pro-only features
-    const userTier = await getUserTier()
     const isPro = userTier === 'pro'
+
+    // ──── PHASE 1D: Sport-specific data for convergence engine ────
+    const convergenceExtra: ExtraData = {}
+    let matchupWeather: { temp: number; windSpeed: number; windDirection: string; humidity: number } | undefined
+    let matchupPitcher: { name: string; hand: string; era: number; whip: number } | undefined
+
+    if (player.sport === 'mlb') {
+      try {
+        const mlbData = await fetchMLBConvergenceData(player, game)
+
+        // Pass weather to convergence engine
+        convergenceExtra.mlb = { weather: mlbData.weather }
+
+        // Inject opposing pitcher data into game object for convergence factor
+        if (mlbData.opposingPitcher) {
+          ;(game as any).opposingPitcher = {
+            name: mlbData.opposingPitcher.name,
+            hand: mlbData.opposingPitcher.hand,
+            era: mlbData.opposingPitcher.era,
+            whip: mlbData.opposingPitcher.whip,
+            kPer9: mlbData.opposingPitcher.kPer9,
+            fip: mlbData.opposingPitcher.fip,
+            daysRest: mlbData.opposingPitcher.daysRest,
+          }
+          matchupPitcher = {
+            name: mlbData.opposingPitcher.name,
+            hand: mlbData.opposingPitcher.hand,
+            era: mlbData.opposingPitcher.era,
+            whip: mlbData.opposingPitcher.whip,
+          }
+        }
+
+        // Inject platoon split data into player object for convergence factor
+        if (mlbData.platoonSplits) {
+          ;(player as any).splits = {
+            wrcVsLHP: mlbData.platoonSplits.wrcVsLHP,
+            wrcVsRHP: mlbData.platoonSplits.wrcVsRHP,
+          }
+        }
+
+        // Weather for matchup context
+        if (mlbData.weather) {
+          matchupWeather = {
+            temp: mlbData.weather.temperature,
+            windSpeed: mlbData.weather.windSpeed,
+            windDirection: mlbData.weather.windDirection,
+            humidity: mlbData.weather.humidity,
+          }
+        }
+      } catch {
+        // Sport-specific data is optional — proceed without it
+      }
+    } else if (player.sport === 'nfl') {
+      try {
+        const nflData = await fetchNFLConvergenceData(game)
+        convergenceExtra.nfl = { weather: nflData.weather }
+
+        if (nflData.weather) {
+          matchupWeather = {
+            temp: nflData.weather.temperature,
+            windSpeed: nflData.weather.windSpeed,
+            windDirection: nflData.weather.windDirection,
+            humidity: nflData.weather.humidity,
+          }
+        }
+      } catch {
+        // Sport-specific data is optional — proceed without it
+      }
+    }
 
     // ──── PHASE 2: Computation (all pure functions, runs fast) ────
 
-    // 1. Convergence Engine (9 factors)
+    // 1. Convergence Engine (9 factors — with sport-specific extra data)
     const convergence = evaluateConvergence(
-      player, game, gameLogs, seasonStats, defenseRanking, stat, line
+      player, game, gameLogs, seasonStats, defenseRanking, stat, line, convergenceExtra
     )
 
     // 2. Heat Ring (10 games for free, 20 for Pro)
@@ -100,9 +171,11 @@ export async function POST(req: NextRequest) {
     // 4. Game Log Timeline
     const gameLogTimeline = buildGameLogTimeline({ gameLogs, stat })
 
-    // 5. Matchup Context
+    // 5. Matchup Context (includes weather + opposing pitcher when available)
     const matchup = buildMatchupContext({
       player, game, gameLogs, defenseRanking, injuries: allInjuries,
+      weather: matchupWeather,
+      opposingPitcher: matchupPitcher,
     })
 
     // 6. Narrative Flags
@@ -118,6 +191,7 @@ export async function POST(req: NextRequest) {
 
     const verdict = synthesizeVerdict({
       factors: convergence.factors,
+      weightedFactors: convergence.weightedFactors,
       overCount: convergence.overCount,
       underCount: convergence.underCount,
       neutralCount: convergence.neutralCount,
@@ -144,7 +218,12 @@ export async function POST(req: NextRequest) {
       verdict,
       heatRing,
       spectrum,
-      convergence,
+      convergence: {
+        factors: convergence.factors,
+        overCount: convergence.overCount,
+        underCount: convergence.underCount,
+        neutralCount: convergence.neutralCount,
+      },
       matchup,
       narratives,
       gameLog: gameLogTimeline,

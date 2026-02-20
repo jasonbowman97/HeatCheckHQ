@@ -121,6 +121,82 @@ export async function getAllGameWeather(homeTeams: string[]): Promise<Record<str
   return results
 }
 
+// NFL stadium coordinates and indoor flag for weather lookups
+const NFL_STADIUMS: Record<string, { lat: number; lng: number; name: string; indoor: boolean }> = {
+  ARI: { lat: 33.5276, lng: -112.2626, name: "State Farm Stadium", indoor: true },
+  ATL: { lat: 33.7554, lng: -84.4010, name: "Mercedes-Benz Stadium", indoor: true },
+  BAL: { lat: 39.2780, lng: -76.6227, name: "M&T Bank Stadium", indoor: false },
+  BUF: { lat: 42.7738, lng: -78.7870, name: "Highmark Stadium", indoor: false },
+  CAR: { lat: 35.2258, lng: -80.8528, name: "Bank of America Stadium", indoor: false },
+  CHI: { lat: 41.8623, lng: -87.6167, name: "Soldier Field", indoor: false },
+  CIN: { lat: 39.0955, lng: -84.5160, name: "Paycor Stadium", indoor: false },
+  CLE: { lat: 41.5061, lng: -81.6995, name: "Cleveland Browns Stadium", indoor: false },
+  DAL: { lat: 32.7473, lng: -97.0945, name: "AT&T Stadium", indoor: true },
+  DEN: { lat: 39.7439, lng: -105.0201, name: "Empower Field", indoor: false },
+  DET: { lat: 42.3400, lng: -83.0456, name: "Ford Field", indoor: true },
+  GB: { lat: 44.5013, lng: -88.0622, name: "Lambeau Field", indoor: false },
+  HOU: { lat: 29.6847, lng: -95.4107, name: "NRG Stadium", indoor: true },
+  IND: { lat: 39.7601, lng: -86.1639, name: "Lucas Oil Stadium", indoor: true },
+  JAX: { lat: 30.3239, lng: -81.6373, name: "EverBank Stadium", indoor: false },
+  KC: { lat: 39.0490, lng: -94.4839, name: "GEHA Field at Arrowhead", indoor: false },
+  LV: { lat: 36.0909, lng: -115.1833, name: "Allegiant Stadium", indoor: true },
+  LAC: { lat: 33.9535, lng: -118.3390, name: "SoFi Stadium", indoor: true },
+  LAR: { lat: 33.9535, lng: -118.3390, name: "SoFi Stadium", indoor: true },
+  MIA: { lat: 25.9580, lng: -80.2389, name: "Hard Rock Stadium", indoor: false },
+  MIN: { lat: 44.9736, lng: -93.2575, name: "U.S. Bank Stadium", indoor: true },
+  NE: { lat: 42.0909, lng: -71.2643, name: "Gillette Stadium", indoor: false },
+  NO: { lat: 29.9511, lng: -90.0812, name: "Caesars Superdome", indoor: true },
+  NYG: { lat: 40.8128, lng: -74.0742, name: "MetLife Stadium", indoor: false },
+  NYJ: { lat: 40.8128, lng: -74.0742, name: "MetLife Stadium", indoor: false },
+  PHI: { lat: 39.9008, lng: -75.1675, name: "Lincoln Financial Field", indoor: false },
+  PIT: { lat: 40.4468, lng: -80.0158, name: "Acrisure Stadium", indoor: false },
+  SF: { lat: 37.4033, lng: -121.9694, name: "Levi's Stadium", indoor: false },
+  SEA: { lat: 47.5952, lng: -122.3316, name: "Lumen Field", indoor: false },
+  TB: { lat: 27.9759, lng: -82.5033, name: "Raymond James Stadium", indoor: false },
+  TEN: { lat: 36.1665, lng: -86.7713, name: "Nissan Stadium", indoor: false },
+  WAS: { lat: 38.9076, lng: -76.8645, name: "Northwest Stadium", indoor: false },
+}
+
+/**
+ * Fetch live weather for an NFL stadium.
+ * Returns dome data for indoor stadiums, live weather for outdoor.
+ */
+export async function getNFLStadiumWeather(homeTeamAbbr: string): Promise<LiveWeather | null> {
+  const apiKey = process.env.OPENWEATHER_API_KEY
+  if (!apiKey) return null
+
+  const stadium = NFL_STADIUMS[homeTeamAbbr]
+  if (!stadium) return null
+  if (stadium.indoor) {
+    return { temperature: 72, feelsLike: 72, humidity: 45, windSpeed: 0, windDirection: "N/A", condition: "Dome", icon: "dome" }
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${stadium.lat}&lon=${stadium.lng}&appid=${apiKey}&units=imperial`,
+      { next: { revalidate: 1800 } } // 30 min cache
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+
+    const windDeg = data.wind?.deg ?? 0
+    const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+    const windDirection = directions[Math.round(windDeg / 45) % 8]
+
+    return {
+      temperature: Math.round(data.main?.temp ?? 0),
+      feelsLike: Math.round(data.main?.feels_like ?? 0),
+      humidity: data.main?.humidity ?? 0,
+      windSpeed: Math.round(data.wind?.speed ?? 0),
+      windDirection,
+      condition: data.weather?.[0]?.main ?? "Unknown",
+      icon: data.weather?.[0]?.icon ?? "",
+    }
+  } catch {
+    return null
+  }
+}
+
 /** Check if OpenWeather is configured */
 export function isWeatherConfigured(): boolean {
   return !!process.env.OPENWEATHER_API_KEY
