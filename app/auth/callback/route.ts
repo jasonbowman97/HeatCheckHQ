@@ -6,9 +6,12 @@ export async function GET(request: Request) {
   const code = searchParams.get("code")
   const next = searchParams.get("next") ?? "/"
 
+  console.log("[v0] Auth callback hit — code:", code ? "present" : "missing", "next:", next)
+
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log("[v0] exchangeCodeForSession result — error:", error?.message ?? "none")
     if (!error) {
       // Auto-activate 7-day Pro trial for new signups (idempotent).
       // Fire-and-forget — don't block the redirect if it fails.
@@ -32,6 +35,7 @@ export async function GET(request: Request) {
     // If code exchange failed, check if user already has a valid session
     // (e.g. returning user who clicked Google OAuth again)
     const { data: { user } } = await supabase.auth.getUser()
+    console.log("[v0] Code exchange failed, existing user check:", user?.email ?? "no user")
     if (user) {
       // User is already authenticated — just redirect them
       return NextResponse.redirect(`${origin}${next}`)
