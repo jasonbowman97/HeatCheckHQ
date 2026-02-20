@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2, Search, TrendingUp, Zap, Shield } from "lucide-react"
 import { PlayerSearch } from "@/components/analyzer/player-search"
 import { PlayerHeader } from "@/components/analyzer/player-header"
+import { RecentPerformance } from "@/components/analyzer/recent-performance"
 import { PropGrid, PropGridSkeleton } from "@/components/analyzer/prop-grid"
 import { DetailPanel } from "@/components/analyzer/detail-panel"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -284,12 +285,21 @@ function PropAnalyzerContent() {
                 gamesPlayed={analysis.gamesPlayed}
               />
 
+              {/* Recent Performance Chart */}
+              <RecentPerformance
+                props={analysis.props}
+                sport={analysis.sport}
+                seasonAverages={analysis.seasonAverages}
+                onSelectProp={handlePropSelect}
+              />
+
               {/* Prop Card Grid */}
               <PropGrid
                 props={analysis.props}
                 sport={analysis.sport}
                 selectedStat={selectedStat}
                 onSelectProp={handlePropSelect}
+                hideTopSignals
                 matchupContext={analysis.matchupContext ? {
                   defRank: analysis.matchupContext.opponentDefRank,
                   isHome: analysis.matchupContext.isHome,

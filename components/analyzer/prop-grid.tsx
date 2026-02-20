@@ -20,6 +20,8 @@ interface PropGridProps {
   onSelectProp: (stat: string) => void
   /** Matchup context from API — passed through to PropCards for narrative tags */
   matchupContext?: MatchupContextLight
+  /** Hide the Top Signals row (when RecentPerformance section is shown above) */
+  hideTopSignals?: boolean
 }
 
 // ──── Small helpers ────
@@ -254,7 +256,7 @@ const SMART_FILTERS: Array<{ key: SmartFilter; label: string; icon: React.ReactN
 
 // ──── Main Grid ────
 
-export function PropGrid({ props, sport, selectedStat, onSelectProp, matchupContext }: PropGridProps) {
+export function PropGrid({ props, sport, selectedStat, onSelectProp, matchupContext, hideTopSignals = false }: PropGridProps) {
   const tier = useUserTier()
   const isPro = tier === "pro"
   const categories = STAT_CATEGORIES[sport] || []
@@ -298,8 +300,8 @@ export function PropGrid({ props, sport, selectedStat, onSelectProp, matchupCont
 
   return (
     <div>
-      {/* Top Signals (always from unfiltered props) */}
-      <TopSignals props={props} onSelectProp={onSelectProp} />
+      {/* Top Signals (always from unfiltered props) — hidden when RecentPerformance is shown */}
+      {!hideTopSignals && <TopSignals props={props} onSelectProp={onSelectProp} />}
 
       {/* Smart Filter Presets */}
       <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-0.5">
