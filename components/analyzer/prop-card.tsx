@@ -16,6 +16,25 @@ interface PropCardProps {
   onClick?: () => void
 }
 
+// Signal dots — visual convergence indicator
+function SignalDots({ over, under }: { over: number; under: number }) {
+  const total = 7
+  const neutral = total - over - under
+  return (
+    <div className="flex items-center gap-[3px]" title={`${over} over / ${under} under / ${neutral} neutral`}>
+      {Array.from({ length: over }).map((_, i) => (
+        <span key={`o${i}`} className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      ))}
+      {Array.from({ length: neutral }).map((_, i) => (
+        <span key={`n${i}`} className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+      ))}
+      {Array.from({ length: under }).map((_, i) => (
+        <span key={`u${i}`} className="h-1.5 w-1.5 rounded-full bg-red-500" />
+      ))}
+    </div>
+  )
+}
+
 export function PropCard({
   prop,
   sport,
@@ -108,38 +127,42 @@ export function PropCard({
     )
   }
 
+  // Whether line is above/below season average
+  const avgDiff = activeLine - prop.seasonAvg
+  const avgLabel = avgDiff > 0 ? "above avg" : avgDiff < 0 ? "below avg" : "at avg"
+
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col rounded-xl border text-left transition-all overflow-hidden ${
+      className={`relative flex flex-col rounded-xl border text-left transition-all duration-200 overflow-hidden ${
         isSelected
-          ? "border-primary ring-1 ring-primary bg-card"
-          : "border-border bg-card hover:border-primary/30 hover:shadow-sm"
+          ? "border-primary ring-1 ring-primary bg-card shadow-lg shadow-primary/5"
+          : "border-border bg-card hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
       }`}
     >
       {/* Left accent bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentColor}`} />
 
-      <div className="pl-4 pr-3 pt-3 pb-3">
+      <div className="p-4 pl-5">
         {/* Header: stat name + trend */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-foreground">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-base font-bold text-foreground">
             {prop.statLabel}
           </span>
           <TrendBadge />
         </div>
 
         {/* Mini bar chart */}
-        <div className="mb-2">
+        <div className="mb-3">
           <MiniBarChart
             values={prop.last10Values}
             line={activeLine}
-            height={40}
+            height={44}
           />
         </div>
 
-        {/* Line selector + hit rates */}
-        <div className="flex items-center gap-3 mb-2">
+        {/* Line selector + season avg */}
+        <div className="flex items-center gap-3 mb-2.5">
           {/* Line pill with up/down arrows */}
           <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary/50 px-1">
             <button
@@ -182,47 +205,52 @@ export function PropCard({
             </button>
           </div>
 
-          {/* Over/Under percentages + split bar */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between text-[10px] font-medium mb-0.5">
-              <span className="text-emerald-400">Over {computed.overPct}%</span>
-              <span className="text-red-400">Under {computed.underPct}%</span>
-            </div>
-            <div className="flex h-1.5 rounded-full overflow-hidden bg-muted">
-              <div
-                className="bg-emerald-500 transition-all duration-300"
-                style={{ width: `${computed.overPct}%` }}
-              />
-              <div
-                className="bg-red-500 transition-all duration-300"
-                style={{ width: `${computed.underPct}%` }}
-              />
-            </div>
+          {/* Season avg context */}
+          <span className="text-[10px] text-muted-foreground">
+            Avg <span className="font-semibold text-foreground tabular-nums">{prop.seasonAvg.toFixed(1)}</span>
+            <span className="ml-1 opacity-70">({avgLabel})</span>
+          </span>
+        </div>
+
+        {/* Over/Under split bar — thicker */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between text-[10px] font-semibold mb-1">
+            <span className="text-emerald-400">Over {computed.overPct}%</span>
+            <span className="text-red-400">Under {computed.underPct}%</span>
+          </div>
+          <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+            <div
+              className="bg-emerald-500 transition-all duration-300 rounded-l-full"
+              style={{ width: `${computed.overPct}%` }}
+            />
+            <div
+              className="bg-red-500 transition-all duration-300 rounded-r-full"
+              style={{ width: `${computed.underPct}%` }}
+            />
           </div>
         </div>
 
-        {/* Quick stats row */}
+        {/* Quick stats row with signal dots */}
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>
-            L5: <span className={computed.hitRateL5 > 0.6 ? "text-emerald-400 font-medium" : computed.hitRateL5 < 0.4 ? "text-red-400 font-medium" : "text-foreground font-medium"}>
+            L5: <span className={computed.hitRateL5 > 0.6 ? "text-emerald-400 font-semibold" : computed.hitRateL5 < 0.4 ? "text-red-400 font-semibold" : "text-foreground font-semibold"}>
               {Math.round(computed.hitRateL5 * 100)}%
             </span>
           </span>
           <span className="text-border">·</span>
           <span>
-            L10: <span className={computed.hitRateL10 > 0.6 ? "text-emerald-400 font-medium" : computed.hitRateL10 < 0.4 ? "text-red-400 font-medium" : "text-foreground font-medium"}>
+            L10: <span className={computed.hitRateL10 > 0.6 ? "text-emerald-400 font-semibold" : computed.hitRateL10 < 0.4 ? "text-red-400 font-semibold" : "text-foreground font-semibold"}>
               {Math.round(computed.hitRateL10 * 100)}%
             </span>
           </span>
           <span className="text-border">·</span>
           <span>
-            SZN: <span className="text-foreground font-medium">
+            SZN: <span className="text-foreground font-semibold">
               {Math.round(computed.hitRateSeason * 100)}%
             </span>
           </span>
-          <span className="text-border">·</span>
-          <span className="font-medium text-foreground">
-            {prop.convergenceOver}/{7} signals
+          <span className="ml-auto">
+            <SignalDots over={prop.convergenceOver} under={prop.convergenceUnder} />
           </span>
         </div>
       </div>
