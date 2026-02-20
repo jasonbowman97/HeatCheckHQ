@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import type { PropSummary } from "@/types/analyzer"
 import type { Sport } from "@/types/shared"
 import { PropCard } from "./prop-card"
@@ -8,13 +8,18 @@ import { ProGate } from "@/components/pro-gate"
 import { useUserTier } from "@/components/user-tier-provider"
 import { STAT_CATEGORIES, CORE_STATS } from "@/lib/prop-lines"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Flame, Snowflake, ArrowRight, Lock, Target } from "lucide-react"
+import { Flame, Snowflake, ArrowRight, Lock, Target, Crosshair, Gem } from "lucide-react"
+import type { MatchupContextLight } from "@/lib/design-tokens"
+
+type SmartFilter = "all" | "misprice" | "hot" | "high-conf"
 
 interface PropGridProps {
   props: PropSummary[]
   sport: Sport
   selectedStat: string | null
   onSelectProp: (stat: string) => void
+  /** Matchup context from API — passed through to PropCards for narrative tags */
+  matchupContext?: MatchupContextLight
 }
 
 // ──── Small helpers ────
@@ -139,6 +144,7 @@ function CategoryCards({
   isPro,
   selectedStat,
   onSelectProp,
+  matchupContext,
 }: {
   props: PropSummary[]
   sport: Sport
@@ -146,6 +152,7 @@ function CategoryCards({
   isPro: boolean
   selectedStat: string | null
   onSelectProp: (stat: string) => void
+  matchupContext?: MatchupContextLight
 }) {
   const freeProps = props.filter((p) => coreStats.includes(p.stat))
   const proProps = props.filter((p) => !coreStats.includes(p.stat))
@@ -169,6 +176,7 @@ function CategoryCards({
               prop={prop}
               sport={sport}
               allValues={prop.allValues}
+              matchupContext={matchupContext}
               isSelected={selectedStat === prop.stat}
               onClick={() => onSelectProp(prop.stat)}
             />
@@ -220,39 +228,120 @@ function CategoryCards({
 
 // ──── Main Grid ────
 
-export function PropGrid({ props, sport, selectedStat, onSelectProp }: PropGridProps) {
+// ──── Smart Filter Logic ────
+
+function applySmartFilter(props: PropSummary[], filter: SmartFilter): PropSummary[] {
+  switch (filter) {
+    case "misprice":
+      return props
+        .filter((p) => Math.abs(p.seasonAvg - p.line) >= 2 && p.confidence >= 60)
+        .sort((a, b) => Math.abs(b.seasonAvg - b.line) - Math.abs(a.seasonAvg - a.line))
+    case "hot":
+      return props.filter((p) => p.trend === "hot")
+    case "high-conf":
+      return props.filter((p) => p.confidence >= 75)
+    default:
+      return props
+  }
+}
+
+const SMART_FILTERS: Array<{ key: SmartFilter; label: string; icon: React.ReactNode }> = [
+  { key: "all", label: "All Props", icon: null },
+  { key: "misprice", label: "Misprice Hunter", icon: <Crosshair className="h-3 w-3" /> },
+  { key: "hot", label: "Hot Streaks", icon: <Flame className="h-3 w-3" /> },
+  { key: "high-conf", label: "High Confidence", icon: <Gem className="h-3 w-3" /> },
+]
+
+// ──── Main Grid ────
+
+export function PropGrid({ props, sport, selectedStat, onSelectProp, matchupContext }: PropGridProps) {
   const tier = useUserTier()
   const isPro = tier === "pro"
   const categories = STAT_CATEGORIES[sport] || []
   const coreStats = CORE_STATS[sport] || []
 
-  // Categories that actually have props
+  // Smart filter state
+  const [activeFilter, setActiveFilter] = useState<SmartFilter>("all")
+
+  // Compute filter counts
+  const filterCounts = useMemo(() => ({
+    all: props.length,
+    misprice: applySmartFilter(props, "misprice").length,
+    hot: applySmartFilter(props, "hot").length,
+    "high-conf": applySmartFilter(props, "high-conf").length,
+  }), [props])
+
+  // Apply smart filter first
+  const filteredProps = useMemo(
+    () => applySmartFilter(props, activeFilter),
+    [props, activeFilter]
+  )
+
+  // Categories that actually have props (from filtered set)
   const activeCategories = useMemo(
     () =>
       categories
         .map((cat) => {
-          const catProps = props.filter((p) => cat.stats.includes(p.stat))
+          const catProps = filteredProps.filter((p) => cat.stats.includes(p.stat))
           const hasPro = catProps.some((p) => !coreStats.includes(p.stat))
           return { ...cat, count: catProps.length, hasPro, props: catProps }
         })
         .filter((c) => c.count > 0),
-    [categories, props, coreStats]
+    [categories, filteredProps, coreStats]
   )
 
   const defaultTab = activeCategories.length > 0 ? activeCategories[0].label : "all"
 
   // Summary stats
-  const overCount = props.filter((p) => p.verdict === "over").length
-  const underCount = props.filter((p) => p.verdict === "under").length
+  const overCount = filteredProps.filter((p) => p.verdict === "over").length
+  const underCount = filteredProps.filter((p) => p.verdict === "under").length
 
   return (
     <div>
-      {/* Top Signals */}
+      {/* Top Signals (always from unfiltered props) */}
       <TopSignals props={props} onSelectProp={onSelectProp} />
 
+      {/* Smart Filter Presets */}
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-0.5">
+        {SMART_FILTERS.map((f) => {
+          const count = filterCounts[f.key]
+          const isActive = activeFilter === f.key
+          return (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border border-border"
+              }`}
+            >
+              {f.icon}
+              {f.label}
+              <span className={`text-[10px] ${isActive ? "opacity-80" : "opacity-50"}`}>
+                ({count})
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Empty state for filters */}
+      {filteredProps.length === 0 && activeFilter !== "all" && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-sm text-muted-foreground">No props match this filter</p>
+          <button
+            onClick={() => setActiveFilter("all")}
+            className="mt-2 text-xs font-medium text-primary hover:underline"
+          >
+            Show all props
+          </button>
+        </div>
+      )}
+
       {/* Category Tabs */}
-      {activeCategories.length > 1 ? (
-        <Tabs defaultValue={defaultTab}>
+      {filteredProps.length > 0 && activeCategories.length > 1 ? (
+        <Tabs defaultValue={defaultTab} key={activeFilter}>
           {/* Summary row */}
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] text-muted-foreground">
@@ -260,7 +349,7 @@ export function PropGrid({ props, sport, selectedStat, onSelectProp }: PropGridP
               {" · "}
               <span className="text-red-400 font-medium">{underCount} under</span>
               {" · "}
-              {props.length - overCount - underCount} neutral
+              {filteredProps.length - overCount - underCount} neutral
             </p>
           </div>
 
@@ -285,7 +374,7 @@ export function PropGrid({ props, sport, selectedStat, onSelectProp }: PropGridP
               className="gap-1 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5"
             >
               All
-              <span className="text-[10px] opacity-60">({props.length})</span>
+              <span className="text-[10px] opacity-60">({filteredProps.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -299,6 +388,7 @@ export function PropGrid({ props, sport, selectedStat, onSelectProp }: PropGridP
                 isPro={isPro}
                 selectedStat={selectedStat}
                 onSelectProp={onSelectProp}
+                matchupContext={matchupContext}
               />
             </TabsContent>
           ))}
@@ -306,26 +396,28 @@ export function PropGrid({ props, sport, selectedStat, onSelectProp }: PropGridP
           {/* All content panel */}
           <TabsContent value="all">
             <CategoryCards
-              props={props}
+              props={filteredProps}
               sport={sport}
               coreStats={coreStats}
               isPro={isPro}
               selectedStat={selectedStat}
               onSelectProp={onSelectProp}
+              matchupContext={matchupContext}
             />
           </TabsContent>
         </Tabs>
-      ) : (
+      ) : filteredProps.length > 0 ? (
         /* Single category — no tabs needed */
         <CategoryCards
-          props={props}
+          props={filteredProps}
           sport={sport}
           coreStats={coreStats}
           isPro={isPro}
           selectedStat={selectedStat}
           onSelectProp={onSelectProp}
+          matchupContext={matchupContext}
         />
-      )}
+      ) : null}
     </div>
   )
 }

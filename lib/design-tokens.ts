@@ -100,3 +100,142 @@ export const statLabels: Record<string, Record<string, string>> = {
 export function getStatLabel(stat: string, sport: string): string {
   return statLabels[sport]?.[stat] ?? stat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
+
+// ──── HEAT COLOR UTILITIES ────
+// Centralizes scattered red/green/yellow ternary logic across analyzer components.
+
+/** Map a hit rate (0-1) to Tailwind text class */
+export function getHitRateColor(rate: number): string {
+  if (rate >= 0.7) return 'text-emerald-400'
+  if (rate >= 0.5) return 'text-yellow-400'
+  return 'text-red-400'
+}
+
+/** Map a confidence score (0-100) to a Tailwind text class */
+export function getConfidenceColor(confidence: number): string {
+  if (confidence >= 80) return 'text-emerald-400'
+  if (confidence >= 60) return 'text-yellow-400'
+  return 'text-muted-foreground'
+}
+
+/** Map verdict direction to accent bar bg class */
+export function getVerdictAccentClass(verdict: 'over' | 'under' | 'neutral'): string {
+  if (verdict === 'over') return 'bg-emerald-500'
+  if (verdict === 'under') return 'bg-red-500'
+  return 'bg-yellow-500'
+}
+
+/** Map a signal direction to dot/bar bg class */
+export function getSignalColor(signal: 'over' | 'under' | 'neutral'): string {
+  if (signal === 'over') return 'bg-emerald-500'
+  if (signal === 'under') return 'bg-red-500'
+  return 'bg-muted-foreground/40'
+}
+
+/** Map a signal direction to text class */
+export function getSignalTextColor(signal: 'over' | 'under' | 'neutral'): string {
+  if (signal === 'over') return 'text-emerald-400'
+  if (signal === 'under') return 'text-red-400'
+  return 'text-muted-foreground'
+}
+
+/** Map a defense rank (1-30) to text/bg classes for matchup context */
+export function getDefenseMatchupColor(rank: number): { text: string; bg: string } {
+  if (rank >= 21) return { text: 'text-emerald-400', bg: 'bg-emerald-500/15' }
+  if (rank <= 10) return { text: 'text-red-400', bg: 'bg-red-500/15' }
+  return { text: 'text-yellow-400', bg: 'bg-yellow-500/10' }
+}
+
+/** Map the gap between season avg and line to an edge color */
+export function getEdgeColor(gap: number): string {
+  const abs = Math.abs(gap)
+  if (abs >= 3) return gap > 0 ? 'text-emerald-400' : 'text-red-400'
+  if (abs >= 1) return gap > 0 ? 'text-emerald-400/70' : 'text-red-400/70'
+  return 'text-muted-foreground'
+}
+
+// ──── NARRATIVE TAG GENERATION ────
+
+import type { PropSummary } from '@/types/analyzer'
+
+export interface NarrativeTag {
+  label: string
+  variant: 'positive' | 'negative' | 'neutral' | 'info'
+}
+
+export interface MatchupContextLight {
+  defRank?: number
+  isHome?: boolean
+  restDays?: number
+  isB2B?: boolean
+}
+
+/**
+ * Generate 1-2 short narrative tags for display on a prop card.
+ * Priority-ordered: picks the top 2 most impactful tags.
+ */
+export function generateNarrativeTags(
+  prop: PropSummary,
+  matchupContext?: MatchupContextLight
+): NarrativeTag[] {
+  const tags: Array<NarrativeTag & { priority: number }> = []
+
+  // Full convergence
+  const dominant = Math.max(prop.convergenceOver, prop.convergenceUnder)
+  if (dominant === 7) {
+    tags.push({ label: 'All 7 aligned', variant: 'positive', priority: 10 })
+  } else if (dominant >= 6) {
+    tags.push({ label: `${dominant}/7 signals`, variant: 'positive', priority: 8 })
+  }
+
+  // Streak detection from last10Values
+  if (prop.last10Values.length >= 3) {
+    let streak = 0
+    for (const val of prop.last10Values) {
+      if (streak === 0) { streak = val > prop.line ? 1 : -1 }
+      else if (streak > 0 && val > prop.line) { streak++ }
+      else if (streak < 0 && val <= prop.line) { streak-- }
+      else { break }
+    }
+    if (Math.abs(streak) >= 5) {
+      tags.push({
+        label: `${Math.abs(streak)}-game ${streak > 0 ? 'over' : 'under'} streak`,
+        variant: streak > 0 ? 'positive' : 'negative',
+        priority: 9,
+      })
+    } else if (Math.abs(streak) >= 3) {
+      tags.push({
+        label: `${Math.abs(streak)}-game ${streak > 0 ? 'over' : 'under'} streak`,
+        variant: streak > 0 ? 'positive' : 'negative',
+        priority: 6,
+      })
+    }
+  }
+
+  // Large edge between season avg and line
+  const gap = prop.seasonAvg - prop.line
+  if (Math.abs(gap) >= 3) {
+    tags.push({
+      label: gap > 0 ? `Avg +${gap.toFixed(1)} above line` : `Avg ${gap.toFixed(1)} below line`,
+      variant: gap > 0 ? 'positive' : 'negative',
+      priority: 5,
+    })
+  }
+
+  // Matchup context tags
+  if (matchupContext?.defRank !== undefined) {
+    if (matchupContext.defRank >= 25) {
+      tags.push({ label: `Facing #${matchupContext.defRank} DEF`, variant: 'positive', priority: 7 })
+    } else if (matchupContext.defRank <= 5) {
+      tags.push({ label: `vs #${matchupContext.defRank} DEF`, variant: 'negative', priority: 7 })
+    }
+  }
+
+  if (matchupContext?.isB2B) {
+    tags.push({ label: 'B2B fatigue', variant: 'negative', priority: 6 })
+  }
+
+  // Sort by priority descending, take top 2
+  tags.sort((a, b) => b.priority - a.priority)
+  return tags.slice(0, 2).map(({ label, variant }) => ({ label, variant }))
+}

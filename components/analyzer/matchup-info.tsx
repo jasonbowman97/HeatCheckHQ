@@ -1,6 +1,7 @@
 "use client"
 
 import { Shield, Home, Moon, Calendar } from "lucide-react"
+import { getDefenseMatchupColor } from "@/lib/design-tokens"
 
 interface MatchupInfoProps {
   matchup: {
@@ -15,19 +16,7 @@ interface MatchupInfoProps {
 }
 
 export function MatchupInfo({ matchup }: MatchupInfoProps) {
-  const defColor =
-    matchup.opponentDefRank >= 21
-      ? "text-emerald-400" // weak defense = good for player
-      : matchup.opponentDefRank <= 10
-        ? "text-red-400"   // strong defense
-        : "text-yellow-400" // average
-
-  const defBg =
-    matchup.opponentDefRank >= 21
-      ? "bg-emerald-500/15"
-      : matchup.opponentDefRank <= 10
-        ? "bg-red-500/15"
-        : "bg-yellow-500/10"
+  const { text: defColor, bg: defBg } = getDefenseMatchupColor(matchup.opponentDefRank)
 
   return (
     <div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { CheckCircle2, XCircle, MinusCircle } from "lucide-react"
+import { getConfidenceColor } from "@/lib/design-tokens"
 
 interface VerdictCardProps {
   verdict: {

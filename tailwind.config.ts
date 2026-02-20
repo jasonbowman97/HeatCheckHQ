@@ -84,10 +84,19 @@ const config: Config = {
             height: '0',
           },
         },
+        'glow-pulse': {
+          '0%, 100%': {
+            boxShadow: '0 0 8px 2px var(--glow-color, rgba(16,185,129,0.25))',
+          },
+          '50%': {
+            boxShadow: '0 0 16px 4px var(--glow-color, rgba(16,185,129,0.35))',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'glow-pulse': 'glow-pulse 2.5s ease-in-out infinite',
       },
     },
   },

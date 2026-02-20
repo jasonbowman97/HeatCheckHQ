@@ -281,6 +281,12 @@ function PropAnalyzerContent() {
                 sport={analysis.sport}
                 selectedStat={selectedStat}
                 onSelectProp={handlePropSelect}
+                matchupContext={analysis.matchupContext ? {
+                  defRank: analysis.matchupContext.opponentDefRank,
+                  isHome: analysis.matchupContext.isHome,
+                  restDays: analysis.matchupContext.restDays,
+                  isB2B: analysis.matchupContext.isB2B,
+                } : undefined}
               />
             </div>
           )}

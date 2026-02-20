@@ -78,6 +78,24 @@ export function calculatePayoutMultiplier(americanOdds: number): number {
 }
 
 /**
+ * Compute a volatility score (1-10) from an array of values.
+ * 1 = very consistent, 10 = extremely volatile.
+ * Uses coefficient of variation (stdDev / mean) normalized to a 1-10 scale.
+ */
+export function computeVolatility(values: number[]): number {
+  if (values.length <= 1) return 1
+  const m = mean(values)
+  if (m === 0) return 1
+  const sd = stdDev(values)
+  const cv = sd / m // coefficient of variation
+  // CV ~0.1 = consistent (e.g., minutes) => 1-2
+  // CV ~0.3 = moderate (e.g., points)    => 4-5
+  // CV ~0.6 = volatile (e.g., steals)    => 7-8
+  // CV ~1.0+ = extreme (e.g., HRs)       => 9-10
+  return Math.min(10, Math.max(1, Math.round(cv * 12)))
+}
+
+/**
  * Moving average over a window
  */
 export function movingAverage(values: number[], window: number): number[] {

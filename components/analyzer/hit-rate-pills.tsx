@@ -1,5 +1,7 @@
 "use client"
 
+import { getHitRateColor } from "@/lib/design-tokens"
+
 interface HitRatePillsProps {
   l5: number
   l10: number
@@ -25,12 +27,13 @@ export function HitRatePills({ l5, l10, l20, season, h2h }: HitRatePillsProps) {
       <div className="flex gap-1.5">
         {pills.map((pill) => {
           const pct = Math.round(pill.value * 100)
+          const textColor = getHitRateColor(pill.value)
           const color =
             pct >= 70
-              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
+              ? `bg-emerald-500/15 ${textColor} border-emerald-500/20`
               : pct >= 50
-                ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-                : "bg-red-500/15 text-red-400 border-red-500/20"
+                ? `bg-yellow-500/10 ${textColor} border-yellow-500/20`
+                : `bg-red-500/15 ${textColor} border-red-500/20`
 
           return (
             <div

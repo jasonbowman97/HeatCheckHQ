@@ -15,7 +15,7 @@ import { evaluate as evaluateConvergence } from '@/lib/convergence-engine'
 import { computeSeasonStats, getHitRate } from '@/lib/game-log-service'
 import { getStatLabel, statLabels } from '@/lib/design-tokens'
 import { getSmartDefault, getOrderedStats } from '@/lib/prop-lines'
-import { mean } from '@/lib/math-utils'
+import { mean, computeVolatility } from '@/lib/math-utils'
 
 export const revalidate = 300 // 5-minute CDN cache
 
@@ -182,6 +182,7 @@ export async function POST(req: NextRequest) {
           last10Opponents,
           last10Dates,
           allValues,
+          volatility: computeVolatility(allValues),
         }
       } catch {
         return null // skip this stat if computation fails
@@ -194,6 +195,37 @@ export async function POST(req: NextRequest) {
     // Sort by confidence (highest first)
     props.sort((a, b) => b.confidence - a.confidence)
 
+    // ──── PHASE 3: Compute lightweight matchup context ────
+
+    let matchupContext: PlayerAnalysis['matchupContext'] = undefined
+    if (game && opponentAbbrev) {
+      // Use the first core stat to get a representative defense rank
+      const coreStatForDefense = props[0]?.stat
+      let opponentDefRank = 15 // neutral default
+      if (coreStatForDefense) {
+        try {
+          const defRanking = await resolveDefenseRanking(player, game, coreStatForDefense)
+          if (defRanking?.rank) {
+            opponentDefRank = defRanking.rank
+          }
+        } catch {
+          // Defense rank unavailable — keep neutral default
+        }
+      }
+
+      const mostRecentLog = gameLogs[0]
+      const restDays = mostRecentLog?.restDays ?? 2
+      const isB2B = mostRecentLog?.isBackToBack ?? false
+
+      matchupContext = {
+        opponentAbbrev,
+        opponentDefRank,
+        isHome,
+        restDays,
+        isB2B,
+      }
+    }
+
     const result: PlayerAnalysis = {
       player,
       nextGame: game ?? null,
@@ -201,6 +233,7 @@ export async function POST(req: NextRequest) {
       props,
       seasonAverages,
       gamesPlayed: gameLogs.length,
+      matchupContext,
     }
 
     return NextResponse.json(result, {

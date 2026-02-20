@@ -16,6 +16,14 @@ export interface PlayerAnalysis {
   seasonAverages: Record<string, number>
   /** Total games in sample */
   gamesPlayed: number
+  /** Lightweight matchup context for card-level narrative tags */
+  matchupContext?: {
+    opponentAbbrev: string
+    opponentDefRank: number
+    isHome: boolean
+    restDays: number
+    isB2B: boolean
+  }
 }
 
 // ──── PROP SUMMARY (lightweight, for the grid card) ────
@@ -56,6 +64,8 @@ export interface PropSummary {
   last10Dates: string[]
   /** All game values for the season (newest first) — enables client-side line cycling */
   allValues: number[]
+  /** Volatility score 1-10 (1 = consistent, 10 = volatile). Computed from allValues stdDev. */
+  volatility?: number
 }
 
 // ──── API REQUEST ────

@@ -1,17 +1,26 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { ChevronUp, ChevronDown, Flame, Snowflake, ArrowRight } from "lucide-react"
+import { ChevronUp, ChevronDown, Flame, Snowflake, ArrowRight, Zap } from "lucide-react"
 import type { PropSummary } from "@/types/analyzer"
 import type { Sport } from "@/types/shared"
 import { MiniBarChart } from "./mini-bar-chart"
 import { getThresholds } from "@/lib/prop-lines"
+import {
+  getHitRateColor,
+  getVerdictAccentClass,
+  generateNarrativeTags,
+  type MatchupContextLight,
+  type NarrativeTag,
+} from "@/lib/design-tokens"
 
 interface PropCardProps {
   prop: PropSummary
   sport: Sport
   /** All season values for client-side line recalculation */
   allValues: number[]
+  /** Lightweight matchup context for narrative tags */
+  matchupContext?: MatchupContextLight
   isSelected?: boolean
   onClick?: () => void
 }
@@ -39,6 +48,7 @@ export function PropCard({
   prop,
   sport,
   allValues,
+  matchupContext,
   isSelected = false,
   onClick,
 }: PropCardProps) {
@@ -73,6 +83,12 @@ export function PropCard({
     return { hitRateL10, hitRateL5, hitRateSeason, overPct, underPct }
   }, [activeLine, allValues])
 
+  // Narrative tags (computed from prop data + matchup context)
+  const tags = useMemo(
+    () => generateNarrativeTags(prop, matchupContext ? { defRank: matchupContext.defRank, isHome: matchupContext.isHome, restDays: matchupContext.restDays, isB2B: matchupContext.isB2B } : undefined),
+    [prop, matchupContext]
+  )
+
   const cycleLine = (direction: "up" | "down", e: React.MouseEvent) => {
     e.stopPropagation()
     setCustomLine(null)
@@ -96,13 +112,8 @@ export function PropCard({
     setIsEditingLine(false)
   }
 
-  // Accent bar color
-  const accentColor =
-    prop.verdict === "over"
-      ? "bg-emerald-500"
-      : prop.verdict === "under"
-        ? "bg-red-500"
-        : "bg-yellow-500"
+  // Accent bar color (centralized utility)
+  const accentColor = getVerdictAccentClass(prop.verdict)
 
   // Trend badge
   const TrendBadge = () => {
@@ -131,26 +142,71 @@ export function PropCard({
   const avgDiff = activeLine - prop.seasonAvg
   const avgLabel = avgDiff > 0 ? "above avg" : avgDiff < 0 ? "below avg" : "at avg"
 
+  // Edge glow for high-confidence props
+  const isHighConfidence = prop.confidence >= 80
+  const glowColor = prop.verdict === "over"
+    ? "rgba(16,185,129,0.3)"
+    : prop.verdict === "under"
+      ? "rgba(239,68,68,0.3)"
+      : undefined
+
   return (
     <button
       onClick={onClick}
+      style={isHighConfidence && glowColor ? { '--glow-color': glowColor } as React.CSSProperties : undefined}
       className={`relative flex flex-col rounded-xl border text-left transition-all duration-200 overflow-hidden ${
         isSelected
           ? "border-primary ring-1 ring-primary bg-card shadow-lg shadow-primary/5"
           : "border-border bg-card hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
-      }`}
+      } ${isHighConfidence && glowColor ? "animate-glow-pulse" : ""}`}
     >
       {/* Left accent bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentColor}`} />
 
       <div className="p-4 pl-5">
-        {/* Header: stat name + trend */}
-        <div className="flex items-center justify-between mb-2.5">
+        {/* Header: stat name + trend + volatility */}
+        <div className="flex items-center justify-between mb-1.5">
           <span className="text-base font-bold text-foreground">
             {prop.statLabel}
           </span>
-          <TrendBadge />
+          <div className="flex items-center gap-1.5">
+            {prop.volatility != null && (
+              <span
+                className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                  prop.volatility >= 7
+                    ? "bg-amber-500/15 text-amber-400"
+                    : prop.volatility >= 4
+                      ? "bg-blue-500/10 text-blue-400"
+                      : "bg-slate-500/10 text-slate-400"
+                }`}
+                title={`Volatility: ${prop.volatility}/10 — ${prop.volatility >= 7 ? "Volatile" : prop.volatility >= 4 ? "Moderate" : "Consistent"}`}
+              >
+                <Zap className="h-2.5 w-2.5" /> {prop.volatility}
+              </span>
+            )}
+            <TrendBadge />
+          </div>
         </div>
+
+        {/* Narrative tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {tags.map((tag) => (
+              <span
+                key={tag.label}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold leading-tight ${
+                  tag.variant === "positive"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : tag.variant === "negative"
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {tag.label}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Mini bar chart */}
         <div className="mb-3">
@@ -233,13 +289,13 @@ export function PropCard({
         {/* Quick stats row with signal dots */}
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>
-            L5: <span className={computed.hitRateL5 > 0.6 ? "text-emerald-400 font-semibold" : computed.hitRateL5 < 0.4 ? "text-red-400 font-semibold" : "text-foreground font-semibold"}>
+            L5: <span className={`${getHitRateColor(computed.hitRateL5)} font-semibold`}>
               {Math.round(computed.hitRateL5 * 100)}%
             </span>
           </span>
           <span className="text-border">·</span>
           <span>
-            L10: <span className={computed.hitRateL10 > 0.6 ? "text-emerald-400 font-semibold" : computed.hitRateL10 < 0.4 ? "text-red-400 font-semibold" : "text-foreground font-semibold"}>
+            L10: <span className={`${getHitRateColor(computed.hitRateL10)} font-semibold`}>
               {Math.round(computed.hitRateL10 * 100)}%
             </span>
           </span>

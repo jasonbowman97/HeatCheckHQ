@@ -1,6 +1,7 @@
 "use client"
 
 import type { ConvergenceFactor } from "@/types/check-prop"
+import { getSignalColor, getSignalTextColor } from "@/lib/design-tokens"
 
 interface SignalBarsProps {
   factors: ConvergenceFactor[]
@@ -20,7 +21,7 @@ export function SignalBars({ factors }: SignalBarsProps) {
         </h4>
         <span className="text-[10px] font-medium text-muted-foreground">
           {dominantCount}/7 lean{" "}
-          <span className={dominantDir === "over" ? "text-emerald-400" : "text-red-400"}>
+          <span className={getSignalTextColor(dominantDir)}>
             {dominantDir}
           </span>
         </span>
@@ -31,13 +32,7 @@ export function SignalBars({ factors }: SignalBarsProps) {
           <div key={factor.key} className="flex items-center gap-2">
             {/* Signal dot */}
             <div
-              className={`h-2 w-2 rounded-full shrink-0 ${
-                factor.signal === "over"
-                  ? "bg-emerald-500"
-                  : factor.signal === "under"
-                    ? "bg-red-500"
-                    : "bg-muted-foreground/40"
-              }`}
+              className={`h-2 w-2 rounded-full shrink-0 ${getSignalColor(factor.signal)}`}
             />
 
             {/* Factor name */}
@@ -47,13 +42,7 @@ export function SignalBars({ factors }: SignalBarsProps) {
 
             {/* Signal label */}
             <span
-              className={`text-[10px] font-semibold uppercase w-12 shrink-0 ${
-                factor.signal === "over"
-                  ? "text-emerald-400"
-                  : factor.signal === "under"
-                    ? "text-red-400"
-                    : "text-muted-foreground"
-              }`}
+              className={`text-[10px] font-semibold uppercase w-12 shrink-0 ${getSignalTextColor(factor.signal)}`}
             >
               {factor.signal === "neutral" ? "—" : factor.signal.toUpperCase()}
             </span>
@@ -67,7 +56,7 @@ export function SignalBars({ factors }: SignalBarsProps) {
                     : factor.signal === "under"
                       ? "bg-red-500/70"
                       : "bg-muted-foreground/30"
-                }`}
+                }` /* strength bar uses opacity variants not covered by signal utils */}
                 style={{ width: `${Math.round(factor.strength * 100)}%` }}
               />
             </div>
