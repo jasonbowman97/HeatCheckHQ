@@ -234,12 +234,14 @@ export function RecentPerformance({
   const showDates = count <= 10 && dates.length > 0
 
   // ── Chart dimensions — HERO SIZE ──
-  const chartHeight = 280
-  const labelArea = showDates ? 36 : showOpponents ? 20 : 8
-  const topPad = 20
+  // Wide viewBox so SVG aspect ratio matches the wide container naturally
+  const vbWidth = 1000
+  const chartHeight = 400
+  const labelArea = showDates ? 60 : showOpponents ? 35 : 15
+  const topPad = 30
   const maxVal = Math.max(...values, activeProp.line * 1.25, activeProp.seasonAvg * 1.1)
 
-  const barWidth = 100 / count
+  const barWidth = vbWidth / count
   const barGap = count <= 5 ? barWidth * 0.25 : count <= 10 ? barWidth * 0.2 : count <= 20 ? barWidth * 0.15 : barWidth * 0.1
   const effectiveBarWidth = barWidth - barGap
 
@@ -486,10 +488,10 @@ export function RecentPerformance({
               </div>
             ) : (
               <svg
-                viewBox={`0 0 100 ${topPad + chartHeight + labelArea}`}
+                viewBox={`0 0 ${vbWidth} ${topPad + chartHeight + labelArea}`}
                 className="w-full"
-                style={{ height: Math.min(chartHeight + labelArea + topPad, 380) }}
-                preserveAspectRatio="xMidYMid meet"
+                preserveAspectRatio="none"
+                style={{ height: "clamp(280px, 40vw, 480px)" }}
               >
                 {/* Bars */}
                 {values.map((val, i) => {
@@ -497,6 +499,7 @@ export function RecentPerformance({
                   const barH = (val / maxVal) * chartHeight
                   const x = i * barWidth + barGap / 2
                   const y = topPad + chartHeight - barH
+                  const rx = Math.min(effectiveBarWidth * 0.08, 6)
 
                   return (
                     <g key={i}>
@@ -506,7 +509,7 @@ export function RecentPerformance({
                         y={y}
                         width={effectiveBarWidth}
                         height={barH}
-                        rx={effectiveBarWidth > 4 ? 1.5 : 0.5}
+                        rx={rx}
                         className={isOver ? "fill-emerald-500/80" : "fill-red-500/70"}
                       />
 
@@ -514,10 +517,10 @@ export function RecentPerformance({
                       {count <= 30 && (
                         <text
                           x={x + effectiveBarWidth / 2}
-                          y={y - 1.5}
+                          y={y - 8}
                           textAnchor="middle"
                           className="fill-foreground font-semibold"
-                          style={{ fontSize: count <= 5 ? "4px" : count <= 10 ? "3.5px" : count <= 20 ? "2.8px" : "2.2px" }}
+                          style={{ fontSize: count <= 5 ? "28px" : count <= 10 ? "22px" : count <= 20 ? "16px" : "13px" }}
                         >
                           {val % 1 === 0 ? val : val.toFixed(1)}
                         </text>
@@ -527,10 +530,10 @@ export function RecentPerformance({
                       {showOpponents && i < opponents.length && (
                         <text
                           x={x + effectiveBarWidth / 2}
-                          y={topPad + chartHeight + 9}
+                          y={topPad + chartHeight + 20}
                           textAnchor="middle"
                           className="fill-muted-foreground font-medium"
-                          style={{ fontSize: count <= 5 ? "3.2px" : count <= 10 ? "2.8px" : "2.2px" }}
+                          style={{ fontSize: count <= 5 ? "22px" : count <= 10 ? "18px" : "14px" }}
                         >
                           {opponents[i] || ""}
                         </text>
@@ -540,10 +543,10 @@ export function RecentPerformance({
                       {showDates && i < dates.length && (
                         <text
                           x={x + effectiveBarWidth / 2}
-                          y={topPad + chartHeight + 17}
+                          y={topPad + chartHeight + 40}
                           textAnchor="middle"
                           className="fill-muted-foreground/60"
-                          style={{ fontSize: count <= 5 ? "2.5px" : "2px" }}
+                          style={{ fontSize: count <= 5 ? "17px" : "14px" }}
                         >
                           {dates[i]
                             ? new Date(dates[i]).toLocaleDateString("en-US", {
@@ -561,40 +564,40 @@ export function RecentPerformance({
                 <line
                   x1={0}
                   y1={lineY}
-                  x2={100}
+                  x2={vbWidth}
                   y2={lineY}
-                  strokeDasharray="1.5 1.5"
+                  strokeDasharray="12 8"
                   className="stroke-foreground/50"
-                  strokeWidth={0.35}
+                  strokeWidth={2}
                 />
                 {/* O/U Line label (right) */}
                 <text
-                  x={99}
-                  y={lineY - 1.5}
+                  x={vbWidth - 8}
+                  y={lineY - 8}
                   textAnchor="end"
                   className="fill-foreground/70 font-semibold"
-                  style={{ fontSize: "2.5px" }}
+                  style={{ fontSize: "18px" }}
                 >
                   LINE {activeProp.line}
                 </text>
 
                 {/* Season Average Line (solid, subtle) */}
-                {Math.abs(avgY - lineY) > 4 && (
+                {Math.abs(avgY - lineY) > 20 && (
                   <>
                     <line
                       x1={0}
                       y1={avgY}
-                      x2={100}
+                      x2={vbWidth}
                       y2={avgY}
                       className="stroke-primary/40"
-                      strokeWidth={0.3}
+                      strokeWidth={1.5}
                     />
                     <text
-                      x={1}
-                      y={avgY - 1.5}
+                      x={8}
+                      y={avgY - 8}
                       textAnchor="start"
                       className="fill-primary/60 font-medium"
-                      style={{ fontSize: "2.3px" }}
+                      style={{ fontSize: "16px" }}
                     >
                       AVG {activeProp.seasonAvg.toFixed(1)}
                     </text>

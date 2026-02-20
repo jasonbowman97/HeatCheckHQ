@@ -6,9 +6,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
-  SearchCheck,
-  Bell,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { AuthButtons, MobileAuthButtons } from "@/components/auth-buttons"
@@ -43,21 +40,6 @@ const sportLinks = [
       { name: "Matchup", href: "/nfl/matchup", tier: "pro" as Tier },
       { name: "Def vs Pos", href: "/nfl/defense-vs-position", tier: "free" as Tier },
       { name: "Streak Tracker", href: "/nfl/streaks", tier: "pro" as Tier },
-    ],
-  },
-]
-
-const toolLinks = [
-  {
-    category: "Analyze",
-    pages: [
-      { name: "Prop Analyzer", href: "/check", tier: "free" as Tier, icon: SearchCheck, desc: "Analyze any player's props" },
-    ],
-  },
-  {
-    category: "Track",
-    pages: [
-      { name: "Alerts", href: "/alerts", tier: "pro" as Tier, icon: Bell, desc: "Research-based alerts" },
     ],
   },
 ]
@@ -112,11 +94,16 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
+          {/* Prop Analyzer — direct link, highlighted */}
+          <Link
+            href="/check"
+            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            Prop Analyzer
+          </Link>
+
           <a href="#dashboards" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Dashboards
-          </a>
-          <a href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Features
           </a>
           <a href="#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Pricing
@@ -126,74 +113,6 @@ export function Navbar() {
           </Link>
 
           <div className="h-4 w-px bg-border" />
-
-          {/* Tools mega-dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => handleMouseEnter("tools")}
-            onMouseLeave={handleMouseLeave}
-          >
-            <button
-              className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-              onClick={() => setOpenDropdown(openDropdown === "tools" ? null : "tools")}
-            >
-              <SearchCheck className="h-3.5 w-3.5" />
-              Tools
-              <ChevronDown className={`h-3 w-3 transition-transform ${openDropdown === "tools" ? "rotate-180" : ""}`} />
-            </button>
-
-            {openDropdown === "tools" && (
-              <div className="absolute top-full right-0 pt-2 w-[480px]">
-                <div className="rounded-xl border border-border bg-card p-4 shadow-xl shadow-background/50">
-                  {/* Free tier CTA */}
-                  <Link
-                    href="/check"
-                    onClick={() => setOpenDropdown(null)}
-                    className="flex items-center gap-3 rounded-lg bg-primary/5 border border-primary/10 px-3 py-2.5 mb-3 group hover:bg-primary/10 transition-colors"
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
-                      <SearchCheck className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">Prop Analyzer</p>
-                      <p className="text-[11px] text-muted-foreground">Analyze any player's props — free</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </Link>
-
-                  {/* Categories */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {toolLinks.map(cat => (
-                      <div key={cat.category}>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1.5 px-1">
-                          {cat.category}
-                        </p>
-                        <div className="flex flex-col gap-0.5">
-                          {cat.pages.filter(p => p.href !== "/check").map(page => {
-                            const Icon = page.icon
-                            return (
-                              <Link
-                                key={page.href}
-                                href={page.href}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground group"
-                                onClick={() => setOpenDropdown(null)}
-                              >
-                                <Icon className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors flex-shrink-0" />
-                                <span className="truncate">{page.name}</span>
-                                {page.tier === "pro" && (
-                                  <span className="ml-auto text-[8px] font-bold uppercase text-primary/60">Pro</span>
-                                )}
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Sport dropdowns */}
           {sportLinks.map((sport) => (
@@ -250,43 +169,10 @@ export function Navbar() {
       {mobileOpen && (
         <div className="border-t border-border bg-background px-4 sm:px-6 py-5 sm:py-6 md:hidden max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col gap-4">
+            <Link href="/check" onClick={() => setMobileOpen(false)} className="text-sm font-medium text-primary">Prop Analyzer</Link>
             <a href="#dashboards" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Dashboards</a>
-            <a href="#features" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Features</a>
             <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Pricing</a>
             <Link href="/blog" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Blog</Link>
-
-            {/* Tools section */}
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
-                Tools
-              </p>
-              {toolLinks.map(cat => (
-                <div key={cat.category} className="mb-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-1 pl-2">
-                    {cat.category}
-                  </p>
-                  <div className="flex flex-col gap-1 pl-2">
-                    {cat.pages.map(page => {
-                      const Icon = page.icon
-                      return (
-                        <Link
-                          key={page.href}
-                          href={page.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-                        >
-                          <Icon className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
-                          {page.name}
-                          {page.tier === "pro" && (
-                            <span className="ml-auto text-[9px] font-bold uppercase text-primary/60">Pro</span>
-                          )}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
 
             {/* Sport sections */}
             {sportLinks.map((sport) => (

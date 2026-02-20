@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, Search, BarChart3, Bell } from "lucide-react"
+import { ArrowRight, Search, BarChart3, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
 import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
@@ -15,11 +15,11 @@ const dashboardPreviews = [
     accent: true,
   },
   {
-    tag: "Tool",
-    label: "Custom Alerts",
-    icon: Bell,
-    description: "Set research criteria and get notified when props match your edge — never miss a play.",
-    href: "/alerts",
+    tag: "7-Factor System",
+    label: "Convergence Scoring",
+    icon: TrendingUp,
+    description: "Every prop scored on hit rates, trends, matchups, splits, and 3 more factors — know your edge before you bet.",
+    href: "/check",
     accent: true,
   },
   {
