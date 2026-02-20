@@ -6,9 +6,12 @@ export async function GET(request: Request) {
   const code = searchParams.get("code")
   const next = searchParams.get("next") ?? "/"
 
+  console.log("[v0] Auth callback hit — code:", code ? "present" : "missing", "next:", next)
+
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log("[v0] exchangeCodeForSession result — error:", error?.message ?? "none")
     if (!error) {
       // Auto-activate 7-day Pro trial for new signups (idempotent).
       // Fire-and-forget — don't block the redirect if it fails.
@@ -28,10 +31,25 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${next}`)
     }
+
+    // If code exchange failed, check if user already has a valid session
+    // (e.g. returning user who clicked Google OAuth again)
+    const { data: { user } } = await supabase.auth.getUser()
+    console.log("[v0] Code exchange failed, existing user check:", user?.email ?? "no user")
+    if (user) {
+      // User is already authenticated — just redirect them
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+  } else {
+    // No code provided — check if user is already logged in
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
   }
 
-  // If code is missing or exchange failed, send to login with a friendly message
-  // instead of showing a scary error page
+  // If code is missing/invalid AND no existing session, send to login
   return NextResponse.redirect(
     `${origin}/auth/login?message=${encodeURIComponent("Your link has expired or was already used. Please sign in below.")}`
   )
