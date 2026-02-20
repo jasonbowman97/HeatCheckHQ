@@ -37,7 +37,7 @@ export function VerdictBanner({ verdict, statLabel, line, playerName }: VerdictB
         <div className="flex items-center gap-6">
           <VerdictStat
             label="Convergence"
-            value={`${verdict.convergenceScore}/7`}
+            value={`${verdict.convergenceScore}/9`}
             color={verdict.color}
           />
           <VerdictStat

@@ -159,7 +159,7 @@ export function CheckPropSheet({ data }: { data: CheckPropShareData }) {
               {convergenceScore}
             </span>
             <span style={{ fontFamily: "Inter-SemiBold", fontSize: 24, color: COLORS.muted }}>
-              /7
+              /9
             </span>
           </div>
           <span style={{ fontFamily: "Inter-SemiBold", fontSize: 14, color: COLORS.muted, marginTop: 8, letterSpacing: 1 }}>

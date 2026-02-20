@@ -8,7 +8,7 @@ const tools = [
     icon: Search,
     title: "Prop Analyzer",
     description:
-      "Search any player and instantly see all their props analyzed — hit rates, trends, and a 7-factor convergence score for every stat line. Full game log with convergence signals inline.",
+      "Search any player and instantly see all their props analyzed — hit rates, trends, and a 9-factor convergence score for every stat line. Full game log with convergence signals inline.",
     href: "/check",
     cta: "Try it free",
   },

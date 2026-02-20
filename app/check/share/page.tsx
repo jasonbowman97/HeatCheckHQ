@@ -41,7 +41,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const verdict = params.verdict ?? "TOSS-UP"
 
   const title = `${playerName} ${statLabel} ${line} — ${verdict} | HeatCheck HQ`
-  const description = `7-factor convergence analysis: ${playerName} ${statLabel} ${line}. Verdict: ${verdict}. Check your props free on HeatCheck HQ.`
+  const description = `9-factor convergence analysis: ${playerName} ${statLabel} ${line}. Verdict: ${verdict}. Check your props free on HeatCheck HQ.`
 
   // Build share image URL
   const imageParams = new URLSearchParams()
@@ -126,13 +126,13 @@ export default async function SharePage({ searchParams }: Props) {
           </p>
           <div className="flex items-baseline justify-center gap-1 mt-4">
             <span className={`text-6xl font-bold font-mono ${verdictColor}`}>{score}</span>
-            <span className="text-2xl text-muted-foreground font-semibold">/7</span>
+            <span className="text-2xl text-muted-foreground font-semibold">/9</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">Convergence Score</p>
 
           {/* Convergence bars */}
           <div className="flex justify-center gap-1.5 mt-4">
-            {[1, 2, 3, 4, 5, 6, 7].map(i => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
               <div
                 key={i}
                 className={`w-8 h-1.5 rounded-full ${
@@ -188,7 +188,7 @@ export default async function SharePage({ searchParams }: Props) {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Powered by 7-factor convergence analysis &middot;{" "}
+          Powered by 9-factor convergence analysis &middot;{" "}
           <Link href="/" className="text-primary hover:underline">heatcheckhq.io</Link>
         </p>
       </div>

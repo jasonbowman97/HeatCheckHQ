@@ -1,5 +1,5 @@
 // ============================================================
-// lib/convergence-engine.ts — 7-factor convergence evaluation
+// lib/convergence-engine.ts — 9-factor convergence evaluation
 // ============================================================
 
 import type { Player, Game, GameLog, SeasonStats, DefenseRanking } from '@/types/shared'
@@ -31,28 +31,44 @@ export function evaluate(
     ? last10Values.filter(v => v > line).length / last10.length
     : 0.5
 
+  // Also factor in the average margin (how much they beat/miss the line)
+  const last10Avg = last10Values.length > 0 ? mean(last10Values) : line
+  const last10Margin = last10Avg - line
+  // Tighter thresholds: 55%/45% to catch leaners, with strength scaling for stronger signals
+  const trendSignal = last10HitRate > 0.55 ? 'over' as const
+    : last10HitRate < 0.45 ? 'under' as const
+    : 'neutral' as const
+  // Strength combines hit rate deviation AND average margin
+  const hitRateDeviation = Math.abs(last10HitRate - 0.5) * 2
+  const marginStrength = Math.min(1, Math.abs(last10Margin) / Math.max(1, line * 0.3))
+  const trendStrength = Math.min(1, hitRateDeviation * 0.6 + marginStrength * 0.4)
+
   factors.push({
     key: 'recent_trend',
     name: 'Recent Trend',
-    signal: last10HitRate > 0.6 ? 'over' : last10HitRate < 0.4 ? 'under' : 'neutral',
-    strength: Math.abs(last10HitRate - 0.5) * 2,
-    detail: `${Math.round(last10HitRate * 100)}% hit rate in last 10 games`,
-    dataPoint: `${last10Values.filter(v => v > line).length}/10 over`,
-    icon: last10HitRate > 0.6 ? '📈' : last10HitRate < 0.4 ? '📉' : '➡',
+    signal: trendSignal,
+    strength: trendStrength,
+    detail: `${Math.round(last10HitRate * 100)}% hit rate in last 10 games (avg ${last10Avg.toFixed(1)})`,
+    dataPoint: `${last10Values.filter(v => v > line).length}/${last10.length} over`,
+    icon: trendSignal === 'over' ? '📈' : trendSignal === 'under' ? '📉' : '➡',
   })
 
   // ──── FACTOR 2: SEASON AVERAGE vs LINE ────
   const seasonAvg = seasonStats.average
   const avgGap = seasonAvg - line
+  // Use percentage-based threshold: 15% of the line value (min 1 unit)
+  // This makes the threshold proportional — a 2-point gap on a line of 25 is small,
+  // but a 2-point gap on a line of 4 is very significant
+  const avgThreshold = Math.max(1, line * 0.15)
 
   factors.push({
     key: 'season_avg',
     name: 'Season Average',
-    signal: avgGap > 2 ? 'over' : avgGap < -2 ? 'under' : 'neutral',
-    strength: Math.min(1, Math.abs(avgGap) / 5),
+    signal: avgGap > avgThreshold ? 'over' : avgGap < -avgThreshold ? 'under' : 'neutral',
+    strength: Math.min(1, Math.abs(avgGap) / (avgThreshold * 2.5)),
     detail: `Season average: ${seasonAvg.toFixed(1)} vs line ${line}`,
     dataPoint: `${avgGap > 0 ? '+' : ''}${avgGap.toFixed(1)} above line`,
-    icon: avgGap > 2 ? '⬆' : avgGap < -2 ? '⬇' : '↔',
+    icon: avgGap > avgThreshold ? '⬆' : avgGap < -avgThreshold ? '⬇' : '↔',
   })
 
   // ──── FACTOR 3: OPPONENT DEFENSE ────
@@ -77,12 +93,14 @@ export function evaluate(
   const awayAvg = awayGames.length > 0 ? mean(awayGames.map(g => g.stats[stat] ?? 0)) : seasonAvg
   const venueAvg = isHome ? homeAvg : awayAvg
   const venueGap = venueAvg - line
+  // Proportional threshold: 12% of line (min 0.8 units)
+  const venueThreshold = Math.max(0.8, line * 0.12)
 
   factors.push({
     key: 'venue',
     name: 'Home/Away Split',
-    signal: venueGap > 1.5 ? 'over' : venueGap < -1.5 ? 'under' : 'neutral',
-    strength: Math.min(1, Math.abs(venueGap) / 4),
+    signal: venueGap > venueThreshold ? 'over' : venueGap < -venueThreshold ? 'under' : 'neutral',
+    strength: Math.min(1, Math.abs(venueGap) / (venueThreshold * 2.5)),
     detail: `${isHome ? 'Home' : 'Away'} avg: ${venueAvg.toFixed(1)} (H: ${homeAvg.toFixed(1)} / A: ${awayAvg.toFixed(1)})`,
     dataPoint: `${isHome ? '🏠' : '✈'} ${venueAvg.toFixed(1)} avg`,
     icon: isHome ? '🏠' : '✈',
@@ -158,6 +176,104 @@ export function evaluate(
     dataPoint: `${streak > 0 ? '🔥' : streak < 0 ? '🧊' : '➡'} ${Math.abs(streak)} games`,
     icon: streak >= 3 ? '🔥' : streak <= -3 ? '🧊' : '➡',
   })
+
+  // ──── FACTOR 8: MINUTES TREND (workload signal) ────
+  // If a player's minutes are trending up, they're getting more opportunity → over
+  // If minutes are declining, less runway to hit props → under
+  // Only applies when we have minutes data and stat is NOT minutes itself
+  const minutesData = gameLogs
+    .slice(0, 10)
+    .map(g => g.minutesPlayed)
+    .filter((m): m is number => m != null && m > 0)
+
+  if (minutesData.length >= 5 && stat !== 'minutes') {
+    const recentMins = mean(minutesData.slice(0, 5))  // L5 avg minutes
+    const olderMins = mean(minutesData.slice(5))       // L6-10 avg minutes (or all older)
+    const seasonMinutes = gameLogs
+      .map(g => g.minutesPlayed)
+      .filter((m): m is number => m != null && m > 0)
+    const seasonMinsAvg = seasonMinutes.length > 0 ? mean(seasonMinutes) : recentMins
+
+    // Compare recent 5 game minutes to older 5 game minutes
+    const minsDelta = recentMins - olderMins
+    const minsVsSeason = recentMins - seasonMinsAvg
+    // Threshold: 2+ min difference is significant
+    const minsSignal: 'over' | 'under' | 'neutral' =
+      minsDelta > 2 ? 'over' :
+      minsDelta < -2 ? 'under' :
+      'neutral'
+
+    factors.push({
+      key: 'minutes_trend',
+      name: 'Minutes Trend',
+      signal: minsSignal,
+      strength: Math.min(1, Math.abs(minsDelta) / 5),
+      detail: `L5 avg: ${recentMins.toFixed(1)} min vs prior: ${olderMins.toFixed(1)} min (szn: ${seasonMinsAvg.toFixed(1)})`,
+      dataPoint: `${minsDelta > 0 ? '+' : ''}${minsDelta.toFixed(1)} min shift`,
+      icon: minsSignal === 'over' ? '⏱' : minsSignal === 'under' ? '📉' : '➡',
+    })
+  } else {
+    // No minutes data or stat IS minutes — push neutral with no strength
+    factors.push({
+      key: 'minutes_trend',
+      name: 'Minutes Trend',
+      signal: 'neutral',
+      strength: 0,
+      detail: stat === 'minutes' ? 'N/A (analyzing minutes prop)' : 'Insufficient minutes data',
+      dataPoint: 'N/A',
+      icon: '➡',
+    })
+  }
+
+  // ──── FACTOR 9: PACE / GAME ENVIRONMENT ────
+  // Uses the game O/U total as a proxy for game pace and scoring environment.
+  // High game totals → more possessions, more scoring, more stats → favors overs for counting stats.
+  // Low game totals → grind-it-out game → favors unders.
+  // We compare the game total to sport-specific median totals.
+  const gameTotal = game.total
+  const sportMedianTotals: Record<string, number> = {
+    nba: 224,
+    mlb: 8.5,
+    nfl: 44,
+  }
+  const medianTotal = sportMedianTotals[player.sport] ?? 224
+
+  if (gameTotal != null && gameTotal > 0) {
+    const totalDelta = gameTotal - medianTotal
+    // Threshold: ~5% above/below median is meaningful
+    const paceThreshold = medianTotal * 0.05
+    const paceSignal: 'over' | 'under' | 'neutral' =
+      totalDelta > paceThreshold ? 'over' :
+      totalDelta < -paceThreshold ? 'under' :
+      'neutral'
+
+    // Also compute implied team total for more detail
+    const spread = game.spread ?? 0
+    const teamImplied = isHome
+      ? (gameTotal / 2) - (spread / 2)
+      : (gameTotal / 2) + (spread / 2)
+
+    factors.push({
+      key: 'game_environment',
+      name: 'Game Environment',
+      signal: paceSignal,
+      strength: Math.min(1, Math.abs(totalDelta) / (paceThreshold * 3)),
+      detail: `Game total: ${gameTotal} (median: ${medianTotal}). Team implied: ${teamImplied.toFixed(1)}`,
+      dataPoint: `O/U ${gameTotal} · Implied ${teamImplied.toFixed(1)}`,
+      icon: paceSignal === 'over' ? '🏃' : paceSignal === 'under' ? '🐢' : '⚖',
+    })
+  } else {
+    // No odds data available
+    factors.push({
+      key: 'game_environment',
+      name: 'Game Environment',
+      signal: 'neutral',
+      strength: 0,
+      detail: 'Game total unavailable',
+      dataPoint: 'N/A',
+      icon: '➡',
+    })
+  }
 
   // ──── TALLY ────
   const overCount = factors.filter(f => f.signal === 'over').length

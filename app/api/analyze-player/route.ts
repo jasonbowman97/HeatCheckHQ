@@ -135,31 +135,45 @@ export async function POST(req: NextRequest) {
             convergenceOver = convergence.overCount
             convergenceUnder = convergence.underCount
 
-            // Derive confidence from convergence + hit rate
+            // Derive confidence from convergence count + factor strength alignment + hit rate
             const dominant = Math.max(convergenceOver, convergenceUnder)
             const convergenceStrength = (dominant / 7) * 100
+
+            // Factor in individual strength weights from the engine
+            const dominantDir = convergenceOver >= convergenceUnder ? 'over' : 'under'
+            const alignedStrength = convergence.factors
+              .filter(f => f.signal === dominantDir)
+              .reduce((sum, f) => sum + f.strength, 0)
+            const totalStrength = convergence.factors.reduce((sum, f) => sum + f.strength, 0)
+            const strengthRatio = totalStrength > 0 ? (alignedStrength / totalStrength) * 100 : 50
+
+            // Hit rate signal reinforcement
             const hitRateStrength = Math.abs(hitRateL10 - 0.5) * 200
-            confidence = Math.round((convergenceStrength * 0.6) + (hitRateStrength * 0.4))
+
+            // Blend: 40% count-based + 30% strength-weighted + 30% hit rate
+            confidence = Math.round(
+              convergenceStrength * 0.4 + strengthRatio * 0.3 + hitRateStrength * 0.3
+            )
             confidence = Math.min(99, Math.max(10, confidence))
           } catch {
             // Defense ranking may fail for some stat/sport combos; use hit rate only
-            convergenceOver = hitRateL10 > 0.5 ? 4 : 3
-            convergenceUnder = 7 - convergenceOver
+            convergenceOver = hitRateL10 > 0.5 ? 5 : 4
+            convergenceUnder = 9 - convergenceOver
             confidence = Math.round(Math.abs(hitRateL10 - 0.5) * 200)
             confidence = Math.min(99, Math.max(10, confidence))
           }
         } else {
           // No game: base verdict on hit rates
-          convergenceOver = hitRateL10 > 0.5 ? 4 : 3
-          convergenceUnder = 7 - convergenceOver
+          convergenceOver = hitRateL10 > 0.5 ? 5 : 4
+          convergenceUnder = 9 - convergenceOver
           confidence = Math.round(Math.abs(hitRateL10 - 0.5) * 200)
           confidence = Math.min(99, Math.max(10, confidence))
         }
 
-        // Verdict
+        // Verdict — threshold at 5/9 so a clear majority counts as directional
         const verdict: PropSummary['verdict'] =
-          convergenceOver >= 5 ? 'over' :
-          convergenceUnder >= 5 ? 'under' :
+          convergenceOver >= 5 && convergenceOver > convergenceUnder ? 'over' :
+          convergenceUnder >= 5 && convergenceUnder > convergenceOver ? 'under' :
           'neutral'
 
         return {

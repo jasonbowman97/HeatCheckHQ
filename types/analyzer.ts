@@ -49,7 +49,7 @@ export interface PropSummary {
   hitRateH2H: number | null
   /** Trend: hot if L5 > season avg + threshold, cold if below, steady otherwise */
   trend: 'hot' | 'cold' | 'steady'
-  /** Quick convergence: how many of 7 factors lean over vs under */
+  /** Quick convergence: how many of 9 factors lean over vs under */
   convergenceOver: number
   convergenceUnder: number
   /** Overall verdict direction */

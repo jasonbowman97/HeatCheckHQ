@@ -33,9 +33,11 @@ export const colors = {
 
 // Verdict label lookup by convergence score
 export const verdictLabels = {
-  7: { label: 'FULL CONVERGENCE', sublabel: 'All signals aligned', color: colors.verdict.strongOver, icon: '🔥' },
-  6: { label: 'STRONG', sublabel: '6 of 7 factors aligned', color: colors.verdict.strongOver, icon: '🟢' },
-  5: { label: 'LEAN', sublabel: '5 of 7 factors aligned', color: colors.verdict.leanOver, icon: '🟢' },
+  9: { label: 'FULL CONVERGENCE', sublabel: 'All signals aligned', color: colors.verdict.strongOver, icon: '🔥' },
+  8: { label: 'NEAR-FULL', sublabel: '8 of 9 factors aligned', color: colors.verdict.strongOver, icon: '🔥' },
+  7: { label: 'STRONG', sublabel: '7 of 9 factors aligned', color: colors.verdict.strongOver, icon: '🟢' },
+  6: { label: 'STRONG', sublabel: '6 of 9 factors aligned', color: colors.verdict.strongOver, icon: '🟢' },
+  5: { label: 'LEAN', sublabel: '5 of 9 factors aligned', color: colors.verdict.leanOver, icon: '🟢' },
   4: { label: 'SLIGHT LEAN', sublabel: 'Marginal edge detected', color: colors.verdict.tossUp, icon: '🟡' },
   3: { label: 'MIXED SIGNALS', sublabel: 'Data is split', color: colors.verdict.tossUp, icon: '🟡' },
   2: { label: 'LEAN AGAINST', sublabel: 'Factors favor the other side', color: colors.verdict.leanUnder, icon: '🟠' },
@@ -66,9 +68,9 @@ export function getVerdictInfo(score: number, direction: 'over' | 'under' | 'tos
     return { label: 'TOSS-UP', sublabel: 'Data is split — no clear edge', icon: '🟡', color: colors.verdict.tossUp }
   }
   const dir = direction.toUpperCase()
-  if (score >= 7) return { label: `FULL CONVERGENCE ${dir}`, sublabel: 'All signals aligned', icon: '🔥', color: direction === 'over' ? colors.verdict.strongOver : colors.verdict.strongUnder }
-  if (score >= 6) return { label: `STRONG ${dir}`, sublabel: `${score}/7 factors favor ${direction}`, icon: direction === 'over' ? '🟢' : '🔴', color: direction === 'over' ? colors.verdict.strongOver : colors.verdict.strongUnder }
-  if (score >= 5) return { label: `LEAN ${dir}`, sublabel: `${score}/7 factors favor ${direction}`, icon: direction === 'over' ? '🟢' : '🔴', color: direction === 'over' ? colors.verdict.leanOver : colors.verdict.leanUnder }
+  if (score >= 8) return { label: `FULL CONVERGENCE ${dir}`, sublabel: `${score}/9 signals aligned`, icon: '🔥', color: direction === 'over' ? colors.verdict.strongOver : colors.verdict.strongUnder }
+  if (score >= 6) return { label: `STRONG ${dir}`, sublabel: `${score}/9 factors favor ${direction}`, icon: direction === 'over' ? '🟢' : '🔴', color: direction === 'over' ? colors.verdict.strongOver : colors.verdict.strongUnder }
+  if (score >= 5) return { label: `LEAN ${dir}`, sublabel: `${score}/9 factors favor ${direction}`, icon: direction === 'over' ? '🟢' : '🔴', color: direction === 'over' ? colors.verdict.leanOver : colors.verdict.leanUnder }
   return { label: 'SLIGHT LEAN', sublabel: 'Marginal edge detected', icon: '🟡', color: colors.verdict.tossUp }
 }
 
@@ -185,7 +187,7 @@ export function generateNarrativeTags(
   if (dominant === 7) {
     tags.push({ label: 'All 7 aligned', variant: 'positive', priority: 10 })
   } else if (dominant >= 6) {
-    tags.push({ label: `${dominant}/7 signals`, variant: 'positive', priority: 8 })
+    tags.push({ label: `${dominant}/9 signals`, variant: 'positive', priority: 8 })
   }
 
   // Streak detection from last10Values

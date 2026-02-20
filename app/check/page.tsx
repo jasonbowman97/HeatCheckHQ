@@ -110,7 +110,7 @@ function PropAnalyzerContent() {
           <div className="mb-6">
             <h1 className="text-lg sm:text-xl font-semibold text-foreground">Prop Analyzer</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Search any player to analyze all their props with 7-factor convergence
+              Search any player to analyze all their props with 9-factor convergence
             </p>
           </div>
 
@@ -155,7 +155,7 @@ function PropAnalyzerContent() {
                       <Zap className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-foreground">7-Factor Score</p>
+                      <p className="text-xs font-semibold text-foreground">9-Factor Score</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         Convergence analysis for each stat
                       </p>

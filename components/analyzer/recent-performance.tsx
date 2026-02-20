@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
-import { Flame, Snowflake, ArrowRight, Crosshair, Gem } from "lucide-react"
+import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { Flame, Snowflake, ArrowRight, Crosshair, Gem, ChevronDown, Loader2 } from "lucide-react"
 import type { PropSummary } from "@/types/analyzer"
+import type { ConvergenceFactor } from "@/types/check-prop"
 import type { Player, Game, Sport } from "@/types/shared"
 import { STAT_CATEGORIES, CORE_STATS } from "@/lib/prop-lines"
 import { getStatLabel, getHitRateColor, getConfidenceColor, generateNarrativeTags } from "@/lib/design-tokens"
@@ -98,7 +99,7 @@ function VerdictPill({ verdict, confidence }: { verdict: string; confidence: num
 // ──── Signal Dots (inline convergence) ────
 
 function SignalDots({ over, under }: { over: number; under: number }) {
-  const total = 7
+  const total = 9
   const neutral = total - over - under
   return (
     <div className="flex items-center gap-[3px]">
@@ -233,13 +234,20 @@ export function RecentPerformance({
   const showOpponents = count <= 20 && opponents.length > 0
   const showDates = count <= 10 && dates.length > 0
 
-  // ── Chart dimensions — HERO SIZE ──
-  // Wide viewBox so SVG aspect ratio matches the wide container naturally
+  // ── Chart dimensions — responsive to data range ──
+  // Wide viewBox so SVG aspect ratio matches the wide container naturally.
+  // Chart height ADAPTS to data range so small-value stats (e.g., 3PT made: 0-3)
+  // get a compact chart, while large-value stats (e.g., points: 0-40) get a taller one.
   const vbWidth = 1000
-  const chartHeight = 400
   const labelArea = showDates ? 60 : showOpponents ? 35 : 15
   const topPad = 30
   const maxVal = Math.max(...values, activeProp.line * 1.25, activeProp.seasonAvg * 1.1)
+
+  // Dynamic chart height: scale based on data range
+  // Small range (0-5): compact ~200px viewBox height → renders ~180px
+  // Medium range (5-15): moderate ~300px viewBox height → renders ~280px
+  // Large range (15+): full ~400px viewBox height → renders ~380px
+  const chartHeight = maxVal <= 3 ? 180 : maxVal <= 8 ? 240 : maxVal <= 15 ? 320 : 400
 
   const barWidth = vbWidth / count
   const barGap = count <= 5 ? barWidth * 0.25 : count <= 10 ? barWidth * 0.2 : count <= 20 ? barWidth * 0.15 : barWidth * 0.1
@@ -289,6 +297,55 @@ export function RecentPerformance({
     () => generateNarrativeTags(activeProp, matchupContext),
     [activeProp, matchupContext]
   )
+
+  // ── Convergence expansion state ──
+  const [convergenceExpanded, setConvergenceExpanded] = useState(false)
+  const [convergenceFactors, setConvergenceFactors] = useState<ConvergenceFactor[] | null>(null)
+  const [convergenceLoading, setConvergenceLoading] = useState(false)
+  // Cache factors per stat so we don't re-fetch
+  const [factorsCache, setFactorsCache] = useState<Record<string, ConvergenceFactor[]>>({})
+
+  // Reset convergence expansion on stat change
+  useEffect(() => {
+    setConvergenceExpanded(false)
+    setConvergenceFactors(factorsCache[selectedStat] ?? null)
+  }, [selectedStat, factorsCache])
+
+  // Reset cache on new player
+  useEffect(() => {
+    setFactorsCache({})
+    setConvergenceFactors(null)
+    setConvergenceExpanded(false)
+  }, [player.id])
+
+  const fetchConvergenceFactors = useCallback(async () => {
+    if (convergenceFactors || convergenceLoading) return
+    if (!activeProp || !nextGame) return
+
+    setConvergenceLoading(true)
+    try {
+      const res = await fetch("/api/check-prop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId: player.id,
+          stat: activeProp.stat,
+          line: activeProp.line,
+          sport,
+        }),
+      })
+      const data = await res.json()
+      if (data.convergence?.factors) {
+        const factors = data.convergence.factors as ConvergenceFactor[]
+        setConvergenceFactors(factors)
+        setFactorsCache((prev) => ({ ...prev, [activeProp.stat]: factors }))
+      }
+    } catch {
+      // Silently fail — the summary dots still show
+    } finally {
+      setConvergenceLoading(false)
+    }
+  }, [activeProp, convergenceFactors, convergenceLoading, nextGame, player.id, sport])
 
   // Convergence info
   const dominantDir = activeProp.convergenceOver >= activeProp.convergenceUnder ? "over" : "under"
@@ -490,8 +547,7 @@ export function RecentPerformance({
               <svg
                 viewBox={`0 0 ${vbWidth} ${topPad + chartHeight + labelArea}`}
                 className="w-full"
-                preserveAspectRatio="none"
-                style={{ height: "clamp(280px, 40vw, 480px)" }}
+                preserveAspectRatio="xMidYMid meet"
               >
                 {/* Bars */}
                 {values.map((val, i) => {
@@ -672,18 +728,30 @@ export function RecentPerformance({
               )}
             </div>
 
-            {/* Convergence Signals */}
-            <div className="sm:w-56 rounded-xl border border-border bg-card/50 p-3.5">
+            {/* Convergence Signals — Clickable to expand */}
+            <button
+              type="button"
+              onClick={() => {
+                setConvergenceExpanded((prev) => !prev)
+                if (!convergenceFactors && !convergenceLoading) {
+                  fetchConvergenceFactors()
+                }
+              }}
+              className="sm:w-56 rounded-xl border border-border bg-card/50 p-3.5 text-left transition-colors hover:border-primary/30 hover:bg-card/80 cursor-pointer"
+            >
               <div className="flex items-center justify-between mb-2.5">
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Convergence
                 </h4>
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  {dominantCount}/7{" "}
-                  <span className={dominantDir === "over" ? "text-emerald-400" : "text-red-400"}>
-                    {dominantDir}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {dominantCount}/9{" "}
+                    <span className={dominantDir === "over" ? "text-emerald-400" : "text-red-400"}>
+                      {dominantDir}
+                    </span>
                   </span>
-                </span>
+                  <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-200 ${convergenceExpanded ? "rotate-180" : ""}`} />
+                </div>
               </div>
               <SignalDots over={activeProp.convergenceOver} under={activeProp.convergenceUnder} />
               <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
@@ -695,6 +763,89 @@ export function RecentPerformance({
                   <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                   Under ({activeProp.convergenceUnder})
                 </span>
+              </div>
+            </button>
+          </div>
+
+          {/* ── Convergence Factor Details (expanded) ── */}
+          <div className={`grid transition-all duration-200 ${
+            convergenceExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}>
+            <div className="overflow-hidden">
+              <div className="rounded-xl border border-border bg-card/50 p-3.5">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  9-Factor Breakdown
+                </h4>
+                {convergenceLoading && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!convergenceLoading && !convergenceFactors && !nextGame && (
+                  <p className="text-xs text-muted-foreground py-2">
+                    No game scheduled — convergence factors unavailable
+                  </p>
+                )}
+                {convergenceFactors && (
+                  <div className="space-y-2">
+                    {convergenceFactors.map((factor) => (
+                      <div key={factor.key} className="flex items-start gap-2.5">
+                        {/* Signal indicator */}
+                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                          factor.signal === "over"
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : factor.signal === "under"
+                              ? "bg-red-500/15 text-red-400"
+                              : "bg-muted text-muted-foreground"
+                        }`}>
+                          {factor.signal === "over" ? "▲" : factor.signal === "under" ? "▼" : "—"}
+                        </div>
+
+                        {/* Factor content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-foreground">
+                              {factor.name}
+                            </span>
+                            <span className={`text-[10px] font-bold uppercase ${
+                              factor.signal === "over"
+                                ? "text-emerald-400"
+                                : factor.signal === "under"
+                                  ? "text-red-400"
+                                  : "text-muted-foreground"
+                            }`}>
+                              {factor.signal}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                            {factor.detail}
+                          </p>
+                          {factor.dataPoint && (
+                            <span className="text-[10px] font-medium text-foreground/60 mt-0.5 inline-block">
+                              {factor.dataPoint}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Strength bar */}
+                        <div className="flex flex-col items-end shrink-0 mt-0.5">
+                          <div className="w-12 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                factor.signal === "over"
+                                  ? "bg-emerald-500"
+                                  : factor.signal === "under"
+                                    ? "bg-red-500"
+                                    : "bg-muted-foreground/40"
+                              }`}
+                              style={{ width: `${Math.round(factor.strength * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

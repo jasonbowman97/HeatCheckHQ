@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // ──── PHASE 2: Computation (all pure functions, runs fast) ────
 
-    // 1. Convergence Engine (7 factors)
+    // 1. Convergence Engine (9 factors)
     const convergence = evaluateConvergence(
       player, game, gameLogs, seasonStats, defenseRanking, stat, line
     )

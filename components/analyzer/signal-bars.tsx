@@ -20,7 +20,7 @@ export function SignalBars({ factors }: SignalBarsProps) {
           Convergence Signals
         </h4>
         <span className="text-[10px] font-medium text-muted-foreground">
-          {dominantCount}/7 lean{" "}
+          {dominantCount}/9 lean{" "}
           <span className={getSignalTextColor(dominantDir)}>
             {dominantDir}
           </span>

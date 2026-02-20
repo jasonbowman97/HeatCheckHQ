@@ -16,7 +16,7 @@ const plans = [
     ctaVariant: "outline" as const,
     highlights: [
       { text: "7-day Pro trial — every tool & dashboard unlocked", included: true },
-      { text: "Prop Analyzer — 7-factor convergence analysis", included: true },
+      { text: "Prop Analyzer — 9-factor convergence analysis", included: true },
       { text: "First Basket picks with live tipoff data", included: true },
       { text: "NRFI matchups & stadium weather impact", included: true },
       { text: "Head-to-Head & Defense vs Position rankings", included: true },
