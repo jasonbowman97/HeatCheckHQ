@@ -12,6 +12,7 @@ import { useUserTier } from "@/components/user-tier-provider"
 import { analytics } from "@/lib/analytics"
 import type { PlayerAnalysis, PropSummary } from "@/types/analyzer"
 import type { PlayerSearchResult } from "@/types/shared"
+import { commandEvents } from "@/lib/command-events"
 
 export default function PropAnalyzerPage() {
   return (
@@ -110,6 +111,14 @@ function PropAnalyzerContent() {
       setIsAnalyzing(false)
     }
   }, [router])
+
+  // ── Listen for ⌘K command palette player selections ──
+  useEffect(() => {
+    return commandEvents.onPlayerSelect((playerId) => {
+      setCurrentPlayerId(playerId)
+      fetchAnalysis(playerId)
+    })
+  }, [fetchAnalysis])
 
   const handlePlayerSelect = useCallback((player: PlayerSearchResult) => {
     setCurrentPlayerId(player.id)

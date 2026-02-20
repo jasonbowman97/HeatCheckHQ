@@ -26,6 +26,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useState, useEffect } from "react"
+import { CommandPalette } from "@/components/command-palette"
 import { OnboardingTooltip } from "@/components/onboarding-tooltip"
 import { WelcomeModal, isOnboarded } from "@/components/welcome-modal"
 import { hydrateOnboardingState } from "@/lib/onboarding"
@@ -297,6 +298,11 @@ export function DashboardShell({ children, subtitle }: DashboardShellProps) {
                 <p className="text-[11px] sm:text-xs text-muted-foreground">{headerSubtitle}</p>
               </div>
             </Link>
+          </div>
+
+          {/* ⌘K Command Palette */}
+          <div className="flex-1 flex justify-center px-4 max-w-sm">
+            <CommandPalette />
           </div>
 
           {/* Desktop nav — hidden on mobile */}
