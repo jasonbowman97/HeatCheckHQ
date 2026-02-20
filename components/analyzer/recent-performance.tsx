@@ -3,16 +3,21 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { Flame, Snowflake, ArrowRight, ChevronRight } from "lucide-react"
 import type { PropSummary } from "@/types/analyzer"
-import type { Sport } from "@/types/shared"
-import { STAT_CATEGORIES } from "@/lib/prop-lines"
-import { getHitRateColor, getConfidenceColor } from "@/lib/design-tokens"
+import type { Player, Game, Sport } from "@/types/shared"
+import { STAT_CATEGORIES, CORE_STATS } from "@/lib/prop-lines"
+import { getStatLabel, getHitRateColor, getConfidenceColor } from "@/lib/design-tokens"
 
 type SampleSize = 5 | 10
 
 interface RecentPerformanceProps {
+  /** Player info for the header section */
+  player: Player
+  nextGame: Game | null
+  /** All analyzed props */
   props: PropSummary[]
   sport: Sport
   seasonAverages: Record<string, number>
+  gamesPlayed: number
   /** Called when user clicks "See Full Analysis" → opens the detail panel */
   onSelectProp: (stat: string) => void
 }
@@ -65,9 +70,12 @@ function VerdictPill({ verdict, confidence }: { verdict: string; confidence: num
 // ──── Main Component ────
 
 export function RecentPerformance({
+  player,
+  nextGame,
   props,
   sport,
   seasonAverages,
+  gamesPlayed,
   onSelectProp,
 }: RecentPerformanceProps) {
   const categories = STAT_CATEGORIES[sport] || []
@@ -95,6 +103,27 @@ export function RecentPerformance({
 
   if (!activeProp || props.length === 0) return null
 
+  // ── Player header helpers ──
+  const isHome = nextGame ? nextGame.homeTeam.id === player.team.id : false
+  const opponent = nextGame
+    ? (isHome ? nextGame.awayTeam : nextGame.homeTeam)
+    : null
+
+  const gameTime = nextGame?.startTime
+    ? new Date(nextGame.startTime).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short",
+      })
+    : null
+
+  // Season averages to display
+  const coreStats = CORE_STATS[sport] || []
+  const displayStats = [...coreStats]
+  if (sport === "nba" && !displayStats.includes("minutes")) {
+    displayStats.push("minutes")
+  }
+
   // ── Chart data (chronological — oldest first) ──
   const sliced = activeProp.last10Values.slice(0, sampleSize)
   const values = [...sliced].reverse()
@@ -104,8 +133,8 @@ export function RecentPerformance({
 
   // ── Chart dimensions ──
   const chartHeight = 180
-  const labelArea = 32 // space for opponent + date below bars
-  const topPad = 16  // space for value labels above bars
+  const labelArea = 32
+  const topPad = 16
   const maxVal = Math.max(...values, activeProp.line * 1.25, activeProp.seasonAvg * 1.1)
 
   const barWidth = 100 / count
@@ -124,7 +153,6 @@ export function RecentPerformance({
         if (p) ordered.push({ prop: p, category: cat.label })
       }
     }
-    // Add any props not in categories
     for (const p of props) {
       if (!ordered.some((o) => o.prop.stat === p.stat)) {
         ordered.push({ prop: p, category: "Other" })
@@ -150,8 +178,81 @@ export function RecentPerformance({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Section Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+      {/* ═══════ PLAYER HEADER ═══════ */}
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start gap-4">
+          {/* Player Photo */}
+          {player.headshotUrl ? (
+            <img
+              src={player.headshotUrl}
+              alt={player.name}
+              className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-2 border-border"
+            />
+          ) : (
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground border-2 border-border">
+              {player.name.charAt(0)}
+            </div>
+          )}
+
+          {/* Player Info */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+              {player.name}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground">
+              {player.team.logo && (
+                <img src={player.team.logo} alt={player.team.abbrev} className="h-4 w-4" />
+              )}
+              <span className="font-medium">{player.team.abbrev}</span>
+              <span>·</span>
+              <span>{player.position}</span>
+              <span>·</span>
+              <span>{gamesPlayed} GP</span>
+            </div>
+
+            {/* Next Game Info */}
+            {nextGame && opponent && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-medium text-foreground">
+                  {isHome ? "vs" : "@"} {opponent.abbrev}
+                </span>
+                {gameTime && <span>· {gameTime}</span>}
+                {nextGame.venue && <span className="hidden sm:inline">· {nextGame.venue}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Season Averages Bar */}
+        <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1">
+          {displayStats.map((stat) => {
+            const avg = seasonAverages[stat]
+            if (avg === undefined || avg === 0) return null
+            return (
+              <div
+                key={stat}
+                className="flex flex-col items-center rounded-lg bg-secondary/50 px-2 py-2"
+              >
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {getStatLabel(stat, sport).replace(/^(\w+).*/, "$1").slice(0, 6)}
+                </span>
+                <span className="text-sm font-bold text-foreground tabular-nums">
+                  {avg % 1 === 0 ? avg.toFixed(0) : avg.toFixed(1)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ═══════ DIVIDER ═══════ */}
+      <div className="border-t border-border" />
+
+      {/* ═══════ RECENT PERFORMANCE ═══════ */}
+
+      {/* Section Header + L5/L10 Toggle */}
+      <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-2">
         <h3 className="text-sm font-bold text-foreground">Recent Performance</h3>
         <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary/30 p-0.5">
           {([5, 10] as SampleSize[]).map((size) => (
@@ -173,7 +274,7 @@ export function RecentPerformance({
       {/* Stat Tabs */}
       <div
         ref={tabsRef}
-        className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-4 pb-3"
+        className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-4 sm:px-5 pb-3"
       >
         {orderedProps.map(({ prop: p }, i) => {
           const isActive = p.stat === selectedStat
@@ -213,7 +314,7 @@ export function RecentPerformance({
       </div>
 
       {/* Rich Bar Chart */}
-      <div className="px-4">
+      <div className="px-4 sm:px-5">
         <div className="rounded-lg border border-border bg-background/50 p-3">
           {count === 0 ? (
             <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
@@ -348,7 +449,7 @@ export function RecentPerformance({
       </div>
 
       {/* Context Row */}
-      <div className="px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="px-4 sm:px-5 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         {/* Season Avg + Trend */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
@@ -385,7 +486,7 @@ export function RecentPerformance({
       </div>
 
       {/* Full Analysis Link */}
-      <div className="border-t border-border px-4 py-2.5">
+      <div className="border-t border-border px-4 sm:px-5 py-2.5">
         <button
           onClick={() => onSelectProp(activeProp.stat)}
           className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
