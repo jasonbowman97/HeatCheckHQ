@@ -52,7 +52,7 @@ const toolLinks = [
   {
     category: "Analyze",
     pages: [
-      { name: "Check My Prop", href: "/check", tier: "free" as Tier, icon: SearchCheck, desc: "Validate any prop bet" },
+      { name: "Prop Analyzer", href: "/check", tier: "free" as Tier, icon: SearchCheck, desc: "Analyze any player's props" },
     ],
   },
   {
@@ -162,8 +162,8 @@ export function Navbar() {
                       <SearchCheck className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">Check My Prop</p>
-                      <p className="text-[11px] text-muted-foreground">Validate any prop bet — free</p>
+                      <p className="text-sm font-semibold text-foreground">Prop Analyzer</p>
+                      <p className="text-[11px] text-muted-foreground">Analyze any player's props — free</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </Link>

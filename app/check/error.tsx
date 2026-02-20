@@ -14,7 +14,7 @@ export default function CheckError({
       error={error}
       reset={reset}
       backHref="/check"
-      backLabel="Check My Prop"
+      backLabel="Prop Analyzer"
     />
   )
 }

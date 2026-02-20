@@ -2,7 +2,7 @@
  * Access tiers for HeatCheck HQ dashboards:
  *
  * "public"  — No account needed (NRFI, Weather, First Basket)
- * "free"    — Free account required (All NBA dashboards, Check My Prop, MLB Due for HR, NFL DVP)
+ * "free"    — Free account required (All NBA dashboards, Prop Analyzer, MLB Due for HR, NFL DVP)
  * "pro"     — Paid subscription (Situation Room, Alerts, MLB Streaks/Hot Hitters/Hitting/Pitching, NFL Matchup/Streaks)
  */
 
@@ -21,7 +21,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/first-basket", tier: "public", label: "First Basket" },
 
   // Free account required
-  { pattern: "/check", tier: "free", label: "Check My Prop" },
+  { pattern: "/check", tier: "free", label: "Prop Analyzer" },
   { pattern: "/mlb/due-for-hr", tier: "free", label: "Due for HR" },
   { pattern: "/nba/defense-vs-position", tier: "free", label: "Defense vs Position" },
   { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },

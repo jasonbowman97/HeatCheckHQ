@@ -1,5 +1,5 @@
 // ============================================================
-// types/check-prop.ts — THE CORE DATA TYPE for Check My Prop
+// types/check-prop.ts — THE CORE DATA TYPE for Prop Analyzer
 // ============================================================
 
 import type { Player, Game, GameLog, Sport } from './shared'

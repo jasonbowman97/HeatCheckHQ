@@ -1,5 +1,5 @@
 // ============================================================
-// lib/social/sheets/check-prop-sheet.tsx — Satori share card for Check My Prop
+// lib/social/sheets/check-prop-sheet.tsx — Satori share card for Prop Analyzer
 // ============================================================
 // 1200x675 (16:9) image showing verdict, heat ring summary,
 // convergence score, and key stats for sharing on social.

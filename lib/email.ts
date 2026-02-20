@@ -95,8 +95,8 @@ function welcomeEmailHtml(firstName: string) {
 
       <div style="margin:0 0 24px;">
         <div style="padding:8px 0;border-bottom:1px solid #21262d;">
-          <span style="color:#58a6ff;font-weight:600;">Check My Prop</span>
-          <span style="color:#8b949e;"> — run any player prop through our convergence engine</span>
+          <span style="color:#58a6ff;font-weight:600;">Prop Analyzer</span>
+          <span style="color:#8b949e;"> — search any player and see all their props analyzed instantly</span>
         </div>
         <div style="padding:8px 0;border-bottom:1px solid #21262d;">
           <span style="color:#58a6ff;font-weight:600;">Matchup X-Ray</span>
@@ -109,7 +109,7 @@ function welcomeEmailHtml(firstName: string) {
       </div>
 
       <a href="https://heatcheckhq.io/check" style="display:inline-block;background:#2f81f7;color:#fff;font-weight:600;font-size:15px;padding:12px 28px;border-radius:8px;text-decoration:none;">
-        Run your first prop check
+        Analyze your first player
       </a>
 
       <p style="color:#484f58;font-size:13px;margin:24px 0 0;">

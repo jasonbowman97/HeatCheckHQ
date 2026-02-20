@@ -1,5 +1,5 @@
 // ============================================================
-// types/shared.ts — Shared types across Check My Prop & Edge Lab
+// types/shared.ts — Shared types across Prop Analyzer & Edge Lab
 // ============================================================
 
 export type Sport = 'mlb' | 'nba' | 'nfl'

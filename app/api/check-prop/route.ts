@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[Check My Prop] Unexpected error:', error)
+    console.error('[Prop Analyzer] Unexpected error:', error)
     return errorResponse('server_error', 'An unexpected error occurred. Please try again.')
   }
 }

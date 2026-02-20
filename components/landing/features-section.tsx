@@ -6,9 +6,9 @@ import { FadeIn } from "@/components/ui/fade-in"
 const tools = [
   {
     icon: Search,
-    title: "Check My Prop",
+    title: "Prop Analyzer",
     description:
-      "Enter any player prop and get a 7-factor convergence score — recent form, matchup, splits, and more — condensed into a single heat rating with a clear over/under verdict.",
+      "Search any player and instantly see all their props analyzed — hit rates, trends, and a 7-factor convergence score for every stat line. Drill into any prop for the full breakdown.",
     href: "/check",
     cta: "Try it free",
   },

@@ -7,11 +7,11 @@ import { getDismissedTips, dismissTip } from "@/lib/onboarding"
 /** Page-specific tips shown to first-time visitors */
 const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
   "/check": {
-    title: "Check My Prop",
+    title: "Prop Analyzer",
     tips: [
-      "Enter any player, stat, and line to get a 7-factor convergence analysis.",
-      "The Heat Ring shows recent game-by-game performance against your line.",
-      "Pro users unlock Spectrum Overlays and Similar Situations for deeper analysis.",
+      "Search any player to instantly see all their props analyzed at a glance.",
+      "Each prop card shows hit rates, trends, and convergence signals with adjustable lines.",
+      "Tap any prop to drill into the full 7-factor analysis with matchup context.",
     ],
   },
   "/situation-room": {

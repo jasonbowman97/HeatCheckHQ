@@ -8,7 +8,7 @@ const faqs = [
   {
     question: "Is HeatCheck HQ really free?",
     answer:
-      "Yes — Check My Prop, 9 dashboards across MLB, NBA, and NFL, and a 7-day Pro trial are completely free. No credit card needed. Create an account in 10 seconds and start researching.",
+      "Yes — Prop Analyzer, 9 dashboards across MLB, NBA, and NFL, and a 7-day Pro trial are completely free. No credit card needed. Create an account in 10 seconds and start researching.",
   },
   {
     question: "How often is the data updated?",
@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "What do I get with Pro?",
     answer:
-      "Pro unlocks the Situation Room, custom Alerts, all 14 dashboards (including Hot Hitters, Hitter vs Pitcher, Pitching Stats, and NFL Matchup), plus enhanced Check My Prop analysis with split overlays and similar situations. You also get priority access to every new tool and dashboard we ship.",
+      "Pro unlocks the Situation Room, custom Alerts, all 14 dashboards (including Hot Hitters, Hitter vs Pitcher, Pitching Stats, and NFL Matchup), plus enhanced Prop Analyzer analysis with split overlays and similar situations. You also get priority access to every new tool and dashboard we ship.",
   },
   {
     question: "Can I cancel anytime?",

@@ -1,5 +1,5 @@
 // ============================================================
-// app/api/check-prop/share-image/route.tsx — Share card image for Check My Prop
+// app/api/check-prop/share-image/route.tsx — Share card image for Prop Analyzer
 // ============================================================
 // Returns a 1200x675 PNG share card for a given prop check.
 // Used for: Twitter/X cards, copied share images, OG meta images.

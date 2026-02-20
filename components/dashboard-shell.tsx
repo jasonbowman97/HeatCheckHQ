@@ -111,7 +111,7 @@ const TOOL_NAV: ToolCategory[] = [
   {
     label: "Analyze",
     links: [
-      { href: "/check", label: "Check My Prop", tier: "free", icon: SearchCheck, description: "Validate any prop bet" },
+      { href: "/check", label: "Prop Analyzer", tier: "free", icon: SearchCheck, description: "Analyze any player's props" },
     ],
   },
   {
@@ -148,7 +148,7 @@ const PAGE_NAMES: Record<string, string> = {
   matchup: "Matchup",
   streaks: "Streak Tracker",
   // Tool pages
-  check: "Check My Prop",
+  check: "Prop Analyzer",
   "situation-room": "Situation Room",
   alerts: "Alerts",
 }
@@ -174,7 +174,7 @@ const NAV_INACTIVE_CLASS = "text-xs font-medium text-muted-foreground hover:text
 
 function QuickAccessBar({ pathname }: { pathname: string }) {
   const quickLinks = [
-    { href: "/check", label: "Check", icon: SearchCheck },
+    { href: "/check", label: "Analyzer", icon: SearchCheck },
     { href: "/situation-room", label: "Situation Room", icon: Radio },
     { href: "/alerts", label: "Alerts", icon: Bell },
   ]

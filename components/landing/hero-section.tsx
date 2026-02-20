@@ -8,9 +8,9 @@ import { AuthCta } from "@/components/landing/auth-cta"
 const dashboardPreviews = [
   {
     tag: "Tool",
-    label: "Check My Prop",
+    label: "Prop Analyzer",
     icon: Search,
-    description: "7-factor convergence analysis for any player prop. Get a heat score before you bet.",
+    description: "See every prop for any player at a glance. 7-factor convergence analysis before you bet.",
     href: "/check",
     accent: true,
   },

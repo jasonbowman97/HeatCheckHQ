@@ -61,4 +61,20 @@ export const analytics = {
 
   propUnsaved: (sport: string, stat: string) =>
     trackEvent("prop_unsaved", { sport, stat }),
+
+  // Prop Analyzer events
+  propAnalyzerSearch: (playerName: string, sport: string) =>
+    trackEvent("prop_analyzer_search", { player_name: playerName, sport }),
+
+  propAnalyzerView: (playerName: string, sport: string, propCount: number) =>
+    trackEvent("prop_analyzer_view", { player_name: playerName, sport, prop_count: propCount }),
+
+  propAnalyzerCardClick: (stat: string, sport: string) =>
+    trackEvent("prop_analyzer_card_click", { stat, sport }),
+
+  propAnalyzerLineChange: (stat: string, line: number, sport: string) =>
+    trackEvent("prop_analyzer_line_change", { stat, line, sport }),
+
+  propAnalyzerShare: (stat: string, sport: string) =>
+    trackEvent("prop_analyzer_share", { stat, sport }),
 }
