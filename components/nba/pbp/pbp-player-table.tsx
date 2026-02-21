@@ -512,7 +512,7 @@ export function PBPPlayerTable({
         <div className="rounded-xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="sticky top-[96px] z-20">
+              <thead>
                 <tr className="border-b border-border bg-card">
                   <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-10">
                     #
