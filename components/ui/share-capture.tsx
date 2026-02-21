@@ -7,6 +7,9 @@ interface ShareCaptureProps {
   children: React.ReactNode
   /** Label shown on the share image watermark */
   label?: string
+  /** Max pixel height of source content to capture. Taller content is
+   *  cropped (top portion kept) so it stays readable in 16:9. Default 800. */
+  maxCaptureHeight?: number
 }
 
 /**
@@ -14,7 +17,7 @@ interface ShareCaptureProps {
  * On click, uses html2canvas to capture the content into a 16:9
  * canvas with HeatCheckHQ branding and dark background.
  */
-export function ShareCapture({ children, label }: ShareCaptureProps) {
+export function ShareCapture({ children, label, maxCaptureHeight = 800 }: ShareCaptureProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [capturing, setCapturing] = useState(false)
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
@@ -30,13 +33,39 @@ export function ShareCapture({ children, label }: ShareCaptureProps) {
       // Dynamic import to avoid SSR issues
       const html2canvas = (await import("html2canvas")).default
 
-      // Capture the content
+      // Capture the content at 2x resolution
       const sourceCanvas = await html2canvas(contentRef.current, {
-        backgroundColor: "#0a0a0b", // matches dark theme bg
-        scale: 2, // high-res
+        backgroundColor: "#0a0a0b",
+        scale: 2,
         useCORS: true,
         logging: false,
       })
+
+      // If the source is taller than maxCaptureHeight (at 2x), crop it
+      // and create a trimmed canvas with a fade-out at the bottom
+      const maxH = maxCaptureHeight * 2 // account for scale: 2
+      const isCropped = sourceCanvas.height > maxH
+      let finalSource = sourceCanvas
+
+      if (isCropped) {
+        const trimmed = document.createElement("canvas")
+        trimmed.width = sourceCanvas.width
+        trimmed.height = maxH
+        const tCtx = trimmed.getContext("2d")!
+
+        // Draw the top portion
+        tCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, maxH, 0, 0, sourceCanvas.width, maxH)
+
+        // Fade-out gradient at the bottom (last 120px)
+        const fadeH = 120 * 2
+        const grad = tCtx.createLinearGradient(0, maxH - fadeH, 0, maxH)
+        grad.addColorStop(0, "rgba(10, 10, 11, 0)")
+        grad.addColorStop(1, "rgba(10, 10, 11, 1)")
+        tCtx.fillStyle = grad
+        tCtx.fillRect(0, maxH - fadeH, sourceCanvas.width, fadeH)
+
+        finalSource = trimmed
+      }
 
       // Create 16:9 output canvas
       const outputWidth = 1920
@@ -56,17 +85,25 @@ export function ShareCapture({ children, label }: ShareCaptureProps) {
       const availH = outputHeight - padding * 2 - 40 // reserve space for watermark
 
       const scale = Math.min(
-        availW / sourceCanvas.width,
-        availH / sourceCanvas.height,
+        availW / finalSource.width,
+        availH / finalSource.height,
         1 // don't upscale
       )
 
-      const drawW = sourceCanvas.width * scale
-      const drawH = sourceCanvas.height * scale
+      const drawW = finalSource.width * scale
+      const drawH = finalSource.height * scale
       const drawX = (outputWidth - drawW) / 2
       const drawY = (outputHeight - 40 - drawH) / 2
 
-      ctx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH)
+      ctx.drawImage(finalSource, drawX, drawY, drawW, drawH)
+
+      // "More on heatcheckhq.io" if content was cropped
+      if (isCropped) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.35)"
+        ctx.font = "italic 13px system-ui, -apple-system, sans-serif"
+        ctx.textAlign = "center"
+        ctx.fillText("More rows at heatcheckhq.io", outputWidth / 2, drawY + drawH - 8)
+      }
 
       // Watermark
       ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
@@ -89,7 +126,7 @@ export function ShareCapture({ children, label }: ShareCaptureProps) {
     } finally {
       setCapturing(false)
     }
-  }, [capturing, label])
+  }, [capturing, label, maxCaptureHeight])
 
   const handleDownload = useCallback(() => {
     if (!capturedUrl) return
