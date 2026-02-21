@@ -32,6 +32,9 @@ export async function GET(request: Request) {
       "/api/nfl/matchup",
       "/api/nfl/trends",
       "/api/hot-hitters",
+      "/api/nba/first-basket-pbp",
+      "/api/nba/first-3min",
+      "/api/nba/second-half-pbp",
     ]
 
     // Revalidate dashboard pages with server-side data

@@ -475,10 +475,10 @@ export function PBPPlayerTable({
                         </div>
                       </td>
 
-                      {/* Recent games — redesigned */}
+                      {/* Recent games — oldest on left, most recent on right */}
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-0.5">
-                          {player.recentResults.slice(0, 10).map((g, j) => {
+                          {[...player.recentResults.slice(0, 10)].reverse().map((g, j) => {
                             const isHit = isScoring ? g.hit : g.scored
                             const displayValue = isScoring ? g.points : (isHit ? "✓" : "✗")
                             const tooltipText = `${formatDate(g.date)} ${g.isHome ? "vs" : "@"} ${g.opponent}${isScoring ? ` — ${g.points} pts` : isHit ? " — Scored first" : " — No"}`

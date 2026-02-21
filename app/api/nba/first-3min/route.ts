@@ -54,14 +54,15 @@ export async function GET(request: Request) {
       return res
     }
 
-    // Also need to know ALL games per team (not just games with scoring plays)
-    // so game counts are accurate. Query all unique game_ids from Q1 events.
+    // To build accurate team game counts, we need ALL games (not just those
+    // with scoring plays in the first 3 min). Use the mv_game_firsts MV which
+    // has exactly 1 row per game for q1_first_basket — efficient and complete.
     const { data: allQ1Games } = await supabase
-      .from("pbp_game_events")
+      .from("mv_game_firsts")
       .select("game_id, game_date, home_team, away_team")
-      .eq("period", 1)
+      .eq("category", "q1_first_basket")
       .order("game_date", { ascending: false })
-      .limit(20000)
+      .limit(5000)
 
     // Build complete team game counts from ALL Q1 games
     const uniqueGames = new Map<string, { date: string; home: string; away: string }>()
