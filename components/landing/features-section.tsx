@@ -29,9 +29,9 @@ const dashboardFeatures = [
   },
   {
     icon: Filter,
-    title: "Deep Filtering & Custom Alerts",
+    title: "Deep Filtering & Custom Thresholds",
     description:
-      "Slice data by pitcher hand, time range, matchup, and slate. Set thresholds and get notified when criteria hit.",
+      "Slice data by pitcher hand, time range, matchup, and slate. Set custom thresholds to find consistency edges.",
   },
   {
     icon: Users,

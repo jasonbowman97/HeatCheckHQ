@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ChevronUp, ChevronDown } from "lucide-react"
+import { ShareCapture } from "@/components/ui/share-capture"
 import type { GameLog } from "@/types/shared"
 
 interface GameLogChartProps {
@@ -45,6 +46,7 @@ export function GameLogChart({ games, stat, line, seasonAverage, onLineChange }:
   const lineY = chartHeight - (line / maxVal) * chartHeight
 
   return (
+    <ShareCapture label="Game Log">
     <div>
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -228,5 +230,6 @@ export function GameLogChart({ games, stat, line, seasonAverage, onLineChange }:
         </div>
       </div>
     </div>
+    </ShareCapture>
   )
 }

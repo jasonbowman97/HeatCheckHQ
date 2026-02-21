@@ -35,7 +35,7 @@ const plans = [
     popular: true,
     highlights: [
       { text: "Everything in Free", included: true },
-      { text: "Custom Alerts — get notified when criteria hit", included: true },
+      { text: "Inline Prop Analyzer from any streak tracker", included: true },
       { text: "Full Prop Analyzer with all stats unlocked", included: true },
       { text: "All 14 dashboards across MLB, NBA & NFL", included: true },
       { text: "New tools & dashboards added first to Pro", included: true },

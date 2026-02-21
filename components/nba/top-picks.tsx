@@ -2,20 +2,26 @@
 
 import Image from "next/image"
 import { Trophy, Share2 } from "lucide-react"
+import { ShareCapture } from "@/components/ui/share-capture"
 import type { RowData } from "@/components/nba/first-basket-table"
 
 /** Minimum games started to be eligible for Top Picks (filters outliers like 1-game, 100% players) */
 const MIN_GAMES_TOP_PICKS = 10
 
 /**
- * Composite score for "tonight's best first basket pick":
- *  - 55% first basket % (the core stat)
- *  - 30% tip win % (team controls the ball)
- *  - 15% team rank bonus (rank 1 = 10, rank 2 = 6, rank 3 = 3, else 0)
+ * First Basket Probability:
+ *   P(First Basket) = Tip% × 1st Shot% × (Made / Team 1st Buckets)
+ *
+ * - tipWinPct: Probability the player's team wins the jump (0-100)
+ * - firstShotPct: How often this player takes the team's very first shot (0-100)
+ * - firstBaskets / teamFirstBaskets: Conversion ratio — how many of the team's
+ *   first baskets this player actually scored
  */
 function pickScore(row: RowData): number {
-  const rankBonus = row.teamRank === 1 ? 10 : row.teamRank === 2 ? 6 : row.teamRank === 3 ? 3 : 0
-  return (row.firstBasketPct * 0.55) + (row.tipWinPct * 0.30) + rankBonus
+  const tipPct = row.tipWinPct / 100
+  const firstShotPct = row.firstShotPct / 100
+  const madeRatio = row.teamFirstBaskets > 0 ? row.firstBaskets / row.teamFirstBaskets : 0
+  return tipPct * firstShotPct * madeRatio
 }
 
 export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: number }) {
@@ -31,14 +37,15 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
   const gridCols = maxPicks <= 3 ? "sm:grid-cols-3" : "sm:grid-cols-5"
 
   return (
+    <ShareCapture label="Tonight's Top First Basket Picks">
     <div className="rounded-xl border border-primary/20 bg-primary/[0.02] overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Trophy className="h-4 w-4 text-primary" />
         <span className="text-sm font-bold text-foreground">Tonight{"'"}s Top First Basket Picks</span>
-        <span className="text-[10px] text-muted-foreground ml-auto">Ranked by composite score</span>
+        <span className="text-[10px] text-muted-foreground ml-auto">Ranked by calculated probability</span>
         <button
           onClick={() => {
-            const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${p.firstBasketPct.toFixed(1)}% first basket rate`).join("\n")
+            const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${(pickScore(p) * 100).toFixed(1)}% probability`).join("\n")
             const shareText = `Tonight's Top First Basket Picks\n${text}\n\nFull analysis at heatcheckhq.io/nba/first-basket`
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})
@@ -55,6 +62,7 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
       </div>
       <div className={`grid grid-cols-1 ${gridCols} divide-y sm:divide-y-0 sm:divide-x divide-border/50`}>
         {topPicks.map((pick, i) => {
+          const prob = pickScore(pick) * 100
           return (
             <div key={pick.id} className="px-4 py-3 flex items-center gap-3 sm:flex-col sm:items-center sm:text-center sm:py-4">
               {/* Rank badge */}
@@ -89,12 +97,12 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
               {/* Key stats */}
               <div className="ml-auto flex items-center gap-3 sm:ml-0 sm:mt-1">
                 <div className="flex flex-col items-center">
-                  <span className="text-base font-bold text-primary font-mono tabular-nums">{pick.firstBasketPct.toFixed(1)}%</span>
-                  <span className="text-[9px] text-muted-foreground uppercase">1st Bkt</span>
+                  <span className="text-base font-bold text-primary font-mono tabular-nums">{prob.toFixed(1)}%</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">Prob</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.firstBaskets}</span>
-                  <span className="text-[9px] text-muted-foreground uppercase">Made</span>
+                  <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.firstShotPct.toFixed(1)}%</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">1st Shot</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.tipWinPct.toFixed(1)}%</span>
@@ -106,5 +114,6 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
         })}
       </div>
     </div>
+    </ShareCapture>
   )
 }

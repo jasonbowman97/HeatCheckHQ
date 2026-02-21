@@ -1,33 +1,11 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { X, Lightbulb } from "lucide-react"
-import { getDismissedTips, dismissTip } from "@/lib/onboarding"
-
-/** Page-specific tips shown to first-time visitors */
-const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
+/** Page-specific tips for section info icons (extracted from old onboarding tooltips) */
+export const SECTION_TIPS: Record<string, { title: string; tips: string[] }> = {
   "/check": {
     title: "Prop Analyzer",
     tips: [
       "Search any player to instantly see all their props analyzed at a glance.",
       "Switch between stats to see the full game log with hit rates and convergence signals.",
       "Use the L5/L10/L20/All toggle to view different sample sizes.",
-    ],
-  },
-  "/alerts": {
-    title: "Alerts",
-    tips: [
-      "Set custom research criteria to define what makes a great prop for you.",
-      "When a prop matches your criteria, you'll get an alert so you never miss it.",
-      "Pro users get unlimited criteria with performance tracking.",
-    ],
-  },
-  "/criteria": {
-    title: "Alerts",
-    tips: [
-      "Set custom research criteria to define what makes a great prop for you.",
-      "When a prop matches your criteria, you'll get an alert so you never miss it.",
-      "Pro users get unlimited criteria with performance tracking.",
     ],
   },
   "/mlb/hot-hitters": {
@@ -73,16 +51,16 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
   "/mlb/streaks": {
     title: "MLB Streak Tracker",
     tips: [
-      "Set custom thresholds for H, HR, RBI, R, SB, TB, and K — see who consistently hits your lines.",
+      "Set custom thresholds for H, HR, RBI, R, SB, TB, and K.",
       "Both batters and pitchers are tracked. Pitchers use strikeouts (K) as the key stat.",
-      "Adjust the game window (5, 10, 15, or season) to see short-term vs long-term consistency.",
+      "Click any player name to open their full prop analysis.",
     ],
   },
   "/nba/first-basket": {
     title: "First Basket Picks",
     tips: [
       "Rankings based on first basket %, first shot attempt %, and tipoff win rate.",
-      "Composite score weighs all factors — higher is better for first basket props.",
+      "Top picks ranked by calculated probability: Tip% × 1st Shot% × conversion ratio.",
       "Filter by minimum games played to remove small-sample flukes.",
     ],
   },
@@ -98,16 +76,16 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
     title: "Defense vs Position",
     tips: [
       "Shows how each team defends against specific positions (PG, SG, SF, PF, C).",
-      "Green = that defense is weak (good matchup for the player). Red = tough defense.",
+      "Green = that defense is weak (good matchup). Red = tough defense.",
       "Great for player prop research — find soft matchups for points, rebounds, assists.",
     ],
   },
   "/nba/streaks": {
     title: "NBA Streak Tracker",
     tips: [
-      "Set custom thresholds for PTS, REB, AST, 3PM, STL, BLK — see who consistently hits your lines.",
+      "Set custom thresholds for PTS, REB, AST, 3PM, STL, BLK.",
       "Use the game window selector to compare last 5, 10, 15, or full season consistency.",
-      "Filter by team, search for a player, or toggle 'Playing Today' to find tonight's best bets.",
+      "Click any player name to open their full prop analysis inline.",
     ],
   },
   "/nfl/matchup": {
@@ -131,7 +109,7 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
     tips: [
       "Set custom thresholds for Pass YD, Pass TD, Rush YD, Rush TD, Rec YD, REC, Rec TD.",
       "Top 30 QBs, RBs, and WRs by season stats are tracked with full game logs.",
-      "Adjust the game window to see short-term hot streaks or season-long consistency.",
+      "Click any player name to open their full prop analysis inline.",
     ],
   },
   "/mlb/due-for-hr": {
@@ -142,69 +120,4 @@ const PAGE_TIPS: Record<string, { title: string; tips: string[] }> = {
       "Best used alongside matchup data — overdue + soft pitching = prime HR spot.",
     ],
   },
-}
-
-export function OnboardingTooltip({ pathname }: { pathname: string }) {
-  const [visible, setVisible] = useState(false)
-  const [dismissed, setDismissedState] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    const d = getDismissedTips()
-    setDismissedState(d)
-    // Show if this page hasn't been dismissed
-    if (!d.has(pathname) && PAGE_TIPS[pathname]) {
-      // Small delay so the page loads first
-      const timer = setTimeout(() => setVisible(true), 800)
-      return () => clearTimeout(timer)
-    }
-  }, [pathname])
-
-  const tips = PAGE_TIPS[pathname]
-  if (!tips || !visible) return null
-
-  const handleDismiss = () => {
-    setVisible(false)
-    // dismissTip is async (writes to Supabase) but we don't await —
-    // localStorage is written synchronously inside for instant UX
-    dismissTip(pathname).then(setDismissedState)
-  }
-
-  return (
-    <div className="mx-auto max-w-[1440px] px-6 mt-2">
-      <div className="relative rounded-xl border border-primary/20 bg-primary/5 p-4 pr-10">
-        <button
-          onClick={handleDismiss}
-          className="absolute top-3 right-3 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          aria-label="Dismiss tips"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
-            <Lightbulb className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground mb-1.5">
-              {tips.title}
-            </h3>
-            <ul className="space-y-1">
-              {tips.tips.map((tip, i) => (
-                <li key={i} className="text-xs text-muted-foreground leading-relaxed flex gap-2">
-                  <span className="text-primary/60 shrink-0">&#8226;</span>
-                  {tip}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={handleDismiss}
-              className="mt-2.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              Got it, don&apos;t show again
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }

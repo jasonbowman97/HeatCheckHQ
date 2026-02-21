@@ -12,8 +12,10 @@ import {
   Lock,
 } from "lucide-react"
 import { useUserTier } from "@/components/user-tier-provider"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 import { SignupGate } from "@/components/signup-gate"
 import { StreakTable } from "./streak-table"
+import { PlayerAnalysisPanel } from "./player-analysis-panel"
 import {
   filterAndSort,
   hitRateColorClass,
@@ -66,6 +68,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
   const [activeTeam, setActiveTeam] = useState("All")
   const [playingTodayOnly, setPlayingTodayOnly] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>("hitRate")
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
   // Sync state to URL
   const updateUrl = useCallback(
@@ -133,8 +136,9 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
       {/* Title */}
       <div>
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             {sportLabel} Streak Tracker
+            <SectionInfoTip page={`/${sport}/streaks`} />
           </h2>
           {players.length > 0 && (
             <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
@@ -322,6 +326,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
                   statLabel={activeStat.shortLabel}
                   window={window}
                   sport={sport}
+                  onPlayerClick={setSelectedPlayerId}
                 />
               }
               gated={
@@ -332,6 +337,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
                   window={window}
                   startRank={PREVIEW_ROWS + 1}
                   sport={sport}
+                  onPlayerClick={setSelectedPlayerId}
                 />
               }
             />
@@ -342,6 +348,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
               statLabel={activeStat.shortLabel}
               window={window}
               sport={sport}
+              onPlayerClick={setSelectedPlayerId}
             />
           )
         ) : (
@@ -357,6 +364,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
                   threshold={threshold}
                   statLabel={activeStat.shortLabel}
                   sport={sport}
+                  onPlayerClick={setSelectedPlayerId}
                 />
               }
               gated={
@@ -365,6 +373,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
                   threshold={threshold}
                   statLabel={activeStat.shortLabel}
                   sport={sport}
+                  onPlayerClick={setSelectedPlayerId}
                 />
               }
             />
@@ -374,6 +383,7 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
               threshold={threshold}
               statLabel={activeStat.shortLabel}
               sport={sport}
+              onPlayerClick={setSelectedPlayerId}
             />
           )
         )
@@ -402,6 +412,15 @@ export function StreaksDashboard({ players, sport = "nba" }: StreaksDashboardPro
           )}
         </div>
       )}
+
+      {/* Player Analysis Panel */}
+      {selectedPlayerId && (
+        <PlayerAnalysisPanel
+          playerId={selectedPlayerId}
+          sport={sport}
+          onClose={() => setSelectedPlayerId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -413,11 +432,13 @@ function StreakCardGrid({
   threshold,
   statLabel,
   sport = "nba",
+  onPlayerClick,
 }: {
   rows: FilteredPlayerRow[]
   threshold: number
   statLabel: string
   sport?: SportKey
+  onPlayerClick?: (playerId: string) => void
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -430,7 +451,10 @@ function StreakCardGrid({
           >
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <button
+                className="flex items-center gap-2 text-left group"
+                onClick={() => onPlayerClick?.(row.player.id)}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getTeamLogoUrl(sport, row.player.team)}
@@ -440,7 +464,7 @@ function StreakCardGrid({
                   className="rounded"
                 />
                 <div>
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                     {row.player.name}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
@@ -448,7 +472,7 @@ function StreakCardGrid({
                     {row.player.opponent && ` · vs ${row.player.opponent}`}
                   </p>
                 </div>
-              </div>
+              </button>
               <span
                 className={`text-xs font-bold px-2.5 py-1 rounded-md ${colors.text} ${colors.bg}`}
               >

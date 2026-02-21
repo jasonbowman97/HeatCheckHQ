@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 // Streak types (mirrored from lib/hot-hitters.ts to avoid importing server-only module)
 type StreakType =
   | "hitting"
@@ -189,6 +190,7 @@ export function HotHittersSection() {
       <div>
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-foreground">Hot Hitters</h2>
+          <SectionInfoTip page="/mlb/hot-hitters" />
           {isLoading && (
             <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
               <Loader2 className="h-3 w-3 animate-spin" />

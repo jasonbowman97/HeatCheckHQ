@@ -12,6 +12,7 @@ import { DateNavigator } from "@/components/nba/date-navigator"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 import type { TodayMatchup, MatchupInsight, Position, StatCategory, PositionRankingRow } from "@/lib/nba-defense-vs-position"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -167,6 +168,7 @@ export default function DefenseVsPositionPage() {
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Shield className="h-5 w-5 text-primary" />
             <h1 className="text-lg sm:text-xl font-semibold text-foreground">NBA Defense vs Position Rankings</h1>
+            <SectionInfoTip page="/nba/defense-vs-position" />
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">

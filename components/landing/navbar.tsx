@@ -94,14 +94,6 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
-          {/* Prop Analyzer — direct link, highlighted */}
-          <Link
-            href="/check"
-            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
-          >
-            Prop Analyzer
-          </Link>
-
           <a href="#dashboards" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Dashboards
           </a>
@@ -169,7 +161,6 @@ export function Navbar() {
       {mobileOpen && (
         <div className="border-t border-border bg-background px-4 sm:px-6 py-5 sm:py-6 md:hidden max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col gap-4">
-            <Link href="/check" onClick={() => setMobileOpen(false)} className="text-sm font-medium text-primary">Prop Analyzer</Link>
             <a href="#dashboards" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Dashboards</a>
             <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Pricing</a>
             <Link href="/blog" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground">Blog</Link>

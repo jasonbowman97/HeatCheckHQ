@@ -9,6 +9,7 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { MatchupPanel } from "@/components/matchup-panel"
 import { PlayersTable } from "@/components/players-table"
 import { Loader2, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -255,6 +256,7 @@ export default function Page() {
                   <h2 className="text-xl font-semibold text-foreground">
                     Hitter vs Pitcher
                   </h2>
+                  <SectionInfoTip page="/mlb/hitting-stats" />
                   {matchupData && !isLoadingMatchup && (
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                       Live

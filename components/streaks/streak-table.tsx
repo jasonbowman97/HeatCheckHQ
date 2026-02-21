@@ -2,6 +2,7 @@
 
 import { hitRateColorClass, type FilteredPlayerRow } from "@/lib/streak-filter"
 import { getTeamLogoUrl, type WindowSize, type SportKey } from "@/lib/streak-types"
+import { ShareCapture } from "@/components/ui/share-capture"
 
 interface StreakTableProps {
   rows: FilteredPlayerRow[]
@@ -10,6 +11,7 @@ interface StreakTableProps {
   window: WindowSize
   startRank?: number
   sport?: SportKey
+  onPlayerClick?: (playerId: string) => void
 }
 
 export function StreakTable({
@@ -19,8 +21,10 @@ export function StreakTable({
   window,
   startRank = 1,
   sport = "nba",
+  onPlayerClick,
 }: StreakTableProps) {
   return (
+    <ShareCapture label={`${statLabel} Streak Tracker`}>
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Scrollable wrapper for the table */}
       <div className="overflow-x-auto">
@@ -70,7 +74,10 @@ export function StreakTable({
 
                   {/* Player */}
                   <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
+                    <button
+                      className="flex items-center gap-2 text-left group w-full"
+                      onClick={() => onPlayerClick?.(row.player.id)}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getTeamLogoUrl(sport, row.player.team)}
@@ -80,7 +87,7 @@ export function StreakTable({
                         className="rounded flex-shrink-0"
                       />
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
+                        <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                           {row.player.name}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
@@ -92,7 +99,7 @@ export function StreakTable({
                           )}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   </td>
 
                   {/* Game stat boxes */}
@@ -168,5 +175,6 @@ export function StreakTable({
         </table>
       </div>
     </div>
+    </ShareCapture>
   )
 }

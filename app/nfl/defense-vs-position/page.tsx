@@ -17,6 +17,7 @@ import type {
   NFLDvpRankingRow,
 } from "@/lib/nfl-defense-vs-position"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -215,6 +216,7 @@ export default function NFLDefenseVsPositionPage() {
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Shield className="h-5 w-5 text-primary" />
             <h1 className="text-lg sm:text-xl font-semibold text-foreground">Defense vs Position</h1>
+            <SectionInfoTip page="/nfl/defense-vs-position" />
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-sm text-muted-foreground">

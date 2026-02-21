@@ -28,12 +28,8 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
   { pattern: "/nba/streaks", tier: "free", label: "NBA Streak Tracker" },
 
-  // Pro subscription required — core features
-  { pattern: "/alerts", tier: "pro", label: "Alerts" },
-  { pattern: "/criteria", tier: "pro", label: "Alerts" },
-  { pattern: "/heatcheck", tier: "pro", label: "The HeatCheck" },
+  // Pro subscription required
 
-  // Pro subscription required — existing dashboards
   { pattern: "/mlb/streaks", tier: "pro", label: "MLB Streak Tracker" },
   { pattern: "/nfl/streaks", tier: "pro", label: "NFL Streak Tracker" },
   { pattern: "/mlb/hitting-stats", tier: "pro", label: "Hitter vs Pitcher" },

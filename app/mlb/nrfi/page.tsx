@@ -13,6 +13,7 @@ import { useUserTier } from "@/components/user-tier-provider"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { NrfiGame } from "@/lib/nrfi-data"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -96,6 +97,7 @@ export default function NrfiPage() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <h1 className="text-lg sm:text-xl font-semibold text-foreground">No Run First Inning</h1>
+            <SectionInfoTip page="/mlb/nrfi" />
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             {isLive && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">

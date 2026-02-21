@@ -11,6 +11,7 @@ import { useUserTier } from "@/components/user-tier-provider"
 import { ProUpsellBanner } from "@/components/pro-upsell-banner"
 import type { GameWeather } from "@/lib/mlb-weather-data"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 /* ---------- helpers: parse ESPN / OpenWeather wind strings ---------- */
 function getWindDir(windStr: string): GameWeather["windDir"] {
@@ -142,6 +143,7 @@ export function WeatherPageClient() {
             <h1 className="text-xl font-semibold text-foreground">
               Stadium Weather
             </h1>
+            <SectionInfoTip page="/mlb/weather" />
             {liveGames.length > 0 && hasLiveWeather && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md">
                 Live Weather

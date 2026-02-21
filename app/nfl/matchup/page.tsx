@@ -11,6 +11,7 @@ import Image from "next/image"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 import { LastUpdated } from "@/components/ui/last-updated"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -153,6 +154,9 @@ export default function NFLMatchupPage() {
       <main className="mx-auto max-w-[1440px] px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {/* Game Selector */}
         <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <SectionInfoTip page="/nfl/matchup" />
+          </div>
           {/* Live games */}
           {hasLiveGames && (
             <div className="flex flex-wrap items-center gap-3">

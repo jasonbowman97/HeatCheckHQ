@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import useSWR from "swr"
 import { Loader2 } from "lucide-react"
+import { SectionInfoTip } from "@/components/ui/section-info-tip"
 import { DashboardShell } from "@/components/dashboard-shell"
 import type { PitcherStats } from "@/lib/pitching-data"
 import { PitchingTable } from "@/components/mlb/pitching-table"
@@ -79,6 +80,7 @@ export default function PitchingStatsPage() {
           <>
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-4">
+              <SectionInfoTip page="/mlb/pitching-stats" />
               {/* Today's Starters / All Pitchers toggle */}
               {hasTodayStarters && (
                 <div className="flex items-center gap-3">
