@@ -38,6 +38,8 @@ export interface PBPPlayer {
 export interface TodayGame {
   away: string
   home: string
+  awayLogo?: string
+  homeLogo?: string
 }
 
 type TableMode = "first-basket" | "scoring"
@@ -267,7 +269,7 @@ function GameFilter({
 
   return (
     <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by game">
-      <span className="text-xs text-muted-foreground mr-1">Games:</span>
+      <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
       <button
         onClick={() => setGameFilter("all")}
         aria-pressed={gameFilter === "all"}
@@ -277,7 +279,7 @@ function GameFilter({
             : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
         }`}
       >
-        All
+        All Players
       </button>
       <button
         onClick={() => setGameFilter("today")}
@@ -295,15 +297,21 @@ function GameFilter({
         return (
           <button
             key={key}
-            onClick={() => setGameFilter(gameFilter === key ? "all" : key)}
+            onClick={() => setGameFilter(gameFilter === key ? "today" : key)}
             aria-pressed={gameFilter === key}
-            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               gameFilter === key
                 ? "bg-primary/15 text-primary border border-primary/30"
                 : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
             }`}
           >
+            {game.awayLogo && (
+              <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />
+            )}
             {game.away} @ {game.home}
+            {game.homeLogo && (
+              <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />
+            )}
           </button>
         )
       })}
@@ -325,7 +333,8 @@ export function PBPPlayerTable({
 }: PBPPlayerTableProps) {
   const [sortColumn, setSortColumn] = useState(mode === "scoring" ? "avgPoints" : "rate")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [gameFilter, setGameFilter] = useState("all")
+  // Default to "today" when there are games today, so users see relevant players first
+  const [gameFilter, setGameFilter] = useState(todayGames.length > 0 ? "today" : "all")
 
   function handleSort(col: string) {
     if (sortColumn === col) {
@@ -471,8 +480,8 @@ export function PBPPlayerTable({
                         <div className="flex items-center gap-0.5">
                           {player.recentResults.slice(0, 10).map((g, j) => {
                             const isHit = isScoring ? g.hit : g.scored
-                            const displayValue = isScoring ? g.points : (isHit ? "Y" : "N")
-                            const tooltipText = `${formatDate(g.date)} ${g.isHome ? "vs" : "@"} ${g.opponent}${isScoring ? ` — ${g.points} pts` : isHit ? " — Scored" : " — No"}`
+                            const displayValue = isScoring ? g.points : (isHit ? "✓" : "✗")
+                            const tooltipText = `${formatDate(g.date)} ${g.isHome ? "vs" : "@"} ${g.opponent}${isScoring ? ` — ${g.points} pts` : isHit ? " — Scored first" : " — No"}`
 
                             return (
                               <div key={j} className="relative group" title={tooltipText}>
@@ -497,6 +506,7 @@ export function PBPPlayerTable({
                                   <div className="bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
                                     <div className="font-semibold">{formatDate(g.date)} {g.isHome ? "vs" : "@"} {g.opponent}</div>
                                     {isScoring && <div>{g.points} pts</div>}
+                                    {!isScoring && <div>{isHit ? "Scored first" : "Did not score first"}</div>}
                                   </div>
                                 </div>
                               </div>

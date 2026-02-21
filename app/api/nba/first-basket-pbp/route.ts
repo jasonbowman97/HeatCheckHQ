@@ -6,6 +6,16 @@ import type { GameWindow } from "@/components/nba/pbp/game-window-filter"
 
 export const revalidate = 3600 // 1hr ISR
 
+/** Standard NBA team abbreviations — excludes All-Star / Rising Stars / special events */
+const NBA_TEAMS = new Set([
+  "ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET", "GS",
+  "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN", "NO", "NY",
+  "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SA", "TOR", "UTAH", "WSH",
+])
+function isRegularGame(homeTeam: string, awayTeam: string): boolean {
+  return NBA_TEAMS.has(homeTeam) && NBA_TEAMS.has(awayTeam)
+}
+
 /**
  * PBP-powered First Basket / First Team FG API.
  *
@@ -39,26 +49,77 @@ export async function GET(request: Request) {
 
     const supabase = await createClient()
 
-    // Query the materialized view for first events
+    // We need ALL games for the season to build correct team game counts.
+    // First, get ALL distinct game_ids for this category to know the full set.
+    // Supabase default limit is 1000 — we need more for season data.
+    const { data: allGamesForCategory } = await supabase
+      .from("mv_game_firsts")
+      .select("game_id, game_date, home_team, away_team")
+      .eq("category", category)
+      .order("game_date", { ascending: false })
+      .limit(5000)
+
+    if (!allGamesForCategory || allGamesForCategory.length === 0) {
+      const res = NextResponse.json({
+        players: [],
+        todayGames: [],
+        updatedAt: new Date().toISOString(),
+        propType,
+        window: windowParam,
+        half,
+      })
+      res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
+      return res
+    }
+
+    // Deduplicate game_ids to get unique games, excluding All-Star / special events
+    const uniqueGames = new Map<string, { date: string; home: string; away: string }>()
+    for (const g of allGamesForCategory) {
+      if (!uniqueGames.has(g.game_id) && isRegularGame(g.home_team, g.away_team)) {
+        uniqueGames.set(g.game_id, { date: g.game_date, home: g.home_team, away: g.away_team })
+      }
+    }
+
+    // Build team game counts from ALL games in the category
+    const teamGameCounts = new Map<string, number>()
+    for (const g of uniqueGames.values()) {
+      teamGameCounts.set(g.home, (teamGameCounts.get(g.home) || 0) + 1)
+      teamGameCounts.set(g.away, (teamGameCounts.get(g.away) || 0) + 1)
+    }
+
+    // Determine which games are in the window
+    const allDates = [...new Set([...uniqueGames.values()].map((g) => g.date))].sort().reverse()
+
+    let windowGameIds: Set<string> | null = null // null = all games
+    let windowTeamGameCounts = teamGameCounts // default to full season
+
+    if (windowSize !== "season") {
+      // Get unique game dates, then pick the Nth date as cutoff
+      const cutoffDate = allDates[Math.min(windowSize - 1, allDates.length - 1)]
+      windowGameIds = new Set<string>()
+      const wTeamCounts = new Map<string, number>()
+      for (const [gid, g] of uniqueGames) {
+        if (g.date >= cutoffDate) {
+          windowGameIds.add(gid)
+          wTeamCounts.set(g.home, (wTeamCounts.get(g.home) || 0) + 1)
+          wTeamCounts.set(g.away, (wTeamCounts.get(g.away) || 0) + 1)
+        }
+      }
+      windowTeamGameCounts = wTeamCounts
+    }
+
+    // Now query the actual first events (with enough limit)
     let query = supabase
       .from("mv_game_firsts")
       .select("*")
       .eq("category", category)
       .order("game_date", { ascending: false })
+      .limit(5000)
 
-    if (windowSize !== "season") {
-      const { data: recentDates } = await supabase
-        .from("mv_game_firsts")
-        .select("game_date")
-        .eq("category", category)
-        .order("game_date", { ascending: false })
-
-      if (recentDates) {
-        const uniqueDates = [...new Set(recentDates.map((d: { game_date: string }) => d.game_date))]
-        const cutoffDate = uniqueDates[Math.min(windowSize * 3, uniqueDates.length) - 1]
-        if (cutoffDate) {
-          query = query.gte("game_date", cutoffDate)
-        }
+    if (windowSize !== "season" && windowGameIds) {
+      const cutoffDate = allDates[Math.min((typeof windowSize === "number" ? windowSize : 1) - 1, allDates.length - 1)]
+      if (cutoffDate) {
+        query = query.gte("game_date", cutoffDate)
       }
     }
 
@@ -85,7 +146,20 @@ export async function GET(request: Request) {
       return res
     }
 
-    // Aggregate per player
+    // Build a set of game_ids where each player's team played (for recent results)
+    // We need to show games where the player did NOT score too
+    const teamGameDates = new Map<string, { gameId: string; date: string; opponent: string; isHome: boolean }[]>()
+    for (const [gid, g] of uniqueGames) {
+      if (windowGameIds && !windowGameIds.has(gid)) continue
+      // home team entry
+      if (!teamGameDates.has(g.home)) teamGameDates.set(g.home, [])
+      teamGameDates.get(g.home)!.push({ gameId: gid, date: g.date, opponent: g.away, isHome: true })
+      // away team entry
+      if (!teamGameDates.has(g.away)) teamGameDates.set(g.away, [])
+      teamGameDates.get(g.away)!.push({ gameId: gid, date: g.date, opponent: g.home, isHome: false })
+    }
+
+    // Aggregate per player — track which games they scored in
     const playerMap = new Map<
       string,
       {
@@ -93,14 +167,14 @@ export async function GET(request: Request) {
         athleteName: string
         team: string
         firstCount: number
-        gameIds: Set<string>
-        gameResults: { gameId: string; date: string; opponent: string; isHome: boolean; scored: boolean }[]
-        teams: Set<string>
+        scoredGameIds: Set<string>
       }
     >()
 
     for (const ev of firstEvents) {
       if (!ev.athlete_id) continue
+      if (!isRegularGame(ev.home_team, ev.away_team)) continue
+      if (windowGameIds && !windowGameIds.has(ev.game_id)) continue
 
       let entry = playerMap.get(ev.athlete_id)
       if (!entry) {
@@ -109,68 +183,49 @@ export async function GET(request: Request) {
           athleteName: ev.athlete_name || "Unknown",
           team: ev.team,
           firstCount: 0,
-          gameIds: new Set(),
-          gameResults: [],
-          teams: new Set(),
+          scoredGameIds: new Set(),
         }
         playerMap.set(ev.athlete_id, entry)
       }
 
       entry.firstCount++
-      entry.gameIds.add(ev.game_id)
-      entry.teams.add(ev.team)
-
-      const isHome = ev.team === ev.home_team
-      const opponent = isHome ? ev.away_team : ev.home_team
-      entry.gameResults.push({
-        gameId: ev.game_id,
-        date: ev.game_date,
-        opponent,
-        isHome,
-        scored: true,
-      })
-    }
-
-    // Team game counts
-    const teamGamesSet = new Map<string, Set<string>>()
-    for (const ev of firstEvents) {
-      for (const team of [ev.home_team, ev.away_team]) {
-        if (!teamGamesSet.has(team)) teamGamesSet.set(team, new Set())
-        teamGamesSet.get(team)!.add(ev.game_id)
-      }
-    }
-    const teamGameCounts = new Map<string, number>()
-    for (const [team, games] of teamGamesSet) {
-      teamGameCounts.set(team, games.size)
+      entry.scoredGameIds.add(ev.game_id)
     }
 
     // Today's games for matchup context
     const todayGames = await getNBAScoreboard()
     const matchupMap: Record<string, { opponent: string; isHome: boolean }> = {}
-    const todayGamesList: { away: string; home: string }[] = []
+    const todayGamesList: { away: string; home: string; awayLogo: string; homeLogo: string }[] = []
     for (const g of todayGames) {
       matchupMap[g.homeTeam.abbreviation] = { opponent: g.awayTeam.abbreviation, isHome: true }
       matchupMap[g.awayTeam.abbreviation] = { opponent: g.homeTeam.abbreviation, isHome: false }
-      todayGamesList.push({ away: g.awayTeam.abbreviation, home: g.homeTeam.abbreviation })
+      todayGamesList.push({
+        away: g.awayTeam.abbreviation,
+        home: g.homeTeam.abbreviation,
+        awayLogo: g.awayTeam.logo,
+        homeLogo: g.homeTeam.logo,
+      })
     }
     const todayTeams = new Set(Object.keys(matchupMap))
 
-    const allGameDates = [...new Set(firstEvents.map((e: { game_date: string }) => e.game_date))]
-
-    // Build player response — show ALL players
+    // Build player response
     const players = [...playerMap.values()]
       .map((p) => {
-        const totalTeamGames = teamGameCounts.get(p.team) || 1
-        let gamesInWindow = totalTeamGames
-        if (windowSize !== "season") {
-          gamesInWindow = Math.min(windowSize, totalTeamGames)
-        }
-
+        const gamesInWindow = windowTeamGameCounts.get(p.team) || 1
         const rate = gamesInWindow > 0 ? (p.firstCount / gamesInWindow) * 100 : 0
 
-        const recentResults = p.gameResults
+        // Build recent results showing ALL games (scored or not)
+        const teamGames = teamGameDates.get(p.team) || []
+        const recentResults = teamGames
           .sort((a, b) => b.date.localeCompare(a.date))
           .slice(0, typeof windowSize === "number" ? windowSize : 10)
+          .map((g) => ({
+            gameId: g.gameId,
+            date: g.date,
+            opponent: g.opponent,
+            isHome: g.isHome,
+            scored: p.scoredGameIds.has(g.gameId),
+          }))
 
         const matchup = matchupMap[p.team]
         const playsToday = todayTeams.has(p.team)
@@ -191,12 +246,13 @@ export async function GET(request: Request) {
           playsToday,
         }
       })
+      .filter((p) => p.gamesInWindow >= 3) // need enough data
       .sort((a, b) => b.rate - a.rate)
 
     const res = NextResponse.json({
       players,
       todayGames: todayGamesList,
-      totalGameDates: allGameDates.length,
+      totalGameDates: allDates.length,
       updatedAt: new Date().toISOString(),
       propType,
       window: windowParam,

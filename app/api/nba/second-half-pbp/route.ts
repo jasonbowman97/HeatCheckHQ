@@ -9,6 +9,16 @@ import { getNBAScoreboard } from "@/lib/nba-api"
 
 export const revalidate = 3600
 
+/** Standard NBA team abbreviations — excludes All-Star / Rising Stars / special events */
+const NBA_TEAMS = new Set([
+  "ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET", "GS",
+  "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN", "NO", "NY",
+  "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SA", "TOR", "UTAH", "WSH",
+])
+function isRegularGame(homeTeam: string, awayTeam: string): boolean {
+  return NBA_TEAMS.has(homeTeam) && NBA_TEAMS.has(awayTeam)
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -21,40 +31,81 @@ export async function GET(request: Request) {
 
     const supabase = await createClient()
 
+    // Get ALL events for this category (override Supabase default 1000 limit)
+    const { data: allGamesForCategory } = await supabase
+      .from("mv_game_firsts")
+      .select("game_id, game_date, home_team, away_team")
+      .eq("category", category)
+      .order("game_date", { ascending: false })
+      .limit(5000)
+
+    if (!allGamesForCategory || allGamesForCategory.length === 0) {
+      const res = NextResponse.json({
+        players: [],
+        todayGames: [],
+        updatedAt: new Date().toISOString(),
+        propType,
+        window: windowParam,
+        half: "2",
+      })
+      res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
+      return res
+    }
+
+    // Deduplicate + exclude All-Star games
+    const uniqueGames = new Map<string, { date: string; home: string; away: string }>()
+    for (const g of allGamesForCategory) {
+      if (!uniqueGames.has(g.game_id) && isRegularGame(g.home_team, g.away_team)) {
+        uniqueGames.set(g.game_id, { date: g.game_date, home: g.home_team, away: g.away_team })
+      }
+    }
+
+    // Build team game counts from ALL games
+    const teamGameCounts = new Map<string, number>()
+    for (const g of uniqueGames.values()) {
+      teamGameCounts.set(g.home, (teamGameCounts.get(g.home) || 0) + 1)
+      teamGameCounts.set(g.away, (teamGameCounts.get(g.away) || 0) + 1)
+    }
+
+    const allDates = [...new Set([...uniqueGames.values()].map((g) => g.date))].sort().reverse()
+    const windowSize = windowParam === "season" ? Infinity : Number(windowParam)
+
+    // For windowed queries, compute per-team game counts within the window
+    let windowGameIds: Set<string> | null = null
+    let windowTeamGameCounts = teamGameCounts
+
+    if (windowSize !== Infinity) {
+      const cutoffDate = allDates[Math.min(windowSize - 1, allDates.length - 1)]
+      windowGameIds = new Set<string>()
+      const wTeamCounts = new Map<string, number>()
+      for (const [gid, g] of uniqueGames) {
+        if (g.date >= cutoffDate) {
+          windowGameIds.add(gid)
+          wTeamCounts.set(g.home, (wTeamCounts.get(g.home) || 0) + 1)
+          wTeamCounts.set(g.away, (wTeamCounts.get(g.away) || 0) + 1)
+        }
+      }
+      windowTeamGameCounts = wTeamCounts
+    }
+
+    // Fetch all first events
     let query = supabase
       .from("mv_game_firsts")
       .select("*")
       .eq("category", category)
       .order("game_date", { ascending: false })
+      .limit(5000)
 
-    if (windowParam !== "season") {
-      const windowSize = Number(windowParam)
-      const { data: recentDates } = await supabase
-        .from("mv_game_firsts")
-        .select("game_date")
-        .eq("category", category)
-        .order("game_date", { ascending: false })
-
-      if (recentDates) {
-        const uniqueDates = [
-          ...new Set(recentDates.map((d: { game_date: string }) => d.game_date)),
-        ]
-        const cutoffDate =
-          uniqueDates[Math.min(windowSize * 3, uniqueDates.length) - 1]
-        if (cutoffDate) {
-          query = query.gte("game_date", cutoffDate)
-        }
-      }
+    if (windowSize !== Infinity) {
+      const cutoffDate = allDates[Math.min(windowSize - 1, allDates.length - 1)]
+      if (cutoffDate) query = query.gte("game_date", cutoffDate)
     }
 
     const { data: firstEvents, error } = await query
 
     if (error) {
       console.error("[2H PBP API]", error)
-      return NextResponse.json(
-        { players: [], error: error.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ players: [], error: error.message }, { status: 500 })
     }
 
     if (!firstEvents || firstEvents.length === 0) {
@@ -70,6 +121,16 @@ export async function GET(request: Request) {
       return res
     }
 
+    // Build team game dates for recent results (show scored AND not-scored games)
+    const teamGameDates = new Map<string, { gameId: string; date: string; opponent: string; isHome: boolean }[]>()
+    for (const [gid, g] of uniqueGames) {
+      if (windowGameIds && !windowGameIds.has(gid)) continue
+      if (!teamGameDates.has(g.home)) teamGameDates.set(g.home, [])
+      teamGameDates.get(g.home)!.push({ gameId: gid, date: g.date, opponent: g.away, isHome: true })
+      if (!teamGameDates.has(g.away)) teamGameDates.set(g.away, [])
+      teamGameDates.get(g.away)!.push({ gameId: gid, date: g.date, opponent: g.home, isHome: false })
+    }
+
     // Aggregate per player
     const playerMap = new Map<
       string,
@@ -78,19 +139,14 @@ export async function GET(request: Request) {
         athleteName: string
         team: string
         firstCount: number
-        gameIds: Set<string>
-        gameResults: {
-          gameId: string
-          date: string
-          opponent: string
-          isHome: boolean
-          scored: boolean
-        }[]
+        scoredGameIds: Set<string>
       }
     >()
 
     for (const ev of firstEvents) {
       if (!ev.athlete_id) continue
+      if (!isRegularGame(ev.home_team, ev.away_team)) continue
+      if (windowGameIds && !windowGameIds.has(ev.game_id)) continue
 
       let entry = playerMap.get(ev.athlete_id)
       if (!entry) {
@@ -99,77 +155,52 @@ export async function GET(request: Request) {
           athleteName: ev.athlete_name || "Unknown",
           team: ev.team,
           firstCount: 0,
-          gameIds: new Set(),
-          gameResults: [],
+          scoredGameIds: new Set(),
         }
         playerMap.set(ev.athlete_id, entry)
       }
 
       entry.firstCount++
-      entry.gameIds.add(ev.game_id)
-
-      const isHome = ev.team === ev.home_team
-      const opponent = isHome ? ev.away_team : ev.home_team
-      entry.gameResults.push({
-        gameId: ev.game_id,
-        date: ev.game_date,
-        opponent,
-        isHome,
-        scored: true,
-      })
-    }
-
-    // Team game counts
-    const teamGamesSet = new Map<string, Set<string>>()
-    for (const ev of firstEvents) {
-      for (const team of [ev.home_team, ev.away_team]) {
-        if (!teamGamesSet.has(team)) teamGamesSet.set(team, new Set())
-        teamGamesSet.get(team)!.add(ev.game_id)
-      }
-    }
-    const teamGameCounts = new Map<string, number>()
-    for (const [team, games] of teamGamesSet) {
-      teamGameCounts.set(team, games.size)
+      entry.scoredGameIds.add(ev.game_id)
     }
 
     // Today's matchup context
     const todayGames = await getNBAScoreboard()
     const matchupMap: Record<string, { opponent: string; isHome: boolean }> = {}
-    const todayGamesList: { away: string; home: string }[] = []
+    const todayGamesList: { away: string; home: string; awayLogo: string; homeLogo: string }[] = []
     for (const g of todayGames) {
-      matchupMap[g.homeTeam.abbreviation] = {
-        opponent: g.awayTeam.abbreviation,
-        isHome: true,
-      }
-      matchupMap[g.awayTeam.abbreviation] = {
-        opponent: g.homeTeam.abbreviation,
-        isHome: false,
-      }
-      todayGamesList.push({ away: g.awayTeam.abbreviation, home: g.homeTeam.abbreviation })
+      matchupMap[g.homeTeam.abbreviation] = { opponent: g.awayTeam.abbreviation, isHome: true }
+      matchupMap[g.awayTeam.abbreviation] = { opponent: g.homeTeam.abbreviation, isHome: false }
+      todayGamesList.push({
+        away: g.awayTeam.abbreviation,
+        home: g.homeTeam.abbreviation,
+        awayLogo: g.awayTeam.logo,
+        homeLogo: g.homeTeam.logo,
+      })
     }
     const todayTeams = new Set(Object.keys(matchupMap))
 
-    const windowSize =
-      windowParam === "season" ? Infinity : Number(windowParam)
-
-    // Build player response — show ALL players
+    // Build player response
     const players = [...playerMap.values()]
       .map((p) => {
-        const totalTeamGames = teamGameCounts.get(p.team) || 1
-        const gamesInWindow = Math.min(
-          windowSize === Infinity ? totalTeamGames : windowSize,
-          totalTeamGames
-        )
-        const rate =
-          gamesInWindow > 0 ? (p.firstCount / gamesInWindow) * 100 : 0
+        const gamesInWindow = windowTeamGameCounts.get(p.team) || 1
+        const rate = gamesInWindow > 0 ? (p.firstCount / gamesInWindow) * 100 : 0
 
-        const recentResults = p.gameResults
+        // Build recent results showing ALL games (scored or not)
+        const teamGames = teamGameDates.get(p.team) || []
+        const recentResults = teamGames
           .sort((a, b) => b.date.localeCompare(a.date))
           .slice(0, windowSize === Infinity ? 10 : windowSize)
+          .map((g) => ({
+            gameId: g.gameId,
+            date: g.date,
+            opponent: g.opponent,
+            isHome: g.isHome,
+            scored: p.scoredGameIds.has(g.gameId),
+          }))
 
         const matchup = matchupMap[p.team]
         const playsToday = todayTeams.has(p.team)
-
         const headshotUrl = `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${p.athleteId}.png&w=96&h=70&cb=1`
 
         return {
@@ -186,6 +217,7 @@ export async function GET(request: Request) {
           playsToday,
         }
       })
+      .filter((p) => p.gamesInWindow >= 3)
       .sort((a, b) => b.rate - a.rate)
 
     const res = NextResponse.json({
@@ -200,9 +232,6 @@ export async function GET(request: Request) {
     return res
   } catch (e) {
     console.error("[2H PBP API]", e)
-    return NextResponse.json(
-      { players: [], error: String(e) },
-      { status: 500 }
-    )
+    return NextResponse.json({ players: [], error: String(e) }, { status: 500 })
   }
 }
