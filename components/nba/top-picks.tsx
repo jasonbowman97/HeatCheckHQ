@@ -42,10 +42,10 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Trophy className="h-4 w-4 text-primary" />
         <span className="text-sm font-bold text-foreground">Tonight{"'"}s Top First Basket Picks</span>
-        <span className="text-[10px] text-muted-foreground ml-auto">Ranked by calculated probability</span>
+        <span className="text-[10px] text-muted-foreground ml-auto hidden sm:inline">Based on tip win %, first shot %, and conversion rate</span>
         <button
           onClick={() => {
-            const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${(pickScore(p) * 100).toFixed(1)}% probability`).join("\n")
+            const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${p.firstBasketPct.toFixed(1)}% first basket rate (${p.firstBaskets}/${p.gamesStarted})`).join("\n")
             const shareText = `Tonight's Top First Basket Picks\n${text}\n\nFull analysis at heatcheckhq.io/nba/first-basket`
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})
@@ -62,7 +62,6 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
       </div>
       <div className={`grid grid-cols-1 ${gridCols} divide-y sm:divide-y-0 sm:divide-x divide-border/50`}>
         {topPicks.map((pick, i) => {
-          const prob = pickScore(pick) * 100
           return (
             <div key={pick.id} className="px-4 py-3 flex items-center gap-3 sm:flex-col sm:items-center sm:text-center sm:py-4">
               {/* Rank badge */}
@@ -97,16 +96,16 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
               {/* Key stats */}
               <div className="ml-auto flex items-center gap-3 sm:ml-0 sm:mt-1">
                 <div className="flex flex-col items-center">
-                  <span className="text-base font-bold text-primary font-mono tabular-nums">{prob.toFixed(1)}%</span>
-                  <span className="text-[9px] text-muted-foreground uppercase">Prob</span>
+                  <span className="text-base font-bold text-primary font-mono tabular-nums">{pick.firstBasketPct.toFixed(1)}%</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">1st Bkt</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.firstShotPct.toFixed(1)}%</span>
                   <span className="text-[9px] text-muted-foreground uppercase">1st Shot</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.tipWinPct.toFixed(1)}%</span>
-                  <span className="text-[9px] text-muted-foreground uppercase">Tip</span>
+                  <span className="text-xs font-semibold font-mono tabular-nums text-foreground">{pick.firstBaskets}/{pick.gamesStarted}</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">Made</span>
                 </div>
               </div>
             </div>

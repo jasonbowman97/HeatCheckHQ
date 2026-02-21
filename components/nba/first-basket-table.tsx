@@ -16,6 +16,8 @@ import { HeatmapLegend } from "@/components/ui/heatmap-legend"
 import { InfoTooltip } from "@/components/ui/info-tooltip"
 import type { BPFirstBasketPlayer, BPTeamTipoff } from "@/lib/bettingpros-scraper"
 
+export type SplitView = "season" | "tonight"
+
 interface FirstBasketTableProps {
   players: BPFirstBasketPlayer[]
   teamTipoffs: Record<string, BPTeamTipoff>
@@ -30,6 +32,8 @@ interface FirstBasketTableProps {
   maxRows?: number
   /** Skip the first N rows (for showing the blurred "rest" behind the gate) */
   skipRows?: number
+  /** Show season totals vs tonight's context (home/away splits) */
+  splitView?: SplitView
 }
 
 export interface RowData {
@@ -47,6 +51,13 @@ export interface RowData {
   firstBasketPct: number
   teamRank: number
   teamFirstBaskets: number
+  /** Home/away splits for contextual view */
+  firstBasketsHome: number
+  firstBasketsAway: number
+  firstShotsHome: number
+  firstShotsAway: number
+  tipWinPctHome: number
+  tipWinPctAway: number
 }
 
 function getRankSuffix(rank: number): string {
@@ -110,6 +121,14 @@ export function buildRows(
 
       const mu = matchupMap[p.team]
 
+      // Home/away tip win % splits
+      const tipWinPctHome = teamTip && teamTip.teamGames > 0
+        ? Math.round((teamTip.tipoffHome / (teamTip.teamGames / 2 || 1)) * 1000) / 10
+        : 0
+      const tipWinPctAway = teamTip && teamTip.teamGames > 0
+        ? Math.round((teamTip.tipoffAway / (teamTip.teamGames / 2 || 1)) * 1000) / 10
+        : 0
+
       return {
         id: p.id,
         name: p.name,
@@ -125,6 +144,12 @@ export function buildRows(
         firstBasketPct,
         teamRank: p.teamRank,
         teamFirstBaskets: teamTip?.firstBaskets ?? 0,
+        firstBasketsHome: p.firstBasketHome,
+        firstBasketsAway: p.firstBasketAway,
+        firstShotsHome: p.firstShotHome,
+        firstShotsAway: p.firstShotAway,
+        tipWinPctHome,
+        tipWinPctAway,
       }
     })
 }
@@ -140,7 +165,9 @@ export function FirstBasketTable({
   matchupMap,
   maxRows,
   skipRows,
+  splitView = "season",
 }: FirstBasketTableProps) {
+  const isTonight = splitView === "tonight"
   const rows = useMemo(() => {
     const built = buildRows(players, teamTipoffs, matchupMap, gameFilter)
     built.sort((a, b) => {
@@ -189,7 +216,7 @@ export function FirstBasketTable({
                 Player
               </TableHead>
               <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={3}>
-                Season Stats
+                {isTonight ? "Tonight's Context (Home/Away Split)" : "Season Stats"}
               </TableHead>
               <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-foreground py-2 border-l border-border" colSpan={2}>
                 Team
@@ -268,34 +295,70 @@ export function FirstBasketTable({
                     )}
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span
-                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
-                        row.tipWinPct, bounds.tipWinPct.min, bounds.tipWinPct.max
-                      )}`}
-                    >
-                      {row.tipWinPct.toFixed(1)}%
-                    </span>
+                    {(() => {
+                      const tipVal = isTonight
+                        ? (row.isHome ? row.tipWinPctHome : row.tipWinPctAway)
+                        : row.tipWinPct
+                      return (
+                        <span
+                          className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                            tipVal, bounds.tipWinPct.min, bounds.tipWinPct.max
+                          )}`}
+                        >
+                          {tipVal.toFixed(1)}%
+                        </span>
+                      )
+                    })()}
                   </TableCell>
                   <TableCell className="py-3 text-center border-l border-border/50">
-                    <span
-                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
-                        row.firstShotPct, bounds.firstShotPct.min, bounds.firstShotPct.max
-                      )}`}
-                    >
-                      {row.firstShotPct.toFixed(1)}%
-                    </span>
+                    {(() => {
+                      const shotCount = isTonight
+                        ? (row.isHome ? row.firstShotsHome : row.firstShotsAway)
+                        : undefined
+                      const halfGames = Math.ceil(row.gamesStarted / 2) || 1
+                      const shotVal = isTonight && shotCount !== undefined
+                        ? Math.round((shotCount / halfGames) * 1000) / 10
+                        : row.firstShotPct
+                      return (
+                        <span
+                          className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                            shotVal, bounds.firstShotPct.min, bounds.firstShotPct.max
+                          )}`}
+                        >
+                          {shotVal.toFixed(1)}%
+                        </span>
+                      )
+                    })()}
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className="text-sm text-foreground font-mono tabular-nums">{row.firstBaskets}</span>
+                    {(() => {
+                      const made = isTonight
+                        ? (row.isHome ? row.firstBasketsHome : row.firstBasketsAway)
+                        : row.firstBaskets
+                      return (
+                        <span className="text-sm text-foreground font-mono tabular-nums">{made}</span>
+                      )
+                    })()}
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span
-                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
-                        row.firstBasketPct, bounds.firstBasketPct.min, bounds.firstBasketPct.max
-                      )}`}
-                    >
-                      {row.firstBasketPct.toFixed(1)}%
-                    </span>
+                    {(() => {
+                      const made = isTonight
+                        ? (row.isHome ? row.firstBasketsHome : row.firstBasketsAway)
+                        : row.firstBaskets
+                      const halfGames = Math.ceil(row.gamesStarted / 2) || 1
+                      const pct = isTonight
+                        ? Math.round((made / halfGames) * 1000) / 10
+                        : row.firstBasketPct
+                      return (
+                        <span
+                          className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-semibold font-mono tabular-nums ${getHeatmapClass(
+                            pct, bounds.firstBasketPct.min, bounds.firstBasketPct.max
+                          )}`}
+                        >
+                          {pct.toFixed(1)}%
+                        </span>
+                      )
+                    })()}
                   </TableCell>
                   {/* Team context */}
                   <TableCell className="py-3 text-center border-l border-border/50">

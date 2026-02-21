@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock, Users } from "lucide-react"
+import { Loader2, Zap, ArrowRight, AlertCircle, RefreshCw, Lock, Users, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { DateNavigator } from "@/components/nba/date-navigator"
-import { FirstBasketTable, buildRows } from "@/components/nba/first-basket-table"
+import { FirstBasketTable, buildRows, type SplitView } from "@/components/nba/first-basket-table"
 import { TopPicks } from "@/components/nba/top-picks"
 import { SignupGate } from "@/components/signup-gate"
 import { LastUpdated } from "@/components/ui/last-updated"
@@ -130,6 +130,7 @@ export default function NBAFirstBasketPage() {
   const [startersOnly, setStartersOnly] = useState(true)
   const [sortColumn, setSortColumn] = useState("firstBasketPct")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [splitView, setSplitView] = useState<SplitView>("season")
 
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
   const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError, mutate: mutateSchedule } = useSWR<{ games: NBAScheduleGame[] }>(
@@ -334,6 +335,29 @@ export default function NBAFirstBasketPage() {
                 <Users className="h-3 w-3" />
                 Starters Only
               </button>
+
+              {/* Stats view toggle — Season vs Tonight's context */}
+              <div className="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Stats view">
+                {([
+                  { value: "season" as SplitView, label: "Season" },
+                  { value: "tonight" as SplitView, label: "Tonight" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSplitView(opt.value)}
+                    aria-pressed={splitView === opt.value}
+                    className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold transition-colors ${
+                      splitView === opt.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.value === "tonight" && <BarChart3 className="h-3 w-3" />}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -416,6 +440,7 @@ export default function NBAFirstBasketPage() {
                   isLive={hasLiveStats}
                   matchupMap={matchupMap}
                   maxRows={PREVIEW_ROWS}
+                  splitView={splitView}
                 />
               }
               gated={
@@ -429,6 +454,7 @@ export default function NBAFirstBasketPage() {
                   isLive={hasLiveStats}
                   matchupMap={matchupMap}
                   skipRows={PREVIEW_ROWS}
+                  splitView={splitView}
                 />
               }
             />
@@ -442,6 +468,7 @@ export default function NBAFirstBasketPage() {
               onSort={handleSort}
               isLive={hasLiveStats}
               matchupMap={matchupMap}
+              splitView={splitView}
             />
           )
         )}
