@@ -36,33 +36,58 @@ function toBP(espn: string): string {
 /** NBA.com → BettingPros team abbreviation mapping (for lineup data) */
 const NBA_TO_BP: Record<string, string> = {
   NOP: "NOR", UTA: "UTH", PHX: "PHO",
+  GSW: "GSW", SAS: "SAS", NYK: "NYK", WAS: "WAS",
 }
 function nbaToBP(nba: string): string {
   return NBA_TO_BP[nba] ?? nba
 }
 
-/** Check if a BettingPros player matches a starter from the lineup data */
-function buildStarterSet(starters: Record<string, string[]>): Set<string> {
+/** Normalize a name for fuzzy matching (strip suffixes, lowercase, remove accents) */
+function normalizeName(name: string): string {
+  return name
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
+    .replace(/\b(Jr\.?|Sr\.?|III|II|IV)\b/gi, "")     // strip suffixes
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+}
+
+/** Build starter set from lineup data. Returns the set AND which teams have lineup data. */
+function buildStarterSet(starters: Record<string, string[]>): { set: Set<string>; teamsWithData: Set<string> } {
   const set = new Set<string>()
+  const teamsWithData = new Set<string>()
   for (const [nbaTeam, names] of Object.entries(starters)) {
     const bpTeam = nbaToBP(nbaTeam)
+    if (names.length > 0) teamsWithData.add(bpTeam)
     for (const name of names) {
       // Exact match key: "LeBron James|LAL"
       set.add(`${name}|${bpTeam}`)
+      // Normalized full name match (handles accents, suffixes)
+      set.add(`~full:${normalizeName(name)}|${bpTeam}`)
       // Fallback: last name only + team (handles "Nic" vs "Nicolas" etc.)
       const lastName = name.split(" ").pop()?.toLowerCase() ?? ""
-      if (lastName) set.add(`~${lastName}|${bpTeam}`)
+      if (lastName) set.add(`~last:${lastName}|${bpTeam}`)
     }
   }
-  return set
+  return { set, teamsWithData }
 }
 
-function isStarter(player: BPFirstBasketPlayer, starterSet: Set<string>): boolean {
+function isStarter(
+  player: BPFirstBasketPlayer,
+  starterSet: Set<string>,
+  teamsWithData: Set<string>,
+): boolean {
+  // If we have no lineup data for this team, include the player
+  // (don't exclude players just because lineups aren't available)
+  if (!teamsWithData.has(player.team)) return true
+
   // Try exact name + team match first
   if (starterSet.has(`${player.name}|${player.team}`)) return true
+  // Normalized full name match
+  if (starterSet.has(`~full:${normalizeName(player.name)}|${player.team}`)) return true
   // Fallback: last name + team
   const lastName = player.name.split(" ").pop()?.toLowerCase() ?? ""
-  return starterSet.has(`~${lastName}|${player.team}`)
+  return starterSet.has(`~last:${lastName}|${player.team}`)
 }
 
 interface GameInfo {
@@ -155,9 +180,10 @@ export default function NBAFirstBasketPage() {
   }, [games])
 
   // Build starter name set from lineup data
-  const starterSet = useMemo(() => {
-    if (!lineupsData?.starters) return new Set<string>()
-    return buildStarterSet(lineupsData.starters)
+  const { starterSet, teamsWithLineups } = useMemo(() => {
+    if (!lineupsData?.starters) return { starterSet: new Set<string>(), teamsWithLineups: new Set<string>() }
+    const { set, teamsWithData } = buildStarterSet(lineupsData.starters)
+    return { starterSet: set, teamsWithLineups: teamsWithData }
   }, [lineupsData])
 
   // Filter first basket players to today's teams + minimum games started + optional starters filter
@@ -166,9 +192,9 @@ export default function NBAFirstBasketPage() {
     return fbData.players.filter((p) =>
       todayTeams.has(p.team) &&
       p.gamesStarted >= minGames &&
-      (!startersOnly || isStarter(p, starterSet))
+      (!startersOnly || isStarter(p, starterSet, teamsWithLineups))
     )
-  }, [fbData, todayTeams, minGames, startersOnly, starterSet])
+  }, [fbData, todayTeams, minGames, startersOnly, starterSet, teamsWithLineups])
 
   // Build team tipoff lookup
   const teamTipoffs = useMemo(() => {

@@ -19,10 +19,11 @@ interface DetailPanelProps {
   onClose: () => void
 }
 
-export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPanelProps) {
+export function DetailPanel({ prop, playerId, sport, line: initialLine, onClose }: DetailPanelProps) {
   const [result, setResult] = useState<PropCheckResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeLine, setActiveLine] = useState(initialLine)
 
   // Fetch full deep analysis when panel opens
   useEffect(() => {
@@ -36,7 +37,7 @@ export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPane
         const res = await fetch("/api/check-prop", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ playerId, stat: prop.stat, line, sport }),
+          body: JSON.stringify({ playerId, stat: prop.stat, line: initialLine, sport }),
         })
 
         if (cancelled) return
@@ -65,7 +66,7 @@ export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPane
 
     fetchDeepAnalysis()
     return () => { cancelled = true }
-  }, [playerId, prop.stat, line, sport])
+  }, [playerId, prop.stat, initialLine, sport])
 
   return (
     <>
@@ -81,7 +82,7 @@ export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPane
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur px-4 py-3">
           <div>
             <h3 className="text-sm font-semibold text-foreground">{prop.statLabel}</h3>
-            <p className="text-xs text-muted-foreground">Line: {line}</p>
+            <p className="text-xs text-muted-foreground">Line: {activeLine}</p>
           </div>
           <button
             onClick={onClose}
@@ -102,14 +103,14 @@ export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPane
           ) : result ? (
             <>
               {/* Verdict */}
-              <VerdictCard verdict={result.verdict} stat={prop.statLabel} line={line} />
+              <VerdictCard verdict={result.verdict} stat={prop.statLabel} line={activeLine} />
 
               {/* Hit Rate Pills */}
               <HitRatePills
                 l5={prop.hitRateL5}
                 l10={prop.hitRateL10}
                 l20={result.gameLog.games.length >= 20
-                  ? result.gameLog.games.slice(0, 20).filter(g => (g.stats[prop.stat] ?? 0) > line).length / 20
+                  ? result.gameLog.games.slice(0, 20).filter(g => (g.stats[prop.stat] ?? 0) > activeLine).length / 20
                   : null
                 }
                 season={prop.hitRateSeason}
@@ -123,8 +124,9 @@ export function DetailPanel({ prop, playerId, sport, line, onClose }: DetailPane
               <GameLogChart
                 games={result.gameLog.games}
                 stat={prop.stat}
-                line={line}
+                line={activeLine}
                 seasonAverage={result.gameLog.seasonAverage}
+                onLineChange={setActiveLine}
               />
 
               {/* Matchup Context */}

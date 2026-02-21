@@ -219,7 +219,7 @@ function detectKeyTeammateOut(
   stat: string,
 ) {
   const highImpactOut = injuries.filter(
-    inj => inj.impact === 'high' && inj.status === 'Out' && inj.team === player.team.abbrev
+    inj => inj.impact === 'high' && inj.status === 'Out' && inj.team === 'teammate'
   )
 
   for (const inj of highImpactOut) {
