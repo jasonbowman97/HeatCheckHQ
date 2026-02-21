@@ -31,6 +31,7 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   // Pro subscription required — core features
   { pattern: "/alerts", tier: "pro", label: "Alerts" },
   { pattern: "/criteria", tier: "pro", label: "Alerts" },
+  { pattern: "/heatcheck", tier: "pro", label: "The HeatCheck" },
 
   // Pro subscription required — existing dashboards
   { pattern: "/mlb/streaks", tier: "pro", label: "MLB Streak Tracker" },

@@ -6,6 +6,7 @@ import {
   Menu,
   SearchCheck,
   Bell,
+  Zap,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import {
@@ -112,6 +113,7 @@ const PAGE_NAMES: Record<string, string> = {
   // Tool pages
   check: "Prop Analyzer",
   alerts: "Alerts",
+  heatcheck: "The HeatCheck",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
@@ -161,6 +163,19 @@ function QuickAccessBar({ pathname }: { pathname: string }) {
         >
           <Bell className="h-3 w-3" />
           Alerts
+        </Link>
+
+        {/* The HeatCheck */}
+        <Link
+          href="/heatcheck"
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors flex-shrink-0 ${
+            pathname.startsWith("/heatcheck")
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          }`}
+        >
+          <Zap className="h-3 w-3" />
+          The HeatCheck
         </Link>
 
         {/* Sport shortcuts — link directly to first dashboard */}
