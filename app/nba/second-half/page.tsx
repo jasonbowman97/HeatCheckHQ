@@ -6,7 +6,6 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Lock,
   ArrowRight,
   Zap,
   Timer,
@@ -15,12 +14,12 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { DashboardShell } from "@/components/dashboard-shell"
+import { PBPPlayerTable, type PBPPlayer, type TodayGame } from "@/components/nba/pbp/pbp-player-table"
 import { GameWindowFilter, type GameWindow } from "@/components/nba/pbp/game-window-filter"
 import { SignupGate } from "@/components/signup-gate"
 import { LastUpdated } from "@/components/ui/last-updated"
 import { SectionInfoTip } from "@/components/ui/section-info-tip"
 import { useUserTier } from "@/components/user-tier-provider"
-import { ShareCapture } from "@/components/ui/share-capture"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -41,7 +40,8 @@ export default function NBASecondHalfPage() {
     dedupingInterval: 3600000,
   })
 
-  const players = data?.players ?? []
+  const players: PBPPlayer[] = data?.players ?? []
+  const todayGames: TodayGame[] = data?.todayGames ?? []
 
   const tabLabel =
     tab === "first-basket" ? "2H First Basket" : "2H Team First FG"
@@ -69,7 +69,7 @@ export default function NBASecondHalfPage() {
           <LastUpdated timestamp={data?.updatedAt} />
         </div>
 
-        {/* Tab bar */}
+        {/* Tab bar + filters */}
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div
             className="flex rounded-lg border border-border overflow-hidden"
@@ -137,8 +137,8 @@ export default function NBASecondHalfPage() {
               No data available
             </p>
             <p className="text-xs text-muted-foreground">
-              Play-by-play data hasn{"'"}t been ingested yet or no players are
-              playing today. Check back after games are played.
+              Play-by-play data hasn{"'"}t been ingested yet. Check back after
+              games are played.
             </p>
           </div>
         )}
@@ -149,24 +149,35 @@ export default function NBASecondHalfPage() {
             <SignupGate
               headline={`See all ${tabLabel.toLowerCase()} data — free`}
               description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
-              countLabel={`${players.length} players available today`}
+              countLabel={`${players.length} players available`}
               preview={
-                <SecondHalfTable
+                <PBPPlayerTable
                   players={players}
-                  propType={tab}
+                  mode="first-basket"
+                  label={tabLabel}
+                  todayGames={todayGames}
                   maxRows={PREVIEW_ROWS}
+                  showTopPicks
                 />
               }
               gated={
-                <SecondHalfTable
+                <PBPPlayerTable
                   players={players}
-                  propType={tab}
+                  mode="first-basket"
+                  label={tabLabel}
+                  todayGames={todayGames}
                   skipRows={PREVIEW_ROWS}
                 />
               }
             />
           ) : (
-            <SecondHalfTable players={players} propType={tab} />
+            <PBPPlayerTable
+              players={players}
+              mode="first-basket"
+              label={tabLabel}
+              todayGames={todayGames}
+              showTopPicks
+            />
           ))}
 
         {/* Pro upsell */}
@@ -196,180 +207,5 @@ export default function NBASecondHalfPage() {
         )}
       </main>
     </DashboardShell>
-  )
-}
-
-/* ─── Inline Table Component for 2nd Half ─── */
-
-interface SecondHalfPlayer {
-  athleteId: string
-  athleteName: string
-  team: string
-  firstCount: number
-  gamesInWindow: number
-  rate: number
-  recentResults: {
-    gameId: string
-    date: string
-    opponent: string
-    isHome: boolean
-    scored: boolean
-  }[]
-  opponent: string | null
-  isHome: boolean
-}
-
-function hitRateColor(rate: number): { text: string; bg: string } {
-  if (rate >= 30) return { text: "text-emerald-400", bg: "bg-emerald-400/15" }
-  if (rate >= 20) return { text: "text-emerald-300", bg: "bg-emerald-400/10" }
-  if (rate >= 10) return { text: "text-amber-400", bg: "bg-amber-400/10" }
-  return { text: "text-muted-foreground", bg: "bg-secondary" }
-}
-
-function SecondHalfTable({
-  players,
-  propType,
-  maxRows,
-  skipRows,
-}: {
-  players: SecondHalfPlayer[]
-  propType: PropTab
-  maxRows?: number
-  skipRows?: number
-}) {
-  const rows = (() => {
-    if (skipRows) return players.slice(skipRows)
-    if (maxRows !== undefined) return players.slice(0, maxRows)
-    return players
-  })()
-
-  const propLabel =
-    propType === "first-basket" ? "2H First Basket" : "2H Team First FG"
-
-  return (
-    <ShareCapture label={propLabel}>
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border bg-card/80">
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary w-10">
-                  #
-                </th>
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary min-w-[160px]">
-                  Player
-                </th>
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary text-center w-20">
-                  Rate
-                </th>
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary text-center w-16">
-                  Made
-                </th>
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary text-center w-16">
-                  Games
-                </th>
-                <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-primary">
-                  <span className="hidden md:inline">Recent Games</span>
-                  <span className="md:hidden">Recent</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((player, i) => {
-                const rank = (skipRows ?? 0) + i + 1
-                const colors = hitRateColor(player.rate)
-
-                return (
-                  <tr
-                    key={player.athleteId}
-                    className="border-b border-border/50 last:border-b-0 hover:bg-secondary/30 transition-colors"
-                  >
-                    {/* Rank */}
-                    <td className="px-3 py-2.5 text-xs font-medium text-muted-foreground">
-                      {rank}
-                    </td>
-
-                    {/* Player */}
-                    <td className="px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
-                          {player.athleteName}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {player.team}
-                          {player.opponent && (
-                            <span
-                              className={`ml-1 ${
-                                player.isHome
-                                  ? "text-emerald-400"
-                                  : "text-blue-400"
-                              }`}
-                            >
-                              {player.isHome ? "vs" : "@"} {player.opponent}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* Rate badge */}
-                    <td className="px-3 py-2.5 text-center">
-                      <span
-                        className={`inline-block text-xs font-bold px-2 py-0.5 rounded-md ${colors.text} ${colors.bg}`}
-                      >
-                        {player.rate.toFixed(1)}%
-                      </span>
-                    </td>
-
-                    {/* Made count */}
-                    <td className="px-3 py-2.5 text-center">
-                      <span className="text-sm font-bold text-foreground font-mono tabular-nums">
-                        {player.firstCount}
-                      </span>
-                    </td>
-
-                    {/* Games in window */}
-                    <td className="px-3 py-2.5 text-center">
-                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                        {player.gamesInWindow}
-                      </span>
-                    </td>
-
-                    {/* Recent game dots */}
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-1">
-                        {player.recentResults.map((game, j) => (
-                          <div key={j} className="relative group">
-                            {/* Desktop: show checkmark/x */}
-                            <div
-                              className={`hidden md:flex items-center justify-center w-7 h-7 rounded text-[11px] font-bold border ${
-                                game.scored
-                                  ? "bg-emerald-400/10 text-emerald-400 border-emerald-500/20"
-                                  : "bg-red-400/10 text-red-400/70 border-red-500/15"
-                              }`}
-                            >
-                              {game.scored ? "✓" : "✗"}
-                            </div>
-                            {/* Mobile: dots */}
-                            <div
-                              className={`md:hidden w-3.5 h-3.5 rounded-full ${
-                                game.scored
-                                  ? "bg-emerald-400"
-                                  : "bg-red-400/40"
-                              }`}
-                              title={`${game.scored ? "Scored" : "Missed"} vs ${game.opponent}`}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </ShareCapture>
   )
 }

@@ -29,10 +29,12 @@ const sports = [
     description:
       "First basket probabilities, team head-to-head history, defensive position rankings, betting metrics, injury tracking, and momentum indicators.",
     dashboards: [
-      { name: "Streak Tracker", href: "/nba/streaks", description: "Custom stat thresholds — see who consistently hits your lines" },
-      { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank by player" },
+      { name: "First Basket", href: "/nba/first-basket", description: "Tip-off win %, 1st shot %, basket rank — includes team first FG tab" },
+      { name: "2H First Basket & Team FG", href: "/nba/second-half", description: "Second half first scorer and team first field goal rates from Q3 play-by-play" },
+      { name: "First 3 Min Scoring", href: "/nba/first-3min", description: "Points scored in the first 3 minutes of Q1 — hit rates at every threshold" },
       { name: "Head-to-Head", href: "/nba/head-to-head", description: "Team H2H, momentum, defense vs position, injuries" },
       { name: "Def vs Position", href: "/nba/defense-vs-position", description: "Which teams give up the most stats to each position" },
+      { name: "Streak Tracker", href: "/nba/streaks", description: "Custom stat thresholds — see who consistently hits your lines" },
     ],
   },
   {
@@ -60,7 +62,7 @@ export function SportsSection() {
               Dashboards
             </span>
             <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance md:text-4xl">
-              14 dashboards across every sport
+              16 dashboards across every sport
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">
               Each sport gets its own set of analytics dashboards tailored to the data points and

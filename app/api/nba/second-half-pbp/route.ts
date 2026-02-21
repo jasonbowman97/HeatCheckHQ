@@ -1,8 +1,5 @@
 /**
- * 2nd Half PBP API — delegates to first-basket-pbp with half=2.
- * This is a convenience route so the Second Half dashboard can fetch
- * from /api/nba/second-half-pbp?type=first-basket&window=10
- * without having to know about the half parameter.
+ * 2nd Half PBP API — queries Q3 first basket / first team FG from the materialized view.
  */
 
 import { NextResponse } from "next/server"
@@ -63,6 +60,7 @@ export async function GET(request: Request) {
     if (!firstEvents || firstEvents.length === 0) {
       const res = NextResponse.json({
         players: [],
+        todayGames: [],
         updatedAt: new Date().toISOString(),
         propType,
         window: windowParam,
@@ -72,7 +70,7 @@ export async function GET(request: Request) {
       return res
     }
 
-    // Same aggregation logic as first-basket-pbp
+    // Aggregate per player
     const playerMap = new Map<
       string,
       {
@@ -137,6 +135,7 @@ export async function GET(request: Request) {
     // Today's matchup context
     const todayGames = await getNBAScoreboard()
     const matchupMap: Record<string, { opponent: string; isHome: boolean }> = {}
+    const todayGamesList: { away: string; home: string }[] = []
     for (const g of todayGames) {
       matchupMap[g.homeTeam.abbreviation] = {
         opponent: g.awayTeam.abbreviation,
@@ -146,14 +145,15 @@ export async function GET(request: Request) {
         opponent: g.homeTeam.abbreviation,
         isHome: false,
       }
+      todayGamesList.push({ away: g.awayTeam.abbreviation, home: g.homeTeam.abbreviation })
     }
     const todayTeams = new Set(Object.keys(matchupMap))
 
     const windowSize =
       windowParam === "season" ? Infinity : Number(windowParam)
 
+    // Build player response — show ALL players
     const players = [...playerMap.values()]
-      .filter((p) => todayTeams.has(p.team))
       .map((p) => {
         const totalTeamGames = teamGameCounts.get(p.team) || 1
         const gamesInWindow = Math.min(
@@ -168,23 +168,29 @@ export async function GET(request: Request) {
           .slice(0, windowSize === Infinity ? 10 : windowSize)
 
         const matchup = matchupMap[p.team]
+        const playsToday = todayTeams.has(p.team)
+
+        const headshotUrl = `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${p.athleteId}.png&w=96&h=70&cb=1`
 
         return {
           athleteId: p.athleteId,
           athleteName: p.athleteName,
           team: p.team,
+          headshotUrl,
           firstCount: p.firstCount,
           gamesInWindow,
           rate: Math.round(rate * 10) / 10,
           recentResults,
           opponent: matchup?.opponent || null,
           isHome: matchup?.isHome ?? false,
+          playsToday,
         }
       })
       .sort((a, b) => b.rate - a.rate)
 
     const res = NextResponse.json({
       players,
+      todayGames: todayGamesList,
       updatedAt: new Date().toISOString(),
       propType,
       window: windowParam,

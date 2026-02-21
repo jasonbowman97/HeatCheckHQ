@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
     // Query scoring plays in Q1 first 3 minutes
     // clock_seconds >= 540 means within the first 3 minutes (720 - 180 = 540)
-    let query = supabase
+    const query = supabase
       .from("pbp_game_events")
       .select("game_id, game_date, athlete_id, athlete_name, team, home_team, away_team, score_value, clock_seconds")
       .eq("period", 1)
@@ -72,8 +72,7 @@ export async function GET(request: Request) {
       gameEntry.points += play.score_value || 0
     }
 
-    // Count total games each team played (from all scoring events, not just first 3 min)
-    // For simplicity, we use the unique game dates from our data
+    // Count total games each team played
     const teamGames = new Map<string, Set<string>>()
     for (const play of scoringPlays) {
       for (const team of [play.home_team, play.away_team]) {
@@ -85,13 +84,15 @@ export async function GET(request: Request) {
     // Get today's games for matchup context
     const todayGames = await getNBAScoreboard()
     const matchupMap: Record<string, { opponent: string; isHome: boolean }> = {}
+    const todayGamesList: { away: string; home: string }[] = []
     for (const g of todayGames) {
       matchupMap[g.homeTeam.abbreviation] = { opponent: g.awayTeam.abbreviation, isHome: true }
       matchupMap[g.awayTeam.abbreviation] = { opponent: g.homeTeam.abbreviation, isHome: false }
+      todayGamesList.push({ away: g.awayTeam.abbreviation, home: g.homeTeam.abbreviation })
     }
     const todayTeams = new Set(Object.keys(matchupMap))
 
-    // Build player response
+    // Build player response — show ALL players, not just today's teams
     const players = [...playerGameMap.entries()]
       .map(([athleteId, games]) => {
         const gameArr = [...games.values()].sort((a, b) => b.date.localeCompare(a.date))
@@ -100,17 +101,20 @@ export async function GET(request: Request) {
         const windowSize = windowParam === "season" ? gameArr.length : Math.min(Number(windowParam), gameArr.length)
         const windowGames = gameArr.slice(0, windowSize)
 
+        if (windowGames.length === 0) return null
+
         const team = windowGames[0]?.team || ""
         const name = windowGames[0]?.name || "Unknown"
 
-        if (!todayTeams.has(team)) return null
+        // Need at least 3 games to show meaningful data
+        if (windowGames.length < 3) return null
 
         const totalPoints = windowGames.reduce((sum, g) => sum + g.points, 0)
         const avg = windowGames.length > 0 ? totalPoints / windowGames.length : 0
         const hitCount = windowGames.filter((g) => g.points >= threshold).length
         const hitRate = windowGames.length > 0 ? (hitCount / windowGames.length) * 100 : 0
 
-        // Recent game results for dots display
+        // Recent game results for display
         const recentResults = windowGames.slice(0, 10).map((g) => ({
           date: g.date,
           points: g.points,
@@ -120,11 +124,16 @@ export async function GET(request: Request) {
         }))
 
         const matchup = matchupMap[team]
+        const playsToday = todayTeams.has(team)
+
+        // ESPN headshot URL
+        const headshotUrl = `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${athleteId}.png&w=96&h=70&cb=1`
 
         return {
           athleteId,
           athleteName: name,
           team,
+          headshotUrl,
           avgPoints: Math.round(avg * 10) / 10,
           hitCount,
           gamesInWindow: windowGames.length,
@@ -132,6 +141,7 @@ export async function GET(request: Request) {
           recentResults,
           opponent: matchup?.opponent || null,
           isHome: matchup?.isHome ?? false,
+          playsToday,
         }
       })
       .filter(Boolean)
@@ -139,6 +149,7 @@ export async function GET(request: Request) {
 
     const res = NextResponse.json({
       players,
+      todayGames: todayGamesList,
       updatedAt: new Date().toISOString(),
       window: windowParam,
       threshold,

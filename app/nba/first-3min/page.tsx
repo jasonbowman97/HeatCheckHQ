@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import useSWR from "swr"
-import { Loader2, AlertCircle, RefreshCw, Lock, ArrowRight, Zap, Timer } from "lucide-react"
+import { Loader2, AlertCircle, RefreshCw, ArrowRight, Zap, Timer } from "lucide-react"
 import Link from "next/link"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { First3MinTable } from "@/components/nba/pbp/first-3min-table"
+import { PBPPlayerTable, type PBPPlayer, type TodayGame } from "@/components/nba/pbp/pbp-player-table"
 import { GameWindowFilter, type GameWindow } from "@/components/nba/pbp/game-window-filter"
 import { SignupGate } from "@/components/signup-gate"
 import { LastUpdated } from "@/components/ui/last-updated"
@@ -37,7 +37,8 @@ export default function NBAFirst3MinPage() {
     dedupingInterval: 3600000,
   })
 
-  const players = data?.players ?? []
+  const players: PBPPlayer[] = data?.players ?? []
+  const todayGames: TodayGame[] = data?.todayGames ?? []
 
   return (
     <DashboardShell>
@@ -140,24 +141,38 @@ export default function NBAFirst3MinPage() {
             <SignupGate
               headline="See all first 3-min scoring data — free"
               description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
-              countLabel={`${players.length} players available today`}
+              countLabel={`${players.length} players available`}
               preview={
-                <First3MinTable
+                <PBPPlayerTable
                   players={players}
+                  mode="scoring"
+                  label={`First 3 Min Scoring (${threshold}+ pts)`}
+                  todayGames={todayGames}
                   threshold={threshold}
                   maxRows={PREVIEW_ROWS}
+                  showTopPicks
                 />
               }
               gated={
-                <First3MinTable
+                <PBPPlayerTable
                   players={players}
+                  mode="scoring"
+                  label={`First 3 Min Scoring (${threshold}+ pts)`}
+                  todayGames={todayGames}
                   threshold={threshold}
                   skipRows={PREVIEW_ROWS}
                 />
               }
             />
           ) : (
-            <First3MinTable players={players} threshold={threshold} />
+            <PBPPlayerTable
+              players={players}
+              mode="scoring"
+              label={`First 3 Min Scoring (${threshold}+ pts)`}
+              todayGames={todayGames}
+              threshold={threshold}
+              showTopPicks
+            />
           ))}
 
         {/* Pro upsell */}

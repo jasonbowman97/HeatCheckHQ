@@ -32,7 +32,6 @@ export async function GET(request: Request) {
           ? "q1_first_basket"
           : "q3_first_basket"
 
-    // Calculate date cutoff for game window
     const windowSize: GameWindow =
       windowParam === "season"
         ? "season"
@@ -48,7 +47,6 @@ export async function GET(request: Request) {
       .order("game_date", { ascending: false })
 
     if (windowSize !== "season") {
-      // Get last N game dates (not N rows — multiple players can score "first" per game for team FG)
       const { data: recentDates } = await supabase
         .from("mv_game_firsts")
         .select("game_date")
@@ -57,10 +55,6 @@ export async function GET(request: Request) {
 
       if (recentDates) {
         const uniqueDates = [...new Set(recentDates.map((d: { game_date: string }) => d.game_date))]
-        // For "first-team-fg" each game has ~2 entries; for "first-basket" each has 1
-        // We want the last N game-days worth of games
-        // But since we're player-centric, we actually want "last N games per player"
-        // For simplicity, limit to the last N * 3 calendar dates (covers most scenarios)
         const cutoffDate = uniqueDates[Math.min(windowSize * 3, uniqueDates.length) - 1]
         if (cutoffDate) {
           query = query.gte("game_date", cutoffDate)
@@ -81,9 +75,11 @@ export async function GET(request: Request) {
     if (!firstEvents || firstEvents.length === 0) {
       const res = NextResponse.json({
         players: [],
+        todayGames: [],
         updatedAt: new Date().toISOString(),
         propType,
         window: windowParam,
+        half,
       })
       res.headers.set("Cache-Control", cacheHeader(CACHE.TRENDS))
       return res
@@ -124,7 +120,6 @@ export async function GET(request: Request) {
       entry.gameIds.add(ev.game_id)
       entry.teams.add(ev.team)
 
-      // Determine opponent and home/away
       const isHome = ev.team === ev.home_team
       const opponent = isHome ? ev.away_team : ev.home_team
       entry.gameResults.push({
@@ -136,53 +131,36 @@ export async function GET(request: Request) {
       })
     }
 
-    // Now we need to know the total games each player could have played
-    // For first-team-fg: every game the player's team played, they had a chance
-    // For first-basket: every game period
-
-    // Get all unique game dates for the window to calculate total possible games
-    const allGameDates = [...new Set(firstEvents.map((e: { game_date: string }) => e.game_date))]
-
-    // For each team, count how many games they played in this window
-    const teamGameCounts = new Map<string, number>()
+    // Team game counts
     const teamGamesSet = new Map<string, Set<string>>()
-
     for (const ev of firstEvents) {
       for (const team of [ev.home_team, ev.away_team]) {
-        if (!teamGamesSet.has(team)) {
-          teamGamesSet.set(team, new Set())
-        }
+        if (!teamGamesSet.has(team)) teamGamesSet.set(team, new Set())
         teamGamesSet.get(team)!.add(ev.game_id)
       }
     }
+    const teamGameCounts = new Map<string, number>()
     for (const [team, games] of teamGamesSet) {
       teamGameCounts.set(team, games.size)
     }
 
-    // Get today's games for matchup context
+    // Today's games for matchup context
     const todayGames = await getNBAScoreboard()
-
-    // Build matchup map
     const matchupMap: Record<string, { opponent: string; isHome: boolean }> = {}
+    const todayGamesList: { away: string; home: string }[] = []
     for (const g of todayGames) {
-      matchupMap[g.homeTeam.abbreviation] = {
-        opponent: g.awayTeam.abbreviation,
-        isHome: true,
-      }
-      matchupMap[g.awayTeam.abbreviation] = {
-        opponent: g.homeTeam.abbreviation,
-        isHome: false,
-      }
+      matchupMap[g.homeTeam.abbreviation] = { opponent: g.awayTeam.abbreviation, isHome: true }
+      matchupMap[g.awayTeam.abbreviation] = { opponent: g.homeTeam.abbreviation, isHome: false }
+      todayGamesList.push({ away: g.awayTeam.abbreviation, home: g.homeTeam.abbreviation })
     }
     const todayTeams = new Set(Object.keys(matchupMap))
 
-    // Build player response
+    const allGameDates = [...new Set(firstEvents.map((e: { game_date: string }) => e.game_date))]
+
+    // Build player response — show ALL players
     const players = [...playerMap.values()]
-      .filter((p) => todayTeams.has(p.team)) // Only players with games today
       .map((p) => {
         const totalTeamGames = teamGameCounts.get(p.team) || 1
-
-        // For windowed data, limit to the requested window
         let gamesInWindow = totalTeamGames
         if (windowSize !== "season") {
           gamesInWindow = Math.min(windowSize, totalTeamGames)
@@ -190,29 +168,34 @@ export async function GET(request: Request) {
 
         const rate = gamesInWindow > 0 ? (p.firstCount / gamesInWindow) * 100 : 0
 
-        // Get last N game results for dots display
         const recentResults = p.gameResults
           .sort((a, b) => b.date.localeCompare(a.date))
           .slice(0, typeof windowSize === "number" ? windowSize : 10)
 
         const matchup = matchupMap[p.team]
+        const playsToday = todayTeams.has(p.team)
+
+        const headshotUrl = `https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/${p.athleteId}.png&w=96&h=70&cb=1`
 
         return {
           athleteId: p.athleteId,
           athleteName: p.athleteName,
           team: p.team,
+          headshotUrl,
           firstCount: p.firstCount,
           gamesInWindow,
           rate: Math.round(rate * 10) / 10,
           recentResults,
           opponent: matchup?.opponent || null,
           isHome: matchup?.isHome ?? false,
+          playsToday,
         }
       })
       .sort((a, b) => b.rate - a.rate)
 
     const res = NextResponse.json({
       players,
+      todayGames: todayGamesList,
       totalGameDates: allGameDates.length,
       updatedAt: new Date().toISOString(),
       propType,

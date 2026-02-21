@@ -50,11 +50,11 @@ const MLB_NAV: NavLink[] = [
 
 const NBA_NAV: NavLink[] = [
   { href: "/nba/first-basket", label: "First Basket", tier: "free" },
+  { href: "/nba/second-half", label: "2H First Basket", tier: "free", ariaLabel: "Second Half First Basket & Team First Field Goal" },
+  { href: "/nba/first-3min", label: "First 3 Min", tier: "free", ariaLabel: "First 3 Minutes Scoring Props" },
   { href: "/nba/head-to-head", label: "H2H", tier: "free", ariaLabel: "Head to Head" },
   { href: "/nba/defense-vs-position", label: "Def vs Pos", tier: "free", ariaLabel: "Defense vs Position" },
   { href: "/nba/streaks", label: "Streak Tracker", tier: "free" },
-  { href: "/nba/first-3min", label: "First 3 Min", tier: "free" },
-  { href: "/nba/second-half", label: "2nd Half", tier: "free" },
 ]
 
 const NFL_NAV: NavLink[] = [
@@ -85,8 +85,8 @@ const PAGE_NAMES: Record<string, string> = {
   matchup: "Matchup",
   streaks: "Streak Tracker",
   check: "Prop Analyzer",
-  "first-3min": "First 3 Minutes",
-  "second-half": "2nd Half Props",
+  "first-3min": "First 3 Minutes Scoring",
+  "second-half": "2H First Basket & Team First FG",
 }
 
 function TierBadge({ tier }: { tier: Tier }) {
