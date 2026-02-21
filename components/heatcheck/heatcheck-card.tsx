@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingUp, TrendingDown, Minus, ArrowRight, Flame, Snowflake } from "lucide-react"
+import { ArrowRight, ArrowUpRight, ArrowDownRight, Flame, Snowflake, Minus, Shield } from "lucide-react"
 import type { HeatCheckPick } from "@/types/heatcheck"
 
 interface HeatCheckCardProps {
@@ -44,20 +44,60 @@ function SignalDots({ over, under }: { over: number; under: number }) {
   )
 }
 
-export function HeatCheckCard({ pick, onAnalyze }: HeatCheckCardProps) {
-  const isOver = pick.direction === "over"
-  const directionColor = isOver ? "text-emerald-400" : "text-red-400"
-  const directionBg = isOver ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
-  const edgeSign = isOver ? "+" : ""
+// Lean badge
+function LeanBadge({ lean, confidence }: { lean: "over" | "under" | "neutral"; confidence: number }) {
+  if (lean === "over") {
+    return (
+      <div className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5">
+        <ArrowUpRight className="h-3 w-3 text-emerald-400" />
+        <span className="text-xs font-bold text-emerald-400">{confidence}%</span>
+      </div>
+    )
+  }
+  if (lean === "under") {
+    return (
+      <div className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-0.5">
+        <ArrowDownRight className="h-3 w-3 text-red-400" />
+        <span className="text-xs font-bold text-red-400">{confidence}%</span>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
+      <Minus className="h-3 w-3 text-muted-foreground" />
+      <span className="text-xs font-bold text-muted-foreground">{confidence}%</span>
+    </div>
+  )
+}
 
+export function HeatCheckCard({ pick, onAnalyze }: HeatCheckCardProps) {
   // Team abbreviations
   const isHome = pick.game.homeTeam.id === pick.player.team.id
   const opponent = isHome ? pick.game.awayTeam.abbrev : pick.game.homeTeam.abbrev
   const matchupLabel = isHome ? `vs ${opponent}` : `@ ${opponent}`
 
+  // Projection vs season avg delta
+  const projDelta = pick.projection - pick.seasonAvg
+  const projDeltaSign = projDelta >= 0 ? "+" : ""
+  const projDeltaColor = projDelta > 0 ? "text-emerald-400" : projDelta < 0 ? "text-red-400" : "text-muted-foreground"
+
+  // Defense rank label
+  const defLabel =
+    pick.defenseRank <= 5 ? "Elite DEF" :
+    pick.defenseRank <= 10 ? "Good DEF" :
+    pick.defenseRank >= 26 ? "Weak DEF" :
+    pick.defenseRank >= 21 ? "Poor DEF" :
+    "Avg DEF"
+  const defColor =
+    pick.defenseRank >= 26 ? "text-emerald-400" :
+    pick.defenseRank >= 21 ? "text-emerald-400/70" :
+    pick.defenseRank <= 5 ? "text-red-400" :
+    pick.defenseRank <= 10 ? "text-red-400/70" :
+    "text-muted-foreground"
+
   return (
     <div className="relative rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30">
-      {/* Top row: Rank + Player + Team */}
+      {/* Top row: Rank + Player + Confidence */}
       <div className="flex items-start gap-3">
         <RankBadge rank={pick.rank} />
 
@@ -81,42 +121,50 @@ export function HeatCheckCard({ pick, onAnalyze }: HeatCheckCardProps) {
           </div>
         </div>
 
-        {/* Confidence badge */}
-        <div className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${directionBg}`}>
-          {pick.confidence}%
-        </div>
+        <LeanBadge lean={pick.convergenceLean} confidence={pick.confidence} />
       </div>
 
-      {/* Stat + Line + Projection row */}
+      {/* Projection row */}
       <div className="mt-3 flex items-center justify-between">
         <div>
           <span className="text-xs text-muted-foreground">{pick.statLabel}</span>
-          <span className="ml-1.5 text-sm font-medium text-foreground">O/U {pick.line}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Proj:</span>
-          <span className={`text-sm font-bold ${directionColor}`}>
-            {pick.projection}
-          </span>
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
-          <span className={`text-sm font-bold ${directionColor}`}>
-            {edgeSign}{pick.edge}% {pick.direction.toUpperCase()}
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold text-foreground">{pick.projection}</span>
+          <span className={`text-xs font-semibold ${projDeltaColor}`}>
+            {projDeltaSign}{projDelta.toFixed(1)} vs avg
           </span>
         </div>
       </div>
 
-      {/* Stats row: Convergence + Hit Rate + Trend */}
+      {/* Data row: Season Avg + L5 + EWMA + Matchup */}
+      <div className="mt-2 grid grid-cols-4 gap-1 text-center">
+        <div className="rounded-md bg-muted/50 px-1 py-1">
+          <div className="text-[10px] text-muted-foreground">Season</div>
+          <div className="text-xs font-semibold text-foreground">{pick.seasonAvg}</div>
+        </div>
+        <div className="rounded-md bg-muted/50 px-1 py-1">
+          <div className="text-[10px] text-muted-foreground">L5 Avg</div>
+          <div className="text-xs font-semibold text-foreground">{pick.last5Avg}</div>
+        </div>
+        <div className="rounded-md bg-muted/50 px-1 py-1">
+          <div className="text-[10px] text-muted-foreground">EWMA</div>
+          <div className="text-xs font-semibold text-foreground">{pick.ewmaRecent}</div>
+        </div>
+        <div className="rounded-md bg-muted/50 px-1 py-1">
+          <div className="text-[10px] text-muted-foreground">Opp DEF</div>
+          <div className={`text-xs font-semibold ${defColor}`}>#{pick.defenseRank}</div>
+        </div>
+      </div>
+
+      {/* Bottom row: Convergence + Trend */}
       <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
         <SignalDots over={pick.convergenceOver} under={pick.convergenceUnder} />
 
-        <div className="flex items-center gap-3 text-xs">
-          <span className="text-muted-foreground">
-            L10: <span className={getHitRateClass(pick.hitRateL10)}>
-              {Math.round(pick.hitRateL10 * 100)}%
-            </span>
-          </span>
-          <span className="text-muted-foreground">
-            Avg: <span className="text-foreground">{pick.seasonAvg}</span>
+        <div className="flex items-center gap-2 text-xs">
+          <span className={`flex items-center gap-0.5 ${defColor}`}>
+            <Shield className="h-3 w-3" />
+            {defLabel}
           </span>
           <TrendBadge trend={pick.trend} />
         </div>
@@ -173,10 +221,4 @@ function TrendBadge({ trend }: { trend: "hot" | "cold" | "steady" }) {
       <span className="text-[10px] font-semibold">STEADY</span>
     </span>
   )
-}
-
-function getHitRateClass(rate: number): string {
-  if (rate >= 0.7) return "text-emerald-400 font-semibold"
-  if (rate >= 0.5) return "text-yellow-400 font-semibold"
-  return "text-red-400 font-semibold"
 }

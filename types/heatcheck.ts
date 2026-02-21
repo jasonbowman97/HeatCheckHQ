@@ -1,6 +1,8 @@
 // ============================================================
 // types/heatcheck.ts — Types for The HeatCheck (daily top picks)
 // ============================================================
+// Projection-only model: ranks by convergence confidence + trend
+// alignment. No sportsbook lines — shows what our model projects.
 
 import type { Player, Game, Sport } from './shared'
 
@@ -17,28 +19,28 @@ export interface HeatCheckPick {
   stat: string
   /** Display label (e.g. 'Points', 'Pass Yards') */
   statLabel: string
-  /** Common line threshold from COMMON_LINES */
-  line: number
   /** Our projected value for tonight */
   projection: number
-  /** Edge = (projection - line) / line as a percentage (e.g. 11.2 = 11.2%) */
-  edge: number
-  /** Which side the edge favors */
-  direction: 'over' | 'under'
-  /** Confidence score 0-100 from convergence lean */
+  /** Season average for this stat */
+  seasonAvg: number
+  /** Last 5 game average */
+  last5Avg: number
+  /** EWMA-weighted recent average (L10) */
+  ewmaRecent: number
+  /** Matchup adjustment factor applied (-10% to +10%) */
+  matchupAdj: number
+  /** Defense rank of opponent for this stat (1=best D, 30=worst D) */
+  defenseRank: number
+  /** Confidence score 0-100 from convergence engine */
   confidence: number
-  /** Composite ranking score: |edge| * (confidence / 100) */
+  /** Composite ranking score for sorting */
   compositeScore: number
   /** How many of 9 convergence factors lean over */
   convergenceOver: number
   /** How many of 9 convergence factors lean under */
   convergenceUnder: number
-  /** Season average for this stat */
-  seasonAvg: number
-  /** Last 5 game average */
-  last5Avg: number
-  /** Hit rate over the line in last 10 games (0-1) */
-  hitRateL10: number
+  /** Convergence lean direction */
+  convergenceLean: 'over' | 'under' | 'neutral'
   /** Recent trend */
   trend: 'hot' | 'cold' | 'steady'
   /** Short narrative flags (e.g. "3-game streak", "vs weak DEF") */

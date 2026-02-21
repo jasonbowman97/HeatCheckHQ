@@ -20,8 +20,8 @@ import {
 import { fetchAndParseGameLogs } from './gamelog-parser'
 import { resolveDefenseRanking } from './defense-service'
 import { evaluateFull } from './convergence-engine'
-import { computeSeasonStats, getHitRate } from './game-log-service'
-import { getSmartDefault, CORE_STATS } from './prop-lines'
+import { computeSeasonStats } from './game-log-service'
+import { CORE_STATS } from './prop-lines'
 import { getStatLabel } from './design-tokens'
 import { ewma, ALPHA } from './convergenceEngine/utils/ewma'
 import { fetchMLBConvergenceData, fetchNFLConvergenceData } from './convergence-data-service'
@@ -330,6 +330,8 @@ async function fetchGameExtraData(
 }
 
 // ──── Step 5: Evaluate a single player × stat pick ────
+// Projection-only model: no sportsbook lines. Ranks by convergence
+// confidence + trend alignment + matchup quality.
 
 async function evaluatePick(
   player: Player,
@@ -350,9 +352,6 @@ async function evaluatePick(
 
   // Skip stats with negligible averages
   if (seasonAvg < 0.5) return null
-
-  // Smart default line
-  const line = getSmartDefault(stat, sport, seasonAvg)
 
   // EWMA for recent trend
   const last10 = gameLogs.slice(0, 10)
@@ -379,42 +378,34 @@ async function evaluatePick(
   const matchupAdj = ((defenseRanking.rank - 15) / 15) * 0.10
   const projection = (seasonAvg * 0.4) + (ewmaL10 * 0.4) + (seasonAvg * (1 + matchupAdj) * 0.2)
 
-  // Edge calculation
-  const edge = line > 0 ? ((projection - line) / line) * 100 : 0
-  const direction: 'over' | 'under' = projection >= line ? 'over' : 'under'
+  // Use season average as the internal reference line for convergence
+  // (not a sportsbook line — just the player's own baseline)
+  const referenceLine = seasonAvg
 
   // Convergence engine for confidence
   let confidence = 50
   let convergenceOver = 0
   let convergenceUnder = 0
+  let convergenceLean: 'over' | 'under' | 'neutral' = 'neutral'
 
   try {
     const convergence = evaluateFull(
-      player, game, gameLogs, seasonStats, defenseRanking, stat, line, extra,
+      player, game, gameLogs, seasonStats, defenseRanking, stat, referenceLine, extra,
     )
     convergenceOver = convergence.overCount
     convergenceUnder = convergence.underCount
     confidence = convergence.lean.confidence
-
-    // Reinforce with hit rate signal
-    const hitRateL10 = getHitRate(gameLogs, stat, line, 10)
-    const hitRateBonus = Math.abs(hitRateL10 - 0.5) * 40
-    confidence = Math.round(confidence * 0.8 + hitRateBonus * 0.2 + 10)
-    confidence = Math.min(99, Math.max(10, confidence))
+    convergenceLean = convergence.lean.direction as 'over' | 'under' | 'neutral'
   } catch {
-    // Fallback: use hit rates for confidence
-    const hitRateL10 = getHitRate(gameLogs, stat, line, 10)
-    convergenceOver = hitRateL10 > 0.5 ? 5 : 4
+    // Fallback: derive lean from EWMA vs season
+    convergenceLean = ewmaL10 > seasonAvg ? 'over' : ewmaL10 < seasonAvg ? 'under' : 'neutral'
+    convergenceOver = convergenceLean === 'over' ? 5 : 4
     convergenceUnder = 9 - convergenceOver
-    confidence = Math.round(Math.abs(hitRateL10 - 0.5) * 200)
-    confidence = Math.min(99, Math.max(10, confidence))
+    confidence = 40
   }
 
-  // Filter: need minimum confidence AND edge
-  if (confidence < 50 || Math.abs(edge) < 5) return null
-
-  // Composite score for ranking
-  const compositeScore = Math.abs(edge) * (confidence / 100)
+  // Filter: need minimum convergence confidence (strong signals only)
+  if (confidence < 55) return null
 
   // Trend detection
   const trendThreshold = seasonAvg * 0.1
@@ -423,23 +414,37 @@ async function evaluatePick(
     last5Avg < seasonAvg - trendThreshold ? 'cold' :
     'steady'
 
-  // Hit rate
-  const hitRateL10 = getHitRate(gameLogs, stat, line, 10)
+  // ── Composite score: confidence × trend boost × matchup boost ──
+  // Base = convergence confidence (0-100)
+  let composite = confidence
 
-  // Simple narrative strings (lightweight — not the full narrative engine)
+  // Trend alignment bonus: +15% when trend aligns with convergence lean
+  const trendAligned =
+    (trend === 'hot' && convergenceLean === 'over') ||
+    (trend === 'cold' && convergenceLean === 'under')
+  if (trendAligned) composite *= 1.15
+
+  // Matchup bonus: up to +10% for favorable matchups (rank 26-30 = weak D)
+  if (defenseRanking.rank >= 26) composite *= 1.10
+  else if (defenseRanking.rank >= 22) composite *= 1.05
+
+  // Penalize neutral convergence — strong leans only
+  if (convergenceLean === 'neutral') composite *= 0.7
+
+  composite = Math.round(composite * 100) / 100
+
+  // Narrative flags
   const narratives: string[] = []
 
-  // Streak detection
-  const streakCount = countStreak(gameLogs, stat, line, direction)
-  if (streakCount >= 3) {
-    narratives.push(`${streakCount}-game ${direction} streak`)
-  }
+  // Consistency check — how many of L5 games beat season avg
+  const aboveAvgCount = last5Values.filter(v => v > seasonAvg).length
+  if (aboveAvgCount >= 4) narratives.push(`${aboveAvgCount}/5 above avg`)
 
   // Defense quality
-  if (defenseRanking.rank <= 5) {
-    narratives.push(direction === 'over' ? 'vs weak DEF' : 'vs elite DEF')
-  } else if (defenseRanking.rank >= 26) {
-    narratives.push(direction === 'over' ? 'vs weak DEF' : 'vs elite DEF')
+  if (defenseRanking.rank >= 26) {
+    narratives.push('vs weak DEF')
+  } else if (defenseRanking.rank <= 5) {
+    narratives.push('vs elite DEF')
   }
 
   // Trend
@@ -452,19 +457,19 @@ async function evaluatePick(
     game,
     stat,
     statLabel: getStatLabel(stat, sport),
-    line,
     projection: Math.round(projection * 10) / 10,
-    edge: Math.round(edge * 10) / 10,
-    direction,
-    confidence,
-    compositeScore: Math.round(compositeScore * 100) / 100,
-    convergenceOver,
-    convergenceUnder,
     seasonAvg: Math.round(seasonAvg * 10) / 10,
     last5Avg: Math.round(last5Avg * 10) / 10,
-    hitRateL10,
+    ewmaRecent: Math.round(ewmaL10 * 10) / 10,
+    matchupAdj: Math.round(matchupAdj * 1000) / 10, // as percentage
+    defenseRank: defenseRanking.rank,
+    confidence,
+    compositeScore: composite,
+    convergenceOver,
+    convergenceUnder,
+    convergenceLean,
     trend,
-    narratives: narratives.slice(0, 2), // max 2 per card
+    narratives: narratives.slice(0, 2),
   }
 }
 
@@ -474,20 +479,6 @@ function findGameForPlayer(player: Player, games: Game[]): Game | undefined {
   return games.find(g =>
     g.homeTeam.id === player.team.id || g.awayTeam.id === player.team.id
   )
-}
-
-function countStreak(gameLogs: GameLog[], stat: string, line: number, direction: 'over' | 'under'): number {
-  let count = 0
-  for (const log of gameLogs) {
-    const val = log.stats[stat] ?? 0
-    const isOver = val > line
-    if ((direction === 'over' && isOver) || (direction === 'under' && !isOver)) {
-      count++
-    } else {
-      break
-    }
-  }
-  return count
 }
 
 function parseSpread(details: string): number | undefined {
