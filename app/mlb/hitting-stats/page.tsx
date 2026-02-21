@@ -101,6 +101,8 @@ export default function Page() {
       hand: matchupData.pitcher.hand,
       arsenal: toPanelArsenal(matchupData.pitcher.arsenal),
       seasonStats: matchupData.pitcher.seasonStats,
+      vsLHB: matchupData.pitcher.vsLHB,
+      vsRHB: matchupData.pitcher.vsRHB,
     }
   }, [matchupData, selectedPitcherId, selectedPitcherName, selectedPitcherTeam, selectedPitcherHand])
 
@@ -245,6 +247,7 @@ export default function Page() {
               season={season}
               onSeasonChange={handleSeasonChange}
               isLoadingMatchup={isLoadingMatchup}
+              batterHand={batterHand}
             />
           </aside>
 

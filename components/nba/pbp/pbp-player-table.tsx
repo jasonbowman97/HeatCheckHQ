@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Image from "next/image"
-import { ChevronDown, ChevronUp, Trophy, Share2, Search } from "lucide-react"
+import { ChevronDown, ChevronUp, Trophy, Search } from "lucide-react"
 import { ShareCapture } from "@/components/ui/share-capture"
 
 /* ─── Types ─── */
@@ -169,30 +169,6 @@ function PBPTopPicks({ players, mode, label }: { players: PBPPlayer[]; mode: Tab
           <span className="text-[10px] text-muted-foreground ml-auto hidden sm:inline">
             Based on hit rate, consistency, streak, and matchup
           </span>
-          <button
-            onClick={() => {
-              const text = topPicks
-                .slice(0, 3)
-                .map((p, i) => {
-                  const stat = mode === "scoring"
-                    ? `${p.avgPoints?.toFixed(1)} avg pts (${p.hitRate?.toFixed(0)}% hit rate)`
-                    : `${p.rate?.toFixed(1)}% rate (${p.firstCount}/${p.gamesInWindow})`
-                  return `${i + 1}. ${p.athleteName} (${p.team}) — ${stat}`
-                })
-                .join("\n")
-              const shareText = `Tonight's Top ${label} Picks\n${text}\n\nFull analysis at heatcheckhq.io`
-              if (navigator.share) {
-                navigator.share({ text: shareText }).catch(() => {})
-              } else {
-                navigator.clipboard.writeText(shareText).catch(() => {})
-              }
-            }}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/5"
-            title="Share tonight's picks"
-          >
-            <Share2 className="h-3 w-3" />
-            Share
-          </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
           {topPicks.map((pick, i) => {

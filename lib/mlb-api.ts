@@ -444,6 +444,60 @@ export async function getPitchArsenal(pitcherId: number, season?: number): Promi
 }
 
 /* ------------------------------------------------------------------ */
+/*  Pitcher Platoon Splits (vs LHB / vs RHB)                          */
+/* ------------------------------------------------------------------ */
+
+export interface PitcherPlatoonSplit {
+  split: "vs LHB" | "vs RHB"
+  atBats: number
+  hits: number
+  avg: number
+  obp: number
+  slg: number
+  ops: number
+  homeRuns: number
+  strikeOuts: number
+  baseOnBalls: number
+  numberOfPitches: number
+  inningsPitched: number
+  strikeoutsPer9: number
+  walksPer9: number
+  whip: number
+  battersFaced: number
+}
+
+export async function getPitcherPlatoonSplits(pitcherId: number, season?: number): Promise<PitcherPlatoonSplit[]> {
+  const yr = season ?? new Date().getFullYear()
+  try {
+    const raw = await mlbFetch<SplitsResponse>(
+      `/people/${pitcherId}/stats?stats=statSplits&season=${yr}&group=pitching&sitCodes=vl,vr&gameType=R`
+    )
+    const splits = raw.stats?.[0]?.splits ?? []
+    return splits.map((s) => ({
+      split: s.split.code === "vl" ? "vs LHB" as const : "vs RHB" as const,
+      atBats: Number(s.stat.atBats) || 0,
+      hits: Number(s.stat.hits) || 0,
+      avg: Number(s.stat.avg) || 0,
+      obp: Number(s.stat.obp) || 0,
+      slg: Number(s.stat.slg) || 0,
+      ops: Number(s.stat.ops) || 0,
+      homeRuns: Number(s.stat.homeRuns) || 0,
+      strikeOuts: Number(s.stat.strikeOuts) || 0,
+      baseOnBalls: Number(s.stat.baseOnBalls) || 0,
+      numberOfPitches: Number(s.stat.numberOfPitches) || 0,
+      inningsPitched: Number(s.stat.inningsPitched) || 0,
+      strikeoutsPer9: Number(s.stat.strikeoutsPer9Inn) || 0,
+      walksPer9: Number(s.stat.walksPer9Inn) || 0,
+      whip: Number(s.stat.whip) || 0,
+      battersFaced: Number(s.stat.battersFaced) || 0,
+    }))
+  } catch (err) {
+    console.error(`[MLB] Pitcher platoon splits error for ${pitcherId}:`, err)
+    return []
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Batter Platoon Splits (vs LHP / vs RHP)                           */
 /* ------------------------------------------------------------------ */
 

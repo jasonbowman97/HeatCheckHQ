@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Trophy, Share2 } from "lucide-react"
+import { Trophy } from "lucide-react"
 import { ShareCapture } from "@/components/ui/share-capture"
 import type { RowData } from "@/components/nba/first-basket-table"
 
@@ -43,22 +43,6 @@ export function TopPicks({ rows, maxPicks = 5 }: { rows: RowData[]; maxPicks?: n
         <Trophy className="h-4 w-4 text-primary" />
         <span className="text-sm font-bold text-foreground">Tonight{"'"}s Top First Basket Picks</span>
         <span className="text-[10px] text-muted-foreground ml-auto hidden sm:inline">Based on tip win %, first shot %, and conversion rate</span>
-        <button
-          onClick={() => {
-            const text = topPicks.slice(0, 3).map((p, i) => `${i + 1}. ${p.name} (${p.team}) — ${p.firstBasketPct.toFixed(1)}% first basket rate (${p.firstBaskets}/${p.gamesStarted})`).join("\n")
-            const shareText = `Tonight's Top First Basket Picks\n${text}\n\nFull analysis at heatcheckhq.io/nba/first-basket`
-            if (navigator.share) {
-              navigator.share({ text: shareText }).catch(() => {})
-            } else {
-              navigator.clipboard.writeText(shareText).catch(() => {})
-            }
-          }}
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/5"
-          title="Share tonight's picks"
-        >
-          <Share2 className="h-3 w-3" />
-          Share
-        </button>
       </div>
       <div className={`grid grid-cols-1 ${gridCols} divide-y sm:divide-y-0 sm:divide-x divide-border/50`}>
         {topPicks.map((pick, i) => {

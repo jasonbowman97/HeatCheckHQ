@@ -196,7 +196,7 @@ export function ShareCapture({ children, label, maxCaptureHeight = 800 }: ShareC
         ) : (
           <Camera className="h-3 w-3" />
         )}
-        {capturing ? "Capturing..." : "Share"}
+        {capturing ? "Capturing..." : "Capture"}
       </button>
 
       {/* Captured image overlay */}

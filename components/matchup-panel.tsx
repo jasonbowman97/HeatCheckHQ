@@ -1,6 +1,6 @@
 "use client"
 
-import type { PitchArsenal, Pitcher, PitcherSeasonStats } from "@/lib/matchup-data"
+import type { PitchArsenal, Pitcher, PitcherSeasonStats, PitcherPlatoonSplit } from "@/lib/matchup-data"
 import type { ScheduleGame } from "@/lib/mlb-api"
 import {
   Select,
@@ -17,6 +17,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Info, User, Calendar, Loader2 } from "lucide-react"
+
+type BatterHandFilter = "All" | "LHH" | "RHH"
 
 interface MatchupPanelProps {
   // Game selection
@@ -41,6 +43,9 @@ interface MatchupPanelProps {
 
   // Loading
   isLoadingMatchup: boolean
+
+  // Batter hand context (for platoon display)
+  batterHand?: BatterHandFilter
 }
 
 function UsageBar({ pct }: { pct: number }) {
@@ -88,6 +93,75 @@ function PitcherContextCard({ stats }: { stats: PitcherSeasonStats }) {
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">W-L</p>
         <p className="text-sm font-bold font-mono tabular-nums text-foreground">{stats.wins}-{stats.losses}</p>
       </div>
+    </div>
+  )
+}
+
+function PitcherPlatoonCard({
+  vsLHB,
+  vsRHB,
+  batterHand,
+}: {
+  vsLHB: PitcherPlatoonSplit | null | undefined
+  vsRHB: PitcherPlatoonSplit | null | undefined
+  batterHand: BatterHandFilter
+}) {
+  // Determine which splits to show
+  const splits: { label: string; data: PitcherPlatoonSplit }[] = []
+  if ((batterHand === "All" || batterHand === "LHH") && vsLHB) {
+    splits.push({ label: "vs LHB", data: vsLHB })
+  }
+  if ((batterHand === "All" || batterHand === "RHH") && vsRHB) {
+    splits.push({ label: "vs RHB", data: vsRHB })
+  }
+
+  if (splits.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-xs font-medium text-primary uppercase tracking-wider">
+        Platoon Splits
+      </span>
+      {splits.map((s) => (
+        <div key={s.label} className="rounded-lg bg-secondary/50 p-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 block">
+            {s.label}
+            <span className="text-muted-foreground/50 ml-1.5 normal-case tracking-normal">
+              ({s.data.atBats} AB)
+            </span>
+          </span>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">AVG</p>
+              <p className={`text-sm font-bold font-mono tabular-nums ${
+                s.data.avg >= .300 ? "text-emerald-400" : s.data.avg >= .250 ? "text-foreground" : "text-red-400"
+              }`}>
+                {s.data.avg.toFixed(3).replace(/^0/, "")}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">OPS</p>
+              <p className={`text-sm font-bold font-mono tabular-nums ${
+                s.data.ops >= .800 ? "text-emerald-400" : s.data.ops >= .700 ? "text-foreground" : "text-red-400"
+              }`}>
+                {s.data.ops.toFixed(3).replace(/^0/, "")}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">K/9</p>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground">
+                {s.data.strikeoutsPer9.toFixed(1)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">WHIP</p>
+              <p className="text-sm font-bold font-mono tabular-nums text-foreground">
+                {s.data.whip.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -140,6 +214,7 @@ export function MatchupPanel({
   season,
   onSeasonChange,
   isLoadingMatchup,
+  batterHand = "All",
 }: MatchupPanelProps) {
   const currentYear = new Date().getFullYear()
   const selectedGame = games.find((g) => g.gamePk === selectedGamePk) ?? null
@@ -316,6 +391,17 @@ export function MatchupPanel({
         </div>
       )}
 
+      {/* Pitcher Platoon Splits */}
+      {(selectedPitcher?.vsLHB || selectedPitcher?.vsRHB) && (
+        <div className="border-b border-border px-5 py-4">
+          <PitcherPlatoonCard
+            vsLHB={selectedPitcher.vsLHB}
+            vsRHB={selectedPitcher.vsRHB}
+            batterHand={batterHand}
+          />
+        </div>
+      )}
+
       {/* Pitch Arsenal Toggles */}
       {sortedArsenal.length > 0 && (
         <div className="px-5 py-4">
@@ -331,9 +417,9 @@ export function MatchupPanel({
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-[260px]">
                     <p className="text-xs">
-                      Toggle pitch types on/off to highlight or de-emphasize them
-                      in the matchup analysis. Usage percentages from the pitcher{"'"}s
-                      season data.
+                      Overall season pitch mix — toggle types on/off to focus the
+                      matchup analysis. Per-pitch splits by batter hand are not
+                      available; use the platoon splits above for hand-specific context.
                     </p>
                   </TooltipContent>
                 </Tooltip>

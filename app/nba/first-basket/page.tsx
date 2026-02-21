@@ -128,8 +128,10 @@ export default function NBAFirstBasketPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const [splitView, setSplitView] = useState<SplitView>("season")
   const [gameWindow, setGameWindow] = useState<GameWindow>("season")
+  const [fbGameWindow, setFbGameWindow] = useState<GameWindow>("season")
 
   const isFirstBasketTab = activeTab === "first-basket"
+  const fbUsingPbp = fbGameWindow !== "season" // Use PBP data when a game window is selected
 
   const dateParam = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`
   const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError, mutate: mutateSchedule } = useSWR<{ games: NBAScheduleGame[] }>(
@@ -138,15 +140,25 @@ export default function NBAFirstBasketPage() {
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
-  // BettingPros first basket data (only used on First Basket tab)
+  // BettingPros first basket data (used on First Basket tab when window=season)
   const { data: fbData, isLoading: fbLoading, error: fbError, mutate: mutateFb } = useSWR<{
     players: BPFirstBasketPlayer[]
     teams: BPTeamTipoff[]
     updatedAt?: string
-  }>(isFirstBasketTab ? "/api/nba/first-basket" : null, fetcher, {
+  }>(isFirstBasketTab && !fbUsingPbp ? "/api/nba/first-basket" : null, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 43200000,
   })
+
+  // PBP first basket data (used on First Basket tab when window != season)
+  const fbPbpApiUrl = isFirstBasketTab && fbUsingPbp
+    ? `/api/nba/first-basket-pbp?type=first-basket&window=${fbGameWindow}`
+    : null
+  const { data: fbPbpData, isLoading: fbPbpLoading, error: fbPbpError, mutate: mutateFbPbp } = useSWR(
+    fbPbpApiUrl,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 3600000 }
+  )
 
   // PBP data (used on Team First FG tab)
   const pbpApiUrl = !isFirstBasketTab
@@ -164,11 +176,13 @@ export default function NBAFirstBasketPage() {
     { revalidateOnFocus: false, dedupingInterval: 43200000 }
   )
 
-  const hasError = scheduleError || (isFirstBasketTab ? fbError : pbpError)
-  const isLoading = scheduleLoading || (isFirstBasketTab ? fbLoading : pbpLoading)
+  const hasError = scheduleError || (isFirstBasketTab ? (fbUsingPbp ? fbPbpError : fbError) : pbpError)
+  const isLoading = scheduleLoading || (isFirstBasketTab ? (fbUsingPbp ? fbPbpLoading : fbLoading) : pbpLoading)
 
   const games = useMemo(() => (scheduleData?.games?.length ? toLiveGames(scheduleData.games) : []), [scheduleData])
-  const hasLiveStats = isFirstBasketTab ? !!fbData?.players?.length : !!pbpData?.players?.length
+  const hasLiveStats = isFirstBasketTab
+    ? (fbUsingPbp ? !!fbPbpData?.players?.length : !!fbData?.players?.length)
+    : !!pbpData?.players?.length
 
   // Get today's team abbreviations for filtering players (convert to BettingPros format)
   const todayTeams = useMemo(() => {
@@ -225,6 +239,10 @@ export default function NBAFirstBasketPage() {
   const pbpPlayers: PBPPlayer[] = pbpData?.players ?? []
   const pbpTodayGames: TodayGame[] = pbpData?.todayGames ?? []
 
+  // PBP players for First Basket tab (when game window is not season)
+  const fbPbpPlayers: PBPPlayer[] = fbPbpData?.players ?? []
+  const fbPbpTodayGames: TodayGame[] = fbPbpData?.todayGames ?? []
+
   const handlePrevDay = useCallback(() => {
     setDate((prev) => {
       const d = new Date(prev)
@@ -273,14 +291,14 @@ export default function NBAFirstBasketPage() {
             )}
             {isFirstBasketTab && !isLoading && games.length > 0 && (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
-                {games.length} Games · Season Stats
+                {games.length} Games · {fbGameWindow === "season" ? "Season" : `L${fbGameWindow}`} Stats
               </span>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
             {pageDescription}
           </p>
-          <LastUpdated timestamp={isFirstBasketTab ? fbData?.updatedAt : pbpData?.updatedAt} />
+          <LastUpdated timestamp={isFirstBasketTab ? (fbUsingPbp ? fbPbpData?.updatedAt : fbData?.updatedAt) : pbpData?.updatedAt} />
         </div>
 
         {/* Tab bar */}
@@ -314,15 +332,16 @@ export default function NBAFirstBasketPage() {
             ))}
           </div>
 
-          {/* Game window filter (Team First FG tab only) */}
-          {!isFirstBasketTab && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Window
-              </span>
-              <GameWindowFilter value={gameWindow} onChange={setGameWindow} />
-            </div>
-          )}
+          {/* Game window filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Window
+            </span>
+            <GameWindowFilter
+              value={isFirstBasketTab ? fbGameWindow : gameWindow}
+              onChange={isFirstBasketTab ? setFbGameWindow : setGameWindow}
+            />
+          </div>
         </div>
 
         {/* ─── First Basket Tab Content ─── */}
@@ -464,7 +483,7 @@ export default function NBAFirstBasketPage() {
                 <p className="text-sm font-medium text-foreground">Failed to load data</p>
                 <p className="text-xs text-muted-foreground">Something went wrong. Try refreshing.</p>
                 <button
-                  onClick={() => { mutateSchedule(); mutateFb() }}
+                  onClick={() => { mutateSchedule(); fbUsingPbp ? mutateFbPbp() : mutateFb() }}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
@@ -474,7 +493,7 @@ export default function NBAFirstBasketPage() {
             )}
 
             {/* No games state */}
-            {!isLoading && !hasError && games.length === 0 && (
+            {!isLoading && !hasError && games.length === 0 && !fbUsingPbp && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
                 <p className="text-sm font-medium text-foreground">No games scheduled</p>
@@ -482,60 +501,116 @@ export default function NBAFirstBasketPage() {
               </div>
             )}
 
-            {/* Top Picks spotlight — hidden for anonymous users */}
-            {!isAnonymous && allRows.length > 0 && gameFilter === "all" && (
-              <TopPicks rows={allRows} maxPicks={5} />
+            {/* ── Season view (BettingPros data) ── */}
+            {!fbUsingPbp && (
+              <>
+                {/* Top Picks spotlight — hidden for anonymous users */}
+                {!isAnonymous && allRows.length > 0 && gameFilter === "all" && (
+                  <TopPicks rows={allRows} maxPicks={5} />
+                )}
+
+                {/* Table */}
+                {games.length > 0 && (
+                  isAnonymous ? (
+                    <SignupGate
+                      headline="See all first basket picks — free"
+                      description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
+                      countLabel={`${allRows.length} players available today`}
+                      preview={
+                        <FirstBasketTable
+                          players={filteredPlayers}
+                          teamTipoffs={teamTipoffs}
+                          gameFilter={gameFilter}
+                          sortColumn={sortColumn}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                          isLive={hasLiveStats}
+                          matchupMap={matchupMap}
+                          maxRows={PREVIEW_ROWS}
+                          splitView={splitView}
+                        />
+                      }
+                      gated={
+                        <FirstBasketTable
+                          players={filteredPlayers}
+                          teamTipoffs={teamTipoffs}
+                          gameFilter={gameFilter}
+                          sortColumn={sortColumn}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                          isLive={hasLiveStats}
+                          matchupMap={matchupMap}
+                          skipRows={PREVIEW_ROWS}
+                          splitView={splitView}
+                        />
+                      }
+                    />
+                  ) : (
+                    <FirstBasketTable
+                      players={filteredPlayers}
+                      teamTipoffs={teamTipoffs}
+                      gameFilter={gameFilter}
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      isLive={hasLiveStats}
+                      matchupMap={matchupMap}
+                      splitView={splitView}
+                    />
+                  )
+                )}
+              </>
             )}
 
-            {/* Table */}
-            {games.length > 0 && (
-              isAnonymous ? (
-                <SignupGate
-                  headline="See all first basket picks — free"
-                  description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
-                  countLabel={`${allRows.length} players available today`}
-                  preview={
-                    <FirstBasketTable
-                      players={filteredPlayers}
-                      teamTipoffs={teamTipoffs}
-                      gameFilter={gameFilter}
-                      sortColumn={sortColumn}
-                      sortDirection={sortDirection}
-                      onSort={handleSort}
-                      isLive={hasLiveStats}
-                      matchupMap={matchupMap}
-                      maxRows={PREVIEW_ROWS}
-                      splitView={splitView}
+            {/* ── L5/L10/L20 view (PBP data) ── */}
+            {fbUsingPbp && (
+              <>
+                {!fbPbpLoading && !fbPbpError && fbPbpPlayers.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
+                    <p className="text-sm font-medium text-foreground">No data available</p>
+                    <p className="text-xs text-muted-foreground">
+                      Play-by-play data hasn{"'"}t been ingested yet. Check back after games are played.
+                    </p>
+                  </div>
+                )}
+
+                {fbPbpPlayers.length > 0 &&
+                  (isAnonymous ? (
+                    <SignupGate
+                      headline="See all first basket picks — free"
+                      description="Unlock the full player rankings, every matchup, and advanced sorting. Free forever, no credit card."
+                      countLabel={`${fbPbpPlayers.length} players available`}
+                      preview={
+                        <PBPPlayerTable
+                          players={fbPbpPlayers}
+                          mode="first-basket"
+                          label="First Basket"
+                          todayGames={fbPbpTodayGames}
+                          maxRows={PREVIEW_ROWS}
+                          showTopPicks
+                        />
+                      }
+                      gated={
+                        <PBPPlayerTable
+                          players={fbPbpPlayers}
+                          mode="first-basket"
+                          label="First Basket"
+                          todayGames={fbPbpTodayGames}
+                          skipRows={PREVIEW_ROWS}
+                        />
+                      }
                     />
-                  }
-                  gated={
-                    <FirstBasketTable
-                      players={filteredPlayers}
-                      teamTipoffs={teamTipoffs}
-                      gameFilter={gameFilter}
-                      sortColumn={sortColumn}
-                      sortDirection={sortDirection}
-                      onSort={handleSort}
-                      isLive={hasLiveStats}
-                      matchupMap={matchupMap}
-                      skipRows={PREVIEW_ROWS}
-                      splitView={splitView}
+                  ) : (
+                    <PBPPlayerTable
+                      players={fbPbpPlayers}
+                      mode="first-basket"
+                      label="First Basket"
+                      todayGames={fbPbpTodayGames}
+                      showTopPicks
                     />
-                  }
-                />
-              ) : (
-                <FirstBasketTable
-                  players={filteredPlayers}
-                  teamTipoffs={teamTipoffs}
-                  gameFilter={gameFilter}
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                  isLive={hasLiveStats}
-                  matchupMap={matchupMap}
-                  splitView={splitView}
-                />
-              )
+                  ))}
+              </>
             )}
           </>
         )}

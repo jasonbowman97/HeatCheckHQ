@@ -21,6 +21,33 @@ function ConditionIcon({ condition }: { condition: GameWeather["condition"] }) {
   }
 }
 
+/* ---------- compass → degrees (meteorological: direction wind blows FROM) ---------- */
+const COMPASS_TO_DEG: Record<string, number> = {
+  N: 0, NNE: 22.5, NE: 45, ENE: 67.5,
+  E: 90, ESE: 112.5, SE: 135, SSE: 157.5,
+  S: 180, SSW: 202.5, SW: 225, WSW: 247.5,
+  W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
+}
+
+/** SVG arrow pointing up (↑) — rotated via CSS to show wind direction */
+function WindArrow({ degrees, className }: { degrees: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      style={{ transform: `rotate(${degrees}deg)` }}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
+    </svg>
+  )
+}
+
 /* ---------- wind direction arrow + color ---------- */
 function WindDisplay({ dir, speed, dirRaw }: { dir: GameWeather["windDir"]; speed: number; dirRaw: string }) {
   if (dir === "Calm" || speed === 0) {
@@ -32,18 +59,26 @@ function WindDisplay({ dir, speed, dirRaw }: { dir: GameWeather["windDir"]; spee
     )
   }
 
-  const arrow = dir === "Out" ? "\u2197" : dir === "In" ? "\u2199" : dir === "L-R" ? "\u2192" : "\u2190"
   const color = dir === "Out" ? "text-emerald-400" : dir === "In" ? "text-red-400" : "text-muted-foreground"
   const label = dir === "Out" ? "Blowing Out" : dir === "In" ? "Blowing In" : dir === "L-R" ? "Left to Right" : "Right to Left"
 
+  // Wind direction in degrees — compass tells us where wind blows FROM,
+  // so the arrow points in the direction wind is going TO (add 180°)
+  const fromDeg = COMPASS_TO_DEG[dirRaw] ?? null
+  const arrowDeg = fromDeg !== null ? (fromDeg + 180) % 360 : null
+
   return (
     <div className="flex items-center gap-2">
-      <Wind className={`h-4 w-4 ${color}`} />
+      {arrowDeg !== null ? (
+        <WindArrow degrees={arrowDeg} className={`h-5 w-5 shrink-0 ${color}`} />
+      ) : (
+        <Wind className={`h-4 w-4 ${color}`} />
+      )}
       <div className="flex flex-col">
         <span className={`text-sm font-semibold font-mono tabular-nums ${color}`}>
-          {arrow} {speed} mph
+          {speed} mph {dirRaw}
         </span>
-        <span className="text-[10px] text-muted-foreground/60">{label} ({dirRaw})</span>
+        <span className="text-[10px] text-muted-foreground/60">{label}</span>
       </div>
     </div>
   )

@@ -7,6 +7,7 @@
 
 import type {
   PitchArsenalEntry,
+  PitcherPlatoonSplit,
   PlatoonSplit,
   H2HStats,
   PitcherSeasonStats,
@@ -17,7 +18,7 @@ import type {
 /*  Re-export API types for convenience                                */
 /* ------------------------------------------------------------------ */
 
-export type { PitchArsenalEntry, PlatoonSplit, H2HStats, PitcherSeasonStats, BatterSeasonStats }
+export type { PitchArsenalEntry, PitcherPlatoonSplit, PlatoonSplit, H2HStats, PitcherSeasonStats, BatterSeasonStats }
 
 /* ------------------------------------------------------------------ */
 /*  Matchup panel types                                                */
@@ -36,6 +37,8 @@ export interface Pitcher {
   hand: "R" | "L"
   arsenal: PitchArsenal[]
   seasonStats?: PitcherSeasonStats | null
+  vsLHB?: PitcherPlatoonSplit | null
+  vsRHB?: PitcherPlatoonSplit | null
 }
 
 /* ------------------------------------------------------------------ */
@@ -81,6 +84,8 @@ export interface MatchupPitcher {
   hand: "L" | "R"
   seasonStats: PitcherSeasonStats | null
   arsenal: PitchArsenalEntry[]
+  vsLHB: PitcherPlatoonSplit | null
+  vsRHB: PitcherPlatoonSplit | null
 }
 
 export interface MatchupBatter {

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import {
   getPitchArsenal,
+  getPitcherPlatoonSplits,
   getBatterPlatoonSplits,
   getBatterVsPitcherH2H,
   getTeamRoster,
   getPitcherSeasonStats,
   getBatterSeasonStats,
   type PitchArsenalEntry,
+  type PitcherPlatoonSplit,
   type PlatoonSplit,
   type H2HStats,
   type PitcherSeasonStats,
@@ -40,6 +42,8 @@ export interface MatchupPitcher {
   hand: "L" | "R"
   seasonStats: PitcherSeasonStats | null
   arsenal: PitchArsenalEntry[]
+  vsLHB: PitcherPlatoonSplit | null
+  vsRHB: PitcherPlatoonSplit | null
 }
 
 export interface MatchupBatter {
@@ -113,10 +117,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Phase 1: Fetch pitcher data + roster in parallel
-    const [arsenal, roster, pitcherStats] = await Promise.all([
+    const [arsenal, roster, pitcherStats, pitcherSplits] = await Promise.all([
       getPitchArsenal(pitcherId, season),
       getTeamRoster(teamId, season),
       getPitcherSeasonStats(pitcherId, season),
+      getPitcherPlatoonSplits(pitcherId, season),
     ])
 
     // Phase 2: Batch-fetch batter data
@@ -147,6 +152,9 @@ export async function GET(req: NextRequest) {
     // or we can pass it through — for now use a placeholder that the client fills
     const battingTeamAbbr = searchParams.get("battingTeam") ?? ""
 
+    const vsLHB = pitcherSplits.find((s) => s.split === "vs LHB") ?? null
+    const vsRHB = pitcherSplits.find((s) => s.split === "vs RHB") ?? null
+
     const response: MatchupResponse = {
       pitcher: {
         id: pitcherId,
@@ -155,6 +163,8 @@ export async function GET(req: NextRequest) {
         hand: pitcherHand,
         seasonStats: pitcherStats,
         arsenal,
+        vsLHB,
+        vsRHB,
       },
       batters: batterData.map((b) => ({ ...b, team: battingTeamAbbr })),
       season,
