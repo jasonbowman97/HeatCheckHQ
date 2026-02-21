@@ -37,7 +37,7 @@ const plans = [
       { text: "Everything in Free", included: true },
       { text: "Inline Prop Analyzer from any streak tracker", included: true },
       { text: "Full Prop Analyzer with all stats unlocked", included: true },
-      { text: "All 14 dashboards across MLB, NBA & NFL", included: true },
+      { text: "All 16 dashboards across MLB, NBA & NFL", included: true },
       { text: "New tools & dashboards added first to Pro", included: true },
       { text: "Cancel anytime", included: true },
     ],
@@ -54,7 +54,7 @@ const plans = [
     highlights: [
       { text: "Everything in Pro Monthly", included: true },
       { text: "Just $8.33/mo — billed annually", included: true },
-      { text: "All tools & 14 dashboards across MLB, NBA, NFL", included: true },
+      { text: "All tools & 16 dashboards across MLB, NBA, NFL", included: true },
       { text: "Save $44 vs. monthly", included: true },
       { text: "Priority access to new tools & features", included: true },
       { text: "Cancel anytime", included: true },

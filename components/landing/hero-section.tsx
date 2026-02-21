@@ -1,40 +1,65 @@
+import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, Search, BarChart3, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/ui/fade-in"
-import { BaseballIcon, BasketballIcon, FootballIcon } from "@/components/ui/sport-icons"
 import { AuthCta } from "@/components/landing/auth-cta"
 
-const dashboardPreviews = [
-  {
-    tag: "Tool",
-    label: "Prop Analyzer",
-    icon: Search,
-    description: "See every prop for any player at a glance. 9-factor convergence analysis with full game log.",
-    href: "/check",
-    accent: true,
-  },
-  {
-    tag: "9-Factor System",
-    label: "Convergence Scoring",
-    icon: TrendingUp,
-    description: "Every prop scored on hit rates, trends, matchups, minutes, game environment, and more — know your edge before you bet.",
-    href: "/check",
-    accent: true,
-  },
-  {
-    tag: "MLB · NBA · NFL",
-    label: "14 Dashboards",
-    icon: BarChart3,
-    description: "Heatmaps, streaks, matchup breakdowns, and more across all three sports.",
-    href: "#dashboards",
-    accent: false,
-  },
-]
+/** Set to a real path (e.g. "/screenshots/hero-dashboard.png") once a screenshot is captured */
+const HERO_IMAGE_SRC: string | null = null
+
+/* ── Placeholder skeleton that mimics a dashboard UI ── */
+function HeroDashboardPlaceholder() {
+  return (
+    <div className="relative aspect-[16/9] bg-gradient-to-br from-card via-muted/30 to-card p-4 sm:p-8">
+      {/* Fake toolbar row */}
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="h-3 w-16 rounded bg-primary/25" />
+        <div className="h-3 w-12 rounded bg-muted-foreground/10" />
+        <div className="h-3 w-14 rounded bg-muted-foreground/10" />
+        <div className="ml-auto h-3 w-20 rounded bg-muted-foreground/8" />
+      </div>
+
+      {/* Fake table header */}
+      <div className="flex gap-3 mb-3 px-1">
+        <div className="h-2 w-24 rounded bg-primary/20" />
+        <div className="h-2 w-16 rounded bg-primary/15" />
+        <div className="h-2 w-20 rounded bg-primary/15" />
+        <div className="h-2 w-12 rounded bg-primary/15" />
+        <div className="h-2 w-16 rounded bg-primary/15" />
+      </div>
+
+      {/* Fake data rows with heatmap-style coloring */}
+      <div className="space-y-2.5">
+        {[
+          { widths: [28, 14, 22, 10, 14], colors: ["bg-emerald-500/25", "bg-emerald-400/20", "bg-emerald-500/20", "bg-primary/15", "bg-emerald-400/25"] },
+          { widths: [24, 16, 18, 12, 16], colors: ["bg-emerald-400/20", "bg-emerald-500/25", "bg-amber-400/20", "bg-emerald-400/15", "bg-emerald-500/20"] },
+          { widths: [30, 12, 20, 14, 12], colors: ["bg-amber-400/15", "bg-red-400/15", "bg-emerald-400/20", "bg-amber-400/20", "bg-emerald-400/15"] },
+          { widths: [22, 18, 16, 10, 18], colors: ["bg-emerald-500/20", "bg-amber-400/20", "bg-red-400/15", "bg-emerald-400/20", "bg-primary/15"] },
+          { widths: [26, 14, 24, 12, 14], colors: ["bg-red-400/15", "bg-emerald-400/20", "bg-emerald-500/25", "bg-amber-400/15", "bg-emerald-400/20"] },
+          { widths: [20, 16, 18, 14, 16], colors: ["bg-emerald-400/15", "bg-primary/15", "bg-amber-400/20", "bg-red-400/15", "bg-amber-400/15"] },
+        ].map((row, i) => (
+          <div key={i} className="flex items-center gap-3 px-1" style={{ opacity: 1 - i * 0.08 }}>
+            <div className="h-5 w-5 rounded bg-muted-foreground/10 shrink-0" />
+            {row.widths.map((w, j) => (
+              <div
+                key={j}
+                className={`h-3 rounded ${row.colors[j]}`}
+                style={{ width: `${w}%` }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Subtle bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card/80 to-transparent" />
+    </div>
+  )
+}
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24">
+    <section className="relative overflow-visible pt-28 pb-0 md:pt-36 md:pb-0">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[600px] w-[900px] rounded-full bg-primary/5 blur-3xl" />
       </div>
@@ -52,15 +77,16 @@ export function HeroSection() {
 
           <FadeIn delay={0.2}>
             <h1 className="max-w-4xl text-3xl sm:text-4xl font-bold leading-tight tracking-tight text-foreground text-balance md:text-6xl lg:text-7xl">
-              Research tools &amp; dashboards{" "}
+              Your daily heat check{" "}
               <span className="text-primary">for every edge</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.3}>
             <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              Prop validation, full-slate research, heatmaps, streaks, and matchup
-              breakdowns across MLB, NBA, and NFL. Updated daily so you never miss an edge.
+              The research platform built for sports bettors. Prop validation,
+              heatmaps, streaks, and matchup breakdowns across MLB, NBA, and NFL
+              — updated daily.
             </p>
           </FadeIn>
 
@@ -73,43 +99,41 @@ export function HeroSection() {
             </div>
           </FadeIn>
 
-          {/* Three preview cards — tools first, then dashboards */}
-          <div className="mt-10 sm:mt-14 w-full grid gap-3 sm:gap-4 md:grid-cols-3">
-            {dashboardPreviews.map((preview, index) => (
-              <FadeIn key={preview.label} delay={0.3 + index * 0.05}>
-                <Link
-                  href={preview.href}
-                  className={`group flex h-full flex-col rounded-xl border p-4 sm:p-5 transition-colors hover:border-primary/30 ${
-                    preview.accent
-                      ? "border-primary/20 bg-card shadow-sm shadow-primary/5"
-                      : "border-border bg-card"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                        preview.accent ? "bg-primary/15" : "bg-primary/10"
-                      }`}>
-                        <preview.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                          preview.accent ? "text-primary" : "text-muted-foreground"
-                        }`}>
-                          {preview.tag}
-                        </span>
-                        <p className="text-sm font-semibold text-foreground">{preview.label}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+          {/* Hero product screenshot — overlaps into the section below */}
+          <FadeIn delay={0.5}>
+            <div className="mt-12 sm:mt-16 relative mx-auto max-w-5xl translate-y-16 md:translate-y-24">
+              {/* Glow effect */}
+              <div className="absolute -inset-4 rounded-2xl bg-primary/5 blur-2xl" />
+
+              {/* Browser-style frame */}
+              <div className="relative rounded-xl border border-border bg-card overflow-hidden shadow-2xl shadow-primary/10">
+                {/* Browser chrome bar */}
+                <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-border bg-card">
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-400/40" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-amber-400/40" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/40" />
+                  <div className="ml-3 flex-1 h-5 rounded-md bg-muted/50 max-w-xs flex items-center px-2.5">
+                    <span className="text-[9px] text-muted-foreground/50 truncate">heatcheckhq.io</span>
                   </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {preview.description}
-                  </p>
-                </Link>
-              </FadeIn>
-            ))}
-          </div>
+                </div>
+
+                {/* Dashboard image or placeholder */}
+                {HERO_IMAGE_SRC ? (
+                  <div className="relative aspect-[16/9]">
+                    <Image
+                      src={HERO_IMAGE_SRC}
+                      alt="HeatCheck HQ dashboard showing heatmap-colored player stats"
+                      fill
+                      className="object-cover object-top"
+                      priority
+                    />
+                  </div>
+                ) : (
+                  <HeroDashboardPlaceholder />
+                )}
+              </div>
+            </div>
+          </FadeIn>
         </div>
       </div>
     </section>
