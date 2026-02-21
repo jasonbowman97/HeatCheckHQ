@@ -14,6 +14,7 @@ import {
   type PitcherSeasonStats,
   type BatterSeasonStats,
 } from "@/lib/mlb-api"
+import { getSavantPitchArsenalSplits, type SavantPitchMix } from "@/lib/baseball-savant"
 import { cacheHeader, CACHE } from "@/lib/cache"
 
 // Cache for 12 hours
@@ -44,6 +45,8 @@ export interface MatchupPitcher {
   arsenal: PitchArsenalEntry[]
   vsLHB: PitcherPlatoonSplit | null
   vsRHB: PitcherPlatoonSplit | null
+  arsenalVsLHB: SavantPitchMix[]
+  arsenalVsRHB: SavantPitchMix[]
 }
 
 export interface MatchupBatter {
@@ -99,6 +102,7 @@ export async function GET(req: NextRequest) {
     const pitcherName = searchParams.get("pitcherName") ?? "Unknown"
     const pitcherTeam = searchParams.get("pitcherTeam") ?? "???"
     const season = Number(searchParams.get("season")) || new Date().getFullYear()
+    const dateRange = searchParams.get("dateRange") ?? undefined
 
     if (!pitcherId || !teamId) {
       return NextResponse.json(
@@ -108,7 +112,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Check in-memory cache
-    const cacheKey = `${pitcherId}-${teamId}-${season}`
+    const cacheKey = `${pitcherId}-${teamId}-${season}-${dateRange ?? "season"}`
     const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       const res = NextResponse.json(cached.data)
@@ -116,12 +120,16 @@ export async function GET(req: NextRequest) {
       return res
     }
 
-    // Phase 1: Fetch pitcher data + roster in parallel
-    const [arsenal, roster, pitcherStats, pitcherSplits] = await Promise.all([
+    // Phase 1: Fetch pitcher data + roster + Savant arsenal splits in parallel
+    const [arsenal, roster, pitcherStats, pitcherSplits, savantArsenal] = await Promise.all([
       getPitchArsenal(pitcherId, season),
       getTeamRoster(teamId, season),
       getPitcherSeasonStats(pitcherId, season),
       getPitcherPlatoonSplits(pitcherId, season),
+      getSavantPitchArsenalSplits(pitcherId, season, dateRange).catch((err) => {
+        console.warn("[API] Savant arsenal fetch failed, using empty:", err)
+        return { vsLHB: [] as SavantPitchMix[], vsRHB: [] as SavantPitchMix[] }
+      }),
     ])
 
     // Phase 2: Batch-fetch batter data
@@ -165,6 +173,8 @@ export async function GET(req: NextRequest) {
         arsenal,
         vsLHB,
         vsRHB,
+        arsenalVsLHB: savantArsenal.vsLHB,
+        arsenalVsRHB: savantArsenal.vsRHB,
       },
       batters: batterData.map((b) => ({ ...b, team: battingTeamAbbr })),
       season,

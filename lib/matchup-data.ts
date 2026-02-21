@@ -21,6 +21,18 @@ import type {
 export type { PitchArsenalEntry, PitcherPlatoonSplit, PlatoonSplit, H2HStats, PitcherSeasonStats, BatterSeasonStats }
 
 /* ------------------------------------------------------------------ */
+/*  Savant pitch mix type (re-exported for convenience)                */
+/* ------------------------------------------------------------------ */
+
+export interface SavantPitchMix {
+  pitchCode: string
+  pitchName: string
+  pitchCount: number
+  usagePct: number
+  avgVelocity: number
+}
+
+/* ------------------------------------------------------------------ */
 /*  Matchup panel types                                                */
 /* ------------------------------------------------------------------ */
 
@@ -39,6 +51,8 @@ export interface Pitcher {
   seasonStats?: PitcherSeasonStats | null
   vsLHB?: PitcherPlatoonSplit | null
   vsRHB?: PitcherPlatoonSplit | null
+  arsenalVsLHB?: PitchArsenal[]
+  arsenalVsRHB?: PitchArsenal[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -86,6 +100,8 @@ export interface MatchupPitcher {
   arsenal: PitchArsenalEntry[]
   vsLHB: PitcherPlatoonSplit | null
   vsRHB: PitcherPlatoonSplit | null
+  arsenalVsLHB: SavantPitchMix[]
+  arsenalVsRHB: SavantPitchMix[]
 }
 
 export interface MatchupBatter {
@@ -171,5 +187,16 @@ export function toPanelArsenal(entries: PitchArsenalEntry[]): PitchArsenal[] {
     pitchType: e.pitchName,
     usagePct: e.usagePct,
     avgVelocity: e.avgVelocity,
+  }))
+}
+
+/**
+ * Convert SavantPitchMix[] to PitchArsenal[] for the MatchupPanel.
+ */
+export function savantToPanelArsenal(mixes: SavantPitchMix[]): PitchArsenal[] {
+  return mixes.map((m) => ({
+    pitchType: m.pitchName,
+    usagePct: m.usagePct,
+    avgVelocity: m.avgVelocity,
   }))
 }

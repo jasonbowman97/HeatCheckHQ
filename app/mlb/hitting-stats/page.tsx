@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react"
 import useSWR from "swr"
 import type { ScheduleGame } from "@/lib/mlb-api"
 import type { Pitcher, MatchupResponse, AggregatedBatterStats } from "@/lib/matchup-data"
-import { buildMatchupRows, toPanelArsenal } from "@/lib/matchup-data"
+import { buildMatchupRows, toPanelArsenal, savantToPanelArsenal } from "@/lib/matchup-data"
+import { ShareCapture } from "@/components/ui/share-capture"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { MatchupPanel } from "@/components/matchup-panel"
 import { PlayersTable } from "@/components/players-table"
@@ -44,6 +45,7 @@ export default function Page() {
   const [selectedPitchTypes, setSelectedPitchTypes] = useState<string[]>([])
   const [minUsagePct, setMinUsagePct] = useState(5)
   const [batterHand, setBatterHand] = useState<BatterHandFilter>("All")
+  const [statWindow, setStatWindow] = useState<"season" | "7d" | "14d" | "30d">("season")
 
   // Fetch schedule for selected date
   const { data: scheduleData, isLoading: isLoadingSchedule } = useSWR<{ games: ScheduleGame[] }>(
@@ -70,8 +72,9 @@ export default function Page() {
   }, [selectedGamePk, selectedPitcherId, games])
 
   // Fetch matchup data
+  const dateRangeParam = statWindow !== "season" ? `&dateRange=${statWindow}` : ""
   const matchupKey = selectedPitcherId && battingTeamId
-    ? `/api/mlb/matchup?pitcherId=${selectedPitcherId}&teamId=${battingTeamId.id}&season=${season}&hand=${selectedPitcherHand}&pitcherName=${encodeURIComponent(selectedPitcherName)}&pitcherTeam=${encodeURIComponent(selectedPitcherTeam)}&battingTeam=${encodeURIComponent(battingTeamId.abbr)}`
+    ? `/api/mlb/matchup?pitcherId=${selectedPitcherId}&teamId=${battingTeamId.id}&season=${season}&hand=${selectedPitcherHand}&pitcherName=${encodeURIComponent(selectedPitcherName)}&pitcherTeam=${encodeURIComponent(selectedPitcherTeam)}&battingTeam=${encodeURIComponent(battingTeamId.abbr)}${dateRangeParam}`
     : null
   const { data: matchupData, isLoading: isLoadingMatchup } = useSWR<MatchupResponse>(
     matchupKey,
@@ -103,6 +106,8 @@ export default function Page() {
       seasonStats: matchupData.pitcher.seasonStats,
       vsLHB: matchupData.pitcher.vsLHB,
       vsRHB: matchupData.pitcher.vsRHB,
+      arsenalVsLHB: savantToPanelArsenal(matchupData.pitcher.arsenalVsLHB ?? []),
+      arsenalVsRHB: savantToPanelArsenal(matchupData.pitcher.arsenalVsRHB ?? []),
     }
   }, [matchupData, selectedPitcherId, selectedPitcherName, selectedPitcherTeam, selectedPitcherHand])
 
@@ -165,12 +170,29 @@ export default function Page() {
     }
   }, [selectedGamePk, games])
 
-  // Auto-select all pitch types when arsenal loads
-  useEffect(() => {
-    if (pitcher?.arsenal && pitcher.arsenal.length > 0 && selectedPitchTypes.length === 0) {
-      setSelectedPitchTypes(pitcher.arsenal.map((p) => p.pitchType))
+  // Determine the active arsenal based on batter hand filter
+  const activeArsenal = useMemo(() => {
+    if (!pitcher) return []
+    if (batterHand === "LHH" && pitcher.arsenalVsLHB && pitcher.arsenalVsLHB.length > 0) {
+      return pitcher.arsenalVsLHB
     }
-  }, [pitcher?.arsenal, selectedPitchTypes.length])
+    if (batterHand === "RHH" && pitcher.arsenalVsRHB && pitcher.arsenalVsRHB.length > 0) {
+      return pitcher.arsenalVsRHB
+    }
+    return pitcher.arsenal ?? []
+  }, [pitcher, batterHand])
+
+  // Auto-select all pitch types when arsenal loads or batter hand changes
+  useEffect(() => {
+    if (activeArsenal.length > 0 && selectedPitchTypes.length === 0) {
+      setSelectedPitchTypes(activeArsenal.map((p) => p.pitchType))
+    }
+  }, [activeArsenal, selectedPitchTypes.length])
+
+  // Reset pitch type selection when batter hand or stat window changes so auto-select kicks in
+  useEffect(() => {
+    setSelectedPitchTypes([])
+  }, [batterHand, statWindow])
 
   function handleGameChange(gamePk: number) {
     setSelectedGamePk(gamePk)
@@ -248,6 +270,7 @@ export default function Page() {
               onSeasonChange={handleSeasonChange}
               isLoadingMatchup={isLoadingMatchup}
               batterHand={batterHand}
+              statWindow={statWindow}
             />
           </aside>
 
@@ -282,6 +305,7 @@ export default function Page() {
                     <>
                       {battingTeamId.abbr} lineup vs {selectedPitcherName} ({selectedPitcherHand === "R" ? "RHP" : "LHP"}) — {selectedPitcherTeam}
                       {batterHand !== "All" && ` — ${batterHand} only`}
+                      {statWindow !== "season" && ` — ${statWindow === "7d" ? "Last 7 days" : statWindow === "14d" ? "Last 14 days" : "Last 30 days"} arsenal`}
                       {selectedPitchTypes.length > 0 && selectedPitchTypes.length < (pitcher?.arsenal?.length ?? 0) && (
                         <> — {selectedPitchTypes.length} pitch {selectedPitchTypes.length === 1 ? "type" : "types"} selected</>
                       )}
@@ -313,6 +337,31 @@ export default function Page() {
                     ))}
                   </div>
                 </div>
+
+                {/* Time-Frame Filter */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Arsenal</span>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {([
+                      { value: "season" as const, label: "Season" },
+                      { value: "30d" as const, label: "L30" },
+                      { value: "14d" as const, label: "L14" },
+                      { value: "7d" as const, label: "L7" },
+                    ]).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setStatWindow(value)}
+                        className={`px-3.5 py-2.5 text-xs font-semibold transition-colors ${
+                          statWindow === value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -339,10 +388,12 @@ export default function Page() {
               </div>
             )}
 
-            <PlayersTable
-              matchupStats={matchupRows}
-              isLoading={isLoadingMatchup}
-            />
+            <ShareCapture label="Hitter vs Pitcher Matchup" maxCaptureHeight={1200}>
+              <PlayersTable
+                matchupStats={matchupRows}
+                isLoading={isLoadingMatchup}
+              />
+            </ShareCapture>
           </div>
         </div>
       </main>

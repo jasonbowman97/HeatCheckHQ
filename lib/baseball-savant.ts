@@ -108,6 +108,116 @@ export async function getStatcastBatters(minPA = 50): Promise<StatcastBatter[]> 
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Pitch Arsenal by Batter Handedness (Statcast Search)               */
+/* ------------------------------------------------------------------ */
+
+export interface SavantPitchMix {
+  pitchCode: string   // e.g., "FF", "SL", "CH"
+  pitchName: string   // e.g., "4-Seam Fastball", "Slider"
+  pitchCount: number
+  usagePct: number    // 0-100
+  avgVelocity: number
+}
+
+/**
+ * Fetch a pitcher's pitch arsenal filtered by batter handedness.
+ * Uses the Statcast Search CSV endpoint grouped by pitch type.
+ * Optionally accepts a date range (e.g., "7d", "14d", "30d") to filter recent data.
+ */
+export async function getSavantPitchArsenalByHand(
+  pitcherId: number,
+  batterHand: "L" | "R",
+  season?: number,
+  dateRange?: string
+): Promise<SavantPitchMix[]> {
+  try {
+    const yr = season ?? new Date().getFullYear()
+    const params = new URLSearchParams({
+      all: "true",
+      player_type: "pitcher",
+      player_id: String(pitcherId),
+      hfSea: `${yr}|`,
+      batter_stands: batterHand,
+      hfGT: "R|", // regular season only
+      group_by: "name-pitch_type",
+      sort_col: "pitches",
+      sort_order: "desc",
+      min_pitches: "1",
+      min_results: "0",
+      min_pas: "0",
+      chk_stats_pitches: "on",
+      chk_stats_pitch_percent: "on",
+      chk_stats_velocity: "on",
+      type: "details",
+    })
+
+    // Add date range filtering if specified
+    if (dateRange && dateRange !== "season") {
+      const days = parseInt(dateRange.replace("d", ""), 10)
+      if (!isNaN(days) && days > 0) {
+        const endDate = new Date()
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - days)
+        params.set("game_date_gt", startDate.toISOString().slice(0, 10))
+        params.set("game_date_lt", endDate.toISOString().slice(0, 10))
+      }
+    }
+
+    const url = `https://baseballsavant.mlb.com/statcast_search/csv?${params.toString()}`
+    const res = await fetch(url, {
+      next: { revalidate: 14400 }, // 4 hours
+      headers: { "User-Agent": "HeatCheckHQ/1.0" },
+    })
+
+    if (!res.ok) {
+      console.error(`[Savant] Pitch arsenal by hand ${res.status}`)
+      return []
+    }
+
+    const csv = await res.text()
+    if (!csv || csv.trim().length < 20) return []
+
+    const rows = parseCSV(csv)
+
+    // Aggregate: the CSV returns individual pitches grouped by pitch_type
+    // Each row IS a pitch-type group when group_by=name-pitch_type
+    const totalPitches = rows.reduce((sum, r) => sum + num(r.pitches), 0)
+
+    return rows
+      .map((r) => ({
+        pitchCode: r.pitch_type ?? "",
+        pitchName: r.pitch_name ?? r.pitch_type ?? "",
+        pitchCount: num(r.pitches),
+        usagePct: totalPitches > 0
+          ? (num(r.pitches) / totalPitches) * 100
+          : num(r.pitch_percent),
+        avgVelocity: num(r.release_speed),
+      }))
+      .filter((p) => p.pitchCode && p.pitchCount > 0)
+      .sort((a, b) => b.usagePct - a.usagePct)
+  } catch (err) {
+    console.error("[Savant] Failed to fetch pitch arsenal by hand:", err)
+    return []
+  }
+}
+
+/**
+ * Fetch pitch arsenal splits for both batter hands in parallel.
+ * Optionally accepts a date range (e.g., "7d", "14d", "30d") for recent data.
+ */
+export async function getSavantPitchArsenalSplits(
+  pitcherId: number,
+  season?: number,
+  dateRange?: string
+): Promise<{ vsLHB: SavantPitchMix[]; vsRHB: SavantPitchMix[] }> {
+  const [vsLHB, vsRHB] = await Promise.all([
+    getSavantPitchArsenalByHand(pitcherId, "L", season, dateRange),
+    getSavantPitchArsenalByHand(pitcherId, "R", season, dateRange),
+  ])
+  return { vsLHB, vsRHB }
+}
+
 /**
  * Fetch Statcast pitcher leaderboard.
  */

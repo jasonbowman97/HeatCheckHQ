@@ -46,6 +46,9 @@ interface MatchupPanelProps {
 
   // Batter hand context (for platoon display)
   batterHand?: BatterHandFilter
+
+  // Stat window for arsenal display
+  statWindow?: "season" | "7d" | "14d" | "30d"
 }
 
 function UsageBar({ pct }: { pct: number }) {
@@ -215,6 +218,7 @@ export function MatchupPanel({
   onSeasonChange,
   isLoadingMatchup,
   batterHand = "All",
+  statWindow = "season",
 }: MatchupPanelProps) {
   const currentYear = new Date().getFullYear()
   const selectedGame = games.find((g) => g.gamePk === selectedGamePk) ?? null
@@ -230,15 +234,27 @@ export function MatchupPanel({
     }
   }
 
+  // Determine which arsenal to display based on batter hand filter
+  const activeArsenal: PitchArsenal[] = (() => {
+    if (!selectedPitcher) return []
+    if (batterHand === "LHH" && selectedPitcher.arsenalVsLHB && selectedPitcher.arsenalVsLHB.length > 0) {
+      return selectedPitcher.arsenalVsLHB
+    }
+    if (batterHand === "RHH" && selectedPitcher.arsenalVsRHB && selectedPitcher.arsenalVsRHB.length > 0) {
+      return selectedPitcher.arsenalVsRHB
+    }
+    return selectedPitcher.arsenal ?? []
+  })()
+
   function handleSelectAll() {
-    if (selectedPitcher?.arsenal) {
-      onPitchTypesChange(selectedPitcher.arsenal.map((p) => p.pitchType))
+    if (activeArsenal.length > 0) {
+      onPitchTypesChange(activeArsenal.map((p) => p.pitchType))
     }
   }
 
   function handleDeselectBelow() {
-    if (!selectedPitcher?.arsenal) return
-    const above = selectedPitcher.arsenal
+    if (activeArsenal.length === 0) return
+    const above = activeArsenal
       .filter((p) => p.usagePct >= minUsagePct)
       .map((p) => p.pitchType)
     if (above.length > 0) {
@@ -246,9 +262,24 @@ export function MatchupPanel({
     }
   }
 
-  const sortedArsenal = selectedPitcher?.arsenal
-    ? [...selectedPitcher.arsenal].sort((a, b) => b.usagePct - a.usagePct)
+  const sortedArsenal = activeArsenal.length > 0
+    ? [...activeArsenal].sort((a, b) => b.usagePct - a.usagePct)
     : []
+
+  // Label for the arsenal header
+  const windowSuffix = statWindow !== "season"
+    ? ` · ${statWindow === "7d" ? "L7" : statWindow === "14d" ? "L14" : "L30"}`
+    : ""
+  const arsenalLabel = batterHand === "LHH"
+    ? `Pitch Arsenal (vs LHH${windowSuffix})`
+    : batterHand === "RHH"
+      ? `Pitch Arsenal (vs RHH${windowSuffix})`
+      : `Pitch Arsenal${windowSuffix ? ` (${windowSuffix.trim().replace("· ", "")})` : ""}`
+
+  const isHandSpecific = batterHand !== "All" && (
+    (batterHand === "LHH" && selectedPitcher?.arsenalVsLHB && selectedPitcher.arsenalVsLHB.length > 0) ||
+    (batterHand === "RHH" && selectedPitcher?.arsenalVsRHB && selectedPitcher.arsenalVsRHB.length > 0)
+  )
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -408,8 +439,13 @@ export function MatchupPanel({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-primary uppercase tracking-wider">
-                Pitch Arsenal
+                {arsenalLabel}
               </span>
+              {isHandSpecific && (
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                  Statcast
+                </span>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -417,9 +453,9 @@ export function MatchupPanel({
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-[260px]">
                     <p className="text-xs">
-                      Overall season pitch mix — toggle types on/off to focus the
-                      matchup analysis. Per-pitch splits by batter hand are not
-                      available; use the platoon splits above for hand-specific context.
+                      {isHandSpecific
+                        ? `Pitch mix from Statcast data filtered by ${batterHand === "LHH" ? "left-handed" : "right-handed"} batters. Toggle types on/off to focus the matchup analysis.`
+                        : "Overall season pitch mix — toggle types on/off to focus the matchup analysis. Select LHH or RHH in the batter filter to see hand-specific pitch usage from Statcast."}
                     </p>
                   </TooltipContent>
                 </Tooltip>

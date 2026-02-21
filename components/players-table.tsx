@@ -10,7 +10,13 @@ import {
 } from "@/components/ui/table"
 import type { AggregatedBatterStats } from "@/lib/matchup-data"
 import { useMemo, useState } from "react"
-import { Loader2, Users } from "lucide-react"
+import { Loader2, Users, Info } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { HeatmapLegend } from "@/components/ui/heatmap-legend"
 
 interface PlayersTableProps {
@@ -21,33 +27,20 @@ interface PlayersTableProps {
 type SortKey = "name" | "abs" | "avg" | "obp" | "slg" | "ops" | "hr" | "rbi" | "h2hAvg" | "h2hOPS" | "seasonOPS"
 type SortDir = "asc" | "desc"
 
-function getHeatmapColor(value: number, min: number, max: number): string {
-  if (max === min) return "bg-secondary text-foreground"
-  const pct = (value - min) / (max - min)
-  if (pct >= 0.8) return "bg-emerald-500/20 text-emerald-400"
-  if (pct >= 0.6) return "bg-sky-500/20 text-sky-400"
-  if (pct >= 0.4) return "bg-amber-500/20 text-amber-400"
-  if (pct >= 0.2) return "bg-orange-500/20 text-orange-400"
-  return "bg-red-500/20 text-red-400"
+type HeatmapStat = "avg" | "obp" | "slg" | "ops"
+
+const THRESHOLDS: Record<HeatmapStat, { good: number; bad: number }> = {
+  avg: { good: 0.270, bad: 0.230 },
+  obp: { good: 0.340, bad: 0.300 },
+  slg: { good: 0.450, bad: 0.380 },
+  ops: { good: 0.780, bad: 0.680 },
 }
 
-function getStatBounds(data: AggregatedBatterStats[]) {
-  const withData = data.filter((d) => d.abs > 0)
-  if (withData.length === 0) {
-    return {
-      avg: { min: 0, max: 0.400 },
-      obp: { min: 0, max: 0.500 },
-      slg: { min: 0, max: 1 },
-      ops: { min: 0, max: 1.2 },
-    }
-  }
-  const fields = ["avg", "obp", "slg", "ops"] as const
-  const bounds: Record<string, { min: number; max: number }> = {}
-  for (const field of fields) {
-    const values = withData.map((p) => p[field])
-    bounds[field] = { min: Math.min(...values), max: Math.max(...values) }
-  }
-  return bounds
+function getHeatmapColor(value: number, stat: HeatmapStat): string {
+  const t = THRESHOLDS[stat]
+  if (value >= t.good) return "bg-emerald-500/20 text-emerald-400"
+  if (value <= t.bad) return "bg-red-500/20 text-red-400"
+  return "" // neutral — no highlight
 }
 
 export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
@@ -78,7 +71,7 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
     return rows
   }, [matchupStats, sortKey, sortDir])
 
-  const bounds = useMemo(() => getStatBounds(sorted), [sorted])
+  // Heatmap uses absolute baseball thresholds — no bounds computation needed
 
   const SortHeader = ({ label, field, className }: { label: string; field: SortKey; className?: string }) => (
     <TableHead
@@ -137,10 +130,34 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
               <SortHeader label="RBI" field="rbi" className="text-right" />
               {/* H2H columns */}
               <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center border-l border-border/30 pl-3">
-                vs P AVG
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 cursor-help">
+                        vs P AVG
+                        <Info className="h-2.5 w-2.5 text-muted-foreground/50" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Career batting average vs this specific pitcher. N/A = no career matchup history.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">
-                vs P OPS
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 cursor-help">
+                        vs P OPS
+                        <Info className="h-2.5 w-2.5 text-muted-foreground/50" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Career OPS vs this specific pitcher. N/A = no career matchup history.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">
                 vs P AB
@@ -185,22 +202,22 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
                     <span className="text-sm text-muted-foreground font-mono">{row.abs}</span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? getHeatmapColor(row.avg, bounds.avg.min, bounds.avg.max) : "bg-secondary text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? (getHeatmapColor(row.avg, "avg") || "text-foreground") : "bg-secondary text-muted-foreground"}`}>
                       {hasData ? row.avg.toFixed(3) : "-"}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? getHeatmapColor(row.obp, bounds.obp.min, bounds.obp.max) : "bg-secondary text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? (getHeatmapColor(row.obp, "obp") || "text-foreground") : "bg-secondary text-muted-foreground"}`}>
                       {hasData ? row.obp.toFixed(3) : "-"}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? getHeatmapColor(row.slg, bounds.slg.min, bounds.slg.max) : "bg-secondary text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? (getHeatmapColor(row.slg, "slg") || "text-foreground") : "bg-secondary text-muted-foreground"}`}>
                       {hasData ? row.slg.toFixed(3) : "-"}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? getHeatmapColor(row.ops, bounds.ops.min, bounds.ops.max) : "bg-secondary text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold font-mono ${hasData ? (getHeatmapColor(row.ops, "ops") || "text-foreground") : "bg-secondary text-muted-foreground"}`}>
                       {hasData ? row.ops.toFixed(3) : "-"}
                     </span>
                   </TableCell>
@@ -212,18 +229,18 @@ export function PlayersTable({ matchupStats, isLoading }: PlayersTableProps) {
                   </TableCell>
                   {/* H2H vs this pitcher */}
                   <TableCell className="py-3 text-center border-l border-border/30 pl-3">
-                    <span className={`text-xs font-mono ${hasH2H ? "text-foreground font-semibold" : "text-muted-foreground/40"}`}>
-                      {hasH2H ? row.h2hAvg.toFixed(3) : "—"}
+                    <span className={`text-xs font-mono ${hasH2H ? "text-foreground font-semibold" : "text-muted-foreground/30 italic text-[10px]"}`}>
+                      {hasH2H ? row.h2hAvg.toFixed(3) : "N/A"}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`text-xs font-mono ${hasH2H ? "text-foreground font-semibold" : "text-muted-foreground/40"}`}>
-                      {hasH2H ? row.h2hOPS.toFixed(3) : "—"}
+                    <span className={`text-xs font-mono ${hasH2H ? "text-foreground font-semibold" : "text-muted-foreground/30 italic text-[10px]"}`}>
+                      {hasH2H ? row.h2hOPS.toFixed(3) : "N/A"}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-center">
-                    <span className={`text-[10px] font-mono ${hasH2H ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
-                      {hasH2H ? row.h2hABs : "—"}
+                    <span className={`text-[10px] font-mono ${hasH2H ? "text-muted-foreground" : "text-muted-foreground/30 italic"}`}>
+                      {hasH2H ? row.h2hABs : "N/A"}
                     </span>
                   </TableCell>
                   {/* Season context */}

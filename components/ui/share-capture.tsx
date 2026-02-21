@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useCallback } from "react"
-import { Camera, Download, Copy, Share2, Check, Loader2 } from "lucide-react"
+import { Camera, Download, Copy, Share2, Check, Loader2, Save } from "lucide-react"
 
 interface ShareCaptureProps {
   children: React.ReactNode
@@ -212,7 +212,15 @@ export function ShareCapture({ children, label, maxCaptureHeight = 800 }: ShareC
             />
 
             {/* Actions */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              {/* Primary action: Save — uses native share on mobile (Save to Photos), download on desktop */}
+              <button
+                onClick={typeof navigator !== "undefined" && "share" in navigator ? handleShare : handleDownload}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Save className="h-4 w-4" />
+                Save
+              </button>
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 rounded-lg bg-card border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
@@ -233,14 +241,14 @@ export function ShareCapture({ children, label, maxCaptureHeight = 800 }: ShareC
               </button>
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-card border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
               >
                 <Share2 className="h-4 w-4" />
                 Share
               </button>
               <button
                 onClick={handleClose}
-                className="ml-2 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Close
               </button>
