@@ -27,6 +27,8 @@ export const ROUTE_ACCESS: RouteAccess[] = [
   { pattern: "/nfl/defense-vs-position", tier: "free", label: "NFL Defense vs Position" },
   { pattern: "/nba/head-to-head", tier: "free", label: "Head-to-Head" },
   { pattern: "/nba/streaks", tier: "free", label: "NBA Streak Tracker" },
+  { pattern: "/nba/first-3min", tier: "free", label: "First 3 Minutes" },
+  { pattern: "/nba/second-half", tier: "free", label: "2nd Half Props" },
 
   // Pro subscription required
 
