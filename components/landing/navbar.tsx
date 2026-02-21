@@ -29,6 +29,8 @@ const sportLinks = [
     sport: "NBA",
     pages: [
       { name: "First Basket", href: "/nba/first-basket", tier: "free" as Tier },
+      { name: "2H First Basket", href: "/nba/second-half", tier: "free" as Tier },
+      { name: "First 3 Min", href: "/nba/first-3min", tier: "free" as Tier },
       { name: "Head-to-Head", href: "/nba/head-to-head", tier: "free" as Tier },
       { name: "Def vs Pos", href: "/nba/defense-vs-position", tier: "free" as Tier },
       { name: "Streak Tracker", href: "/nba/streaks", tier: "free" as Tier },

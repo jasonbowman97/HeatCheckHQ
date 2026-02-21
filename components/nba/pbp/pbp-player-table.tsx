@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Image from "next/image"
-import { ChevronDown, ChevronUp, Trophy, Share2 } from "lucide-react"
+import { ChevronDown, ChevronUp, Trophy, Share2, Search } from "lucide-react"
 import { ShareCapture } from "@/components/ui/share-capture"
 
 /* ─── Types ─── */
@@ -260,61 +260,101 @@ function GameFilter({
   todayGames,
   gameFilter,
   setGameFilter,
+  teamFilter,
+  setTeamFilter,
 }: {
   todayGames: TodayGame[]
   gameFilter: string
   setGameFilter: (v: string) => void
+  teamFilter: string | null
+  setTeamFilter: (v: string | null) => void
 }) {
   if (!todayGames.length) return null
 
+  // Parse the selected matchup to show team sub-filter
+  const isMatchupSelected = gameFilter !== "all" && gameFilter !== "today" && gameFilter.includes("-")
+  const matchupTeams = isMatchupSelected ? gameFilter.split("-") : []
+
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by game">
-      <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
-      <button
-        onClick={() => setGameFilter("all")}
-        aria-pressed={gameFilter === "all"}
-        className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-          gameFilter === "all"
-            ? "bg-primary/15 text-primary border border-primary/30"
-            : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
-        }`}
-      >
-        All Players
-      </button>
-      <button
-        onClick={() => setGameFilter("today")}
-        aria-pressed={gameFilter === "today"}
-        className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-          gameFilter === "today"
-            ? "bg-primary/15 text-primary border border-primary/30"
-            : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
-        }`}
-      >
-        Today Only
-      </button>
-      {todayGames.map((game) => {
-        const key = `${game.away}-${game.home}`
-        return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by game">
+        <span className="text-xs text-muted-foreground mr-1">{"Today's games:"}</span>
+        <button
+          onClick={() => { setGameFilter("all"); setTeamFilter(null) }}
+          aria-pressed={gameFilter === "all"}
+          className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            gameFilter === "all"
+              ? "bg-primary/15 text-primary border border-primary/30"
+              : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+          }`}
+        >
+          All Players
+        </button>
+        <button
+          onClick={() => { setGameFilter("today"); setTeamFilter(null) }}
+          aria-pressed={gameFilter === "today"}
+          className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            gameFilter === "today"
+              ? "bg-primary/15 text-primary border border-primary/30"
+              : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+          }`}
+        >
+          Today Only
+        </button>
+        {todayGames.map((game) => {
+          const key = `${game.away}-${game.home}`
+          return (
+            <button
+              key={key}
+              onClick={() => { setGameFilter(gameFilter === key ? "today" : key); setTeamFilter(null) }}
+              aria-pressed={gameFilter === key}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                gameFilter === key
+                  ? "bg-primary/15 text-primary border border-primary/30"
+                  : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+              }`}
+            >
+              {game.awayLogo && (
+                <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />
+              )}
+              {game.away} @ {game.home}
+              {game.homeLogo && (
+                <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Team sub-filter — only shows when a specific matchup is selected */}
+      {isMatchupSelected && matchupTeams.length === 2 && (
+        <div className="flex items-center gap-2" role="group" aria-label="Filter by team">
+          <span className="text-xs text-muted-foreground mr-1">Team:</span>
           <button
-            key={key}
-            onClick={() => setGameFilter(gameFilter === key ? "today" : key)}
-            aria-pressed={gameFilter === key}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              gameFilter === key
+            onClick={() => setTeamFilter(null)}
+            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              teamFilter === null
                 ? "bg-primary/15 text-primary border border-primary/30"
                 : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
             }`}
           >
-            {game.awayLogo && (
-              <Image src={game.awayLogo} alt={game.away} width={16} height={16} className="rounded" />
-            )}
-            {game.away} @ {game.home}
-            {game.homeLogo && (
-              <Image src={game.homeLogo} alt={game.home} width={16} height={16} className="rounded" />
-            )}
+            Both
           </button>
-        )
-      })}
+          {matchupTeams.map((team) => (
+            <button
+              key={team}
+              onClick={() => setTeamFilter(teamFilter === team ? null : team)}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                teamFilter === team
+                  ? "bg-primary/15 text-primary border border-primary/30"
+                  : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+              }`}
+            >
+              {team}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -335,6 +375,9 @@ export function PBPPlayerTable({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   // Default to "today" when there are games today, so users see relevant players first
   const [gameFilter, setGameFilter] = useState(todayGames.length > 0 ? "today" : "all")
+  const [teamFilter, setTeamFilter] = useState<string | null>(null)
+  const [minGP, setMinGP] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("")
 
   function handleSort(col: string) {
     if (sortColumn === col) {
@@ -345,28 +388,71 @@ export function PBPPlayerTable({
     }
   }
 
-  // Filter by game
+  const handleGameFilterChange = (v: string) => {
+    setGameFilter(v)
+    setTeamFilter(null)
+  }
+
+  // Filter by game, team, min GP, and search
   const filtered = useMemo(() => {
-    if (gameFilter === "all") return players
-    if (gameFilter === "today") return players.filter((p) => p.playsToday)
-    const [away, home] = gameFilter.split("-")
-    return players.filter((p) => p.team === away || p.team === home)
-  }, [players, gameFilter])
+    let result = players
+
+    // Game filter
+    if (gameFilter === "today") {
+      result = result.filter((p) => p.playsToday)
+    } else if (gameFilter !== "all") {
+      const [away, home] = gameFilter.split("-")
+      result = result.filter((p) => p.team === away || p.team === home)
+    }
+
+    // Team filter (within a matchup)
+    if (teamFilter) {
+      result = result.filter((p) => p.team === teamFilter)
+    }
+
+    // Min GP filter
+    if (minGP > 0) {
+      result = result.filter((p) => p.gamesInWindow >= minGP)
+    }
+
+    // Player search
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      result = result.filter((p) => p.athleteName.toLowerCase().includes(q))
+    }
+
+    return result
+  }, [players, gameFilter, teamFilter, minGP, searchQuery])
 
   // Sort
   const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
+    const s = [...filtered].sort((a, b) => {
       const aVal = (a as unknown as Record<string, number>)[sortColumn] ?? 0
       const bVal = (b as unknown as Record<string, number>)[sortColumn] ?? 0
       return sortDir === "desc" ? bVal - aVal : aVal - bVal
     })
-  }, [filtered, sortColumn, sortDir])
+
+    // When a matchup is selected with no team filter, group by team
+    const isMatchupSelected = gameFilter !== "all" && gameFilter !== "today" && gameFilter.includes("-") && !teamFilter
+    if (isMatchupSelected) {
+      const [away, home] = gameFilter.split("-")
+      const awayPlayers = s.filter((p) => p.team === away)
+      const homePlayers = s.filter((p) => p.team === home)
+      return [...awayPlayers, ...homePlayers]
+    }
+
+    return s
+  }, [filtered, sortColumn, sortDir, gameFilter, teamFilter])
 
   const displayed = maxRows
     ? sorted.slice(skipRows, skipRows + maxRows)
     : sorted.slice(skipRows)
 
   const isScoring = mode === "scoring"
+
+  // Detect team separator for grouped display
+  const isMatchupGrouped = gameFilter !== "all" && gameFilter !== "today" && gameFilter.includes("-") && !teamFilter
+  const [awayTeam, homeTeam] = isMatchupGrouped ? gameFilter.split("-") : ["", ""]
 
   return (
     <>
@@ -380,16 +466,54 @@ export function PBPPlayerTable({
         <GameFilter
           todayGames={todayGames}
           gameFilter={gameFilter}
-          setGameFilter={setGameFilter}
+          setGameFilter={handleGameFilterChange}
+          teamFilter={teamFilter}
+          setTeamFilter={setTeamFilter}
         />
       )}
 
+      {/* Extra filters: Min GP + Player Search */}
+      {skipRows === 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Min GP filter */}
+          <div className="flex items-center gap-2" role="group" aria-label="Minimum games played">
+            <span className="text-xs text-muted-foreground">Min GP:</span>
+            {[0, 5, 10, 20, 30].map((gp) => (
+              <button
+                key={gp}
+                onClick={() => setMinGP(gp)}
+                aria-pressed={minGP === gp}
+                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  minGP === gp
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "bg-secondary text-muted-foreground hover:text-foreground border border-transparent"
+                }`}
+              >
+                {gp === 0 ? "All" : `${gp}+`}
+              </button>
+            ))}
+          </div>
+
+          {/* Player search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search player..."
+              className="h-8 w-44 rounded-md border border-border bg-secondary pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+            />
+          </div>
+        </div>
+      )}
+
       <ShareCapture label={label}>
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-border bg-card/80">
+              <thead className="sticky top-[96px] z-20">
+                <tr className="border-b border-border bg-card">
                   <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-10">
                     #
                   </th>
@@ -404,9 +528,7 @@ export function PBPPlayerTable({
                     <>
                       <SortHeader label="Avg Pts" column="avgPoints" sortColumn={sortColumn} sortDir={sortDir} onSort={handleSort} className="text-right w-16" />
                       <SortHeader label="Hit Rate" column="hitRate" sortColumn={sortColumn} sortDir={sortDir} onSort={handleSort} className="text-center w-20" />
-                      <th className="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center w-16">
-                        GP
-                      </th>
+                      <SortHeader label="GP" column="gamesInWindow" sortColumn={sortColumn} sortDir={sortDir} onSort={handleSort} className="text-center w-16" />
                     </>
                   ) : (
                     <>
@@ -423,137 +545,153 @@ export function PBPPlayerTable({
                   const rate = isScoring ? (player.hitRate ?? 0) : (player.rate ?? 0)
                   const colors = hitRateColor(rate, mode)
 
+                  // Team separator row when matchup is grouped
+                  const showTeamSeparator = isMatchupGrouped && i > 0 && displayed[i - 1]?.team !== player.team
+                  const isFirstGroup = isMatchupGrouped && i === 0
+
                   return (
-                    <tr
-                      key={player.athleteId}
-                      className="border-b border-border/50 last:border-b-0 hover:bg-secondary/30 transition-colors"
-                    >
-                      {/* Rank */}
-                      <td className="px-3 py-2.5 text-xs font-medium text-muted-foreground">
-                        {rank}
-                      </td>
+                    <>
+                      {/* Team header separator */}
+                      {(showTeamSeparator || isFirstGroup) && (
+                        <tr key={`sep-${player.team}`} className="bg-secondary/50">
+                          <td colSpan={isScoring ? 6 : 6} className="px-3 py-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                              {player.team === awayTeam ? `${awayTeam} (Away)` : `${homeTeam} (Home)`}
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                      <tr
+                        key={player.athleteId}
+                        className="border-b border-border/50 last:border-b-0 hover:bg-secondary/30 transition-colors"
+                      >
+                        {/* Rank */}
+                        <td className="px-3 py-2.5 text-xs font-medium text-muted-foreground">
+                          {rank}
+                        </td>
 
-                      {/* Player with headshot */}
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {player.headshotUrl ? (
-                            <Image
-                              src={player.headshotUrl}
-                              alt={player.athleteName}
-                              width={36}
-                              height={26}
-                              className="rounded bg-secondary shrink-0 h-8 w-8 object-cover"
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="h-8 w-8 rounded bg-secondary shrink-0" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate">
-                              {player.athleteName}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {player.team}
-                              {player.opponent && (
-                                <span
-                                  className={`ml-1 ${
-                                    player.isHome
-                                      ? "text-emerald-400"
-                                      : "text-blue-400"
-                                  }`}
-                                >
-                                  {player.isHome ? "vs" : "@"} {player.opponent}
-                                </span>
-                              )}
-                              {!player.playsToday && player.opponent === null && (
-                                <span className="ml-1 text-muted-foreground/50">
-                                  no game
-                                </span>
-                              )}
-                            </p>
+                        {/* Player with headshot */}
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {player.headshotUrl ? (
+                              <Image
+                                src={player.headshotUrl}
+                                alt={player.athleteName}
+                                width={36}
+                                height={26}
+                                className="rounded bg-secondary shrink-0 h-8 w-8 object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="h-8 w-8 rounded bg-secondary shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-foreground truncate">
+                                {player.athleteName}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {player.team}
+                                {player.opponent && (
+                                  <span
+                                    className={`ml-1 ${
+                                      player.isHome
+                                        ? "text-emerald-400"
+                                        : "text-blue-400"
+                                    }`}
+                                  >
+                                    {player.isHome ? "vs" : "@"} {player.opponent}
+                                  </span>
+                                )}
+                                {!player.playsToday && player.opponent === null && (
+                                  <span className="ml-1 text-muted-foreground/50">
+                                    no game
+                                  </span>
+                                )}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Recent games — oldest on left, most recent on right */}
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-0.5">
-                          {[...player.recentResults.slice(0, 10)].reverse().map((g, j) => {
-                            const isHit = isScoring ? g.hit : g.scored
-                            const displayValue = isScoring ? g.points : (isHit ? "✓" : "✗")
-                            const tooltipText = `${formatDate(g.date)} ${g.isHome ? "vs" : "@"} ${g.opponent}${isScoring ? ` — ${g.points} pts` : isHit ? " — Scored first" : " — No"}`
+                        {/* Recent games — oldest on left, most recent on right */}
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-0.5">
+                            {[...player.recentResults.slice(0, 10)].reverse().map((g, j) => {
+                              const isHit = isScoring ? g.hit : g.scored
+                              const displayValue = isScoring ? g.points : (isHit ? "✓" : "✗")
+                              const tooltipText = `${formatDate(g.date)} ${g.isHome ? "vs" : "@"} ${g.opponent}${isScoring ? ` — ${g.points} pts` : isHit ? " — Scored first" : " — No"}`
 
-                            return (
-                              <div key={j} className="relative group" title={tooltipText}>
-                                {/* Desktop: show value in box */}
-                                <div
-                                  className={`hidden md:flex items-center justify-center w-7 h-7 rounded text-[10px] font-bold border transition-colors ${
-                                    isHit
-                                      ? "bg-emerald-400/10 text-emerald-400 border-emerald-500/20"
-                                      : "bg-red-400/10 text-red-400/60 border-red-500/10"
-                                  }`}
-                                >
-                                  {displayValue}
-                                </div>
-                                {/* Mobile: dots */}
-                                <div
-                                  className={`md:hidden w-3 h-3 rounded-full ${
-                                    isHit ? "bg-emerald-400" : "bg-red-400/30"
-                                  }`}
-                                />
-                                {/* Tooltip on hover */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-20 pointer-events-none">
-                                  <div className="bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
-                                    <div className="font-semibold">{formatDate(g.date)} {g.isHome ? "vs" : "@"} {g.opponent}</div>
-                                    {isScoring && <div>{g.points} pts</div>}
-                                    {!isScoring && <div>{isHit ? "Scored first" : "Did not score first"}</div>}
+                              return (
+                                <div key={j} className="relative group" title={tooltipText}>
+                                  {/* Desktop: show value in box */}
+                                  <div
+                                    className={`hidden md:flex items-center justify-center w-7 h-7 rounded text-[10px] font-bold border transition-colors ${
+                                      isHit
+                                        ? "bg-emerald-400/10 text-emerald-400 border-emerald-500/20"
+                                        : "bg-red-400/10 text-red-400/60 border-red-500/10"
+                                    }`}
+                                  >
+                                    {displayValue}
+                                  </div>
+                                  {/* Mobile: dots */}
+                                  <div
+                                    className={`md:hidden w-3 h-3 rounded-full ${
+                                      isHit ? "bg-emerald-400" : "bg-red-400/30"
+                                    }`}
+                                  />
+                                  {/* Tooltip on hover */}
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-20 pointer-events-none">
+                                    <div className="bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
+                                      <div className="font-semibold">{formatDate(g.date)} {g.isHome ? "vs" : "@"} {g.opponent}</div>
+                                      {isScoring && <div>{g.points} pts</div>}
+                                      {!isScoring && <div>{isHit ? "Scored first" : "Did not score first"}</div>}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </td>
+                              )
+                            })}
+                          </div>
+                        </td>
 
-                      {/* Stats columns */}
-                      {isScoring ? (
-                        <>
-                          <td className="px-3 py-2.5 text-right">
-                            <span className="text-sm font-bold text-foreground font-mono tabular-nums">
-                              {player.avgPoints?.toFixed(1)}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-md ${colors.text} ${colors.bg}`}>
-                              {player.hitCount}/{player.gamesInWindow}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                              {player.gamesInWindow}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-md ${colors.text} ${colors.bg}`}>
-                              {player.rate?.toFixed(1)}%
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className="text-sm font-bold text-foreground font-mono tabular-nums">
-                              {player.firstCount}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                              {player.gamesInWindow}
-                            </span>
-                          </td>
-                        </>
-                      )}
-                    </tr>
+                        {/* Stats columns */}
+                        {isScoring ? (
+                          <>
+                            <td className="px-3 py-2.5 text-right">
+                              <span className="text-sm font-bold text-foreground font-mono tabular-nums">
+                                {player.avgPoints?.toFixed(1)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-md ${colors.text} ${colors.bg}`}>
+                                {player.hitCount}/{player.gamesInWindow}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                                {player.gamesInWindow}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-3 py-2.5 text-center">
+                              <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-md ${colors.text} ${colors.bg}`}>
+                                {player.rate?.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <span className="text-sm font-bold text-foreground font-mono tabular-nums">
+                                {player.firstCount}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                                {player.gamesInWindow}
+                              </span>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    </>
                   )
                 })}
               </tbody>

@@ -80,35 +80,53 @@ export async function GET(request: Request) {
       teamGameCounts.set(g.away, (teamGameCounts.get(g.away) || 0) + 1)
     }
 
-    const allDates = [...new Set([...uniqueGames.values()].map((g) => g.date))].sort().reverse()
     const windowSize = windowParam === "season" ? Infinity : Number(windowParam)
 
-    // For windowed queries, determine the date cutoff
-    let windowGameIds: Set<string> | null = null
-    let windowTeamGameCounts = teamGameCounts
+    // Build per-team game lists sorted by date (most recent first)
+    // This is critical: L5 = "last 5 games THIS TEAM played", not league-wide
+    const teamGamesList = new Map<string, { gameId: string; date: string }[]>()
+    for (const [gid, g] of uniqueGames) {
+      for (const t of [g.home, g.away]) {
+        if (!teamGamesList.has(t)) teamGamesList.set(t, [])
+        teamGamesList.get(t)!.push({ gameId: gid, date: g.date })
+      }
+    }
+    for (const games of teamGamesList.values()) {
+      games.sort((a, b) => b.date.localeCompare(a.date))
+    }
+
+    // Per-team window: each team's last N game IDs
+    const perTeamWindowIds = new Map<string, Set<string>>()
+    let windowTeamGameCounts = teamGameCounts // default to full season
 
     if (windowSize !== Infinity) {
-      const cutoffDate = allDates[Math.min(windowSize - 1, allDates.length - 1)]
-      windowGameIds = new Set<string>()
       const wTeamCounts = new Map<string, number>()
-      for (const [gid, g] of uniqueGames) {
-        if (g.date >= cutoffDate) {
-          windowGameIds.add(gid)
-          wTeamCounts.set(g.home, (wTeamCounts.get(g.home) || 0) + 1)
-          wTeamCounts.set(g.away, (wTeamCounts.get(g.away) || 0) + 1)
-        }
+      for (const [team, games] of teamGamesList) {
+        const slice = games.slice(0, windowSize)
+        perTeamWindowIds.set(team, new Set(slice.map((g) => g.gameId)))
+        wTeamCounts.set(team, slice.length)
       }
       windowTeamGameCounts = wTeamCounts
     }
 
-    // Build team game dates for recent results (to show games where player scored 0 in first 3 min)
+    /** Check if a game is within a team's window */
+    function isInTeamWindow(gameId: string, team: string): boolean {
+      if (perTeamWindowIds.size === 0) return true // season mode
+      return perTeamWindowIds.get(team)?.has(gameId) ?? false
+    }
+
+    // Build per-team game dates for recent results (showing scored AND not-scored games)
+    // Each team only includes games within their own window
     const teamGameDates = new Map<string, { gameId: string; date: string; opponent: string; isHome: boolean }[]>()
     for (const [gid, g] of uniqueGames) {
-      if (windowGameIds && !windowGameIds.has(gid)) continue
-      if (!teamGameDates.has(g.home)) teamGameDates.set(g.home, [])
-      teamGameDates.get(g.home)!.push({ gameId: gid, date: g.date, opponent: g.away, isHome: true })
-      if (!teamGameDates.has(g.away)) teamGameDates.set(g.away, [])
-      teamGameDates.get(g.away)!.push({ gameId: gid, date: g.date, opponent: g.home, isHome: false })
+      if (isInTeamWindow(gid, g.home)) {
+        if (!teamGameDates.has(g.home)) teamGameDates.set(g.home, [])
+        teamGameDates.get(g.home)!.push({ gameId: gid, date: g.date, opponent: g.away, isHome: true })
+      }
+      if (isInTeamWindow(gid, g.away)) {
+        if (!teamGameDates.has(g.away)) teamGameDates.set(g.away, [])
+        teamGameDates.get(g.away)!.push({ gameId: gid, date: g.date, opponent: g.home, isHome: false })
+      }
     }
 
     // Aggregate per player per game
@@ -117,7 +135,7 @@ export async function GET(request: Request) {
     for (const play of scoringPlays) {
       if (!play.athlete_id) continue
       if (!isRegularGame(play.home_team, play.away_team)) continue
-      if (windowGameIds && !windowGameIds.has(play.game_id)) continue
+      if (!isInTeamWindow(play.game_id, play.team)) continue
 
       let playerGames = playerGameMap.get(play.athlete_id)
       if (!playerGames) {

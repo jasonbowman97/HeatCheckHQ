@@ -188,7 +188,7 @@ export function ShareCapture({ children, label, maxCaptureHeight = 800 }: ShareC
       <button
         onClick={handleCapture}
         disabled={capturing}
-        className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-lg bg-background/80 backdrop-blur border border-border/60 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-background/95 transition-all opacity-0 group-hover/capture:opacity-100 focus:opacity-100 shadow-sm"
+        className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-lg bg-background/80 backdrop-blur border border-border/60 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-background/95 transition-all opacity-0 group-hover/capture:opacity-100 focus:opacity-100 shadow-sm"
         title="Capture as 16:9 image"
       >
         {capturing ? (
